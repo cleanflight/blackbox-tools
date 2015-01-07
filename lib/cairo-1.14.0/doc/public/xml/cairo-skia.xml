@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?> 
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+                "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY version SYSTEM "version.xml">
+]>
+<refentry id="cairo-cairo-skia">
+<refmeta>
+<refentrytitle role="top_of_page" id="cairo-cairo-skia.top_of_page">cairo-skia</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>
+  CAIRO Library
+</refmiscinfo>
+</refmeta>
+<refnamediv>
+<refname>cairo-skia</refname>
+<refpurpose></refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="cairo-cairo-skia.synopsis" role="synopsis">
+<title role="synopsis.title">Synopsis</title>
+
+<synopsis>typedef             <link linkend="cairo-skia-context-t">cairo_skia_context_t</link>;
+typedef             <link linkend="cairo-skia-surface-t">cairo_skia_surface_t</link>;
+<link linkend="bool"><returnvalue>bool</returnvalue></link>                <link linkend="format-to-sk-config">format_to_sk_config</link>                 (<parameter><link linkend="cairo-format-t"><type>cairo_format_t</type></link> format</parameter>);
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1 id="cairo-cairo-skia.description" role="desc">
+<title role="desc.title">Description</title>
+<para>
+</para>
+</refsect1>
+<refsect1 id="cairo-cairo-skia.details" role="details">
+<title role="details.title">Details</title>
+<refsect2 id="cairo-skia-context-t" role="typedef" condition="since:1.10">
+<title>cairo_skia_context_t</title>
+<indexterm zone="cairo-skia-context-t" role="1.10"><primary sortas="skia_context_t">cairo_skia_context_t</primary></indexterm>
+<programlisting>typedef struct _cairo_skia_context cairo_skia_context_t;
+</programlisting>
+<para>
+A <link linkend="cairo-skia-context-t"><type>cairo_skia_context_t</type></link> includes handles to Skia's canvas,
+paint, and path objects along with the Cairo source surfaces
+and matrix, and the original and target <link linkend="cairo-skia-surface-t"><type>cairo_skia_surface_t</type></link>
+objects.
+</para><para role="since">Since 1.10</para></refsect2>
+<refsect2 id="cairo-skia-surface-t" role="typedef" condition="since:1.10">
+<title>cairo_skia_surface_t</title>
+<indexterm zone="cairo-skia-surface-t" role="1.10"><primary sortas="skia_surface_t">cairo_skia_surface_t</primary></indexterm>
+<programlisting>typedef struct _cairo_skia_surface cairo_skia_surface_t;
+</programlisting>
+<para>
+A <link linkend="cairo-skia-surface-t"><type>cairo_skia_surface_t</type></link> is a container for the underlying
+<link linkend="SkBitmap"><type>SkBitmap</type></link> and the corresponding Cairo image surface.
+</para><para role="since">Since 1.10</para></refsect2>
+<refsect2 id="format-to-sk-config" role="function">
+<title>format_to_sk_config ()</title>
+<indexterm zone="format-to-sk-config"><primary>format_to_sk_config</primary></indexterm>
+<programlisting><link linkend="bool"><returnvalue>bool</returnvalue></link>                format_to_sk_config                 (<parameter><link linkend="cairo-format-t"><type>cairo_format_t</type></link> format</parameter>);</programlisting>
+<para>
+</para></refsect2>
+
+</refsect1>
+
+</refentry>

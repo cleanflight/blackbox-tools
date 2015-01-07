@@ -1,0 +1,6 @@
+/logs/
+/obj/
+/.settings/
+/.cproject
+/.project
+/dist/

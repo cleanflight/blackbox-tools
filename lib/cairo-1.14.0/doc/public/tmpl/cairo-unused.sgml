@@ -1,0 +1,64 @@
+<!-- ##### MACRO CAIRO_HAS_EGL_FUNCTIONS ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### MACRO CAIRO_HAS_GLX_FUNCTIONS ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### MACRO CAIRO_HAS_GOBJECT_FUNCTIONS ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### MACRO CAIRO_HAS_WGL_FUNCTIONS ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION cairo_quartz_image_surface_create ##### -->
+<para>
+
+</para>
+
+@image_surface: 
+@Returns: 
+
+<!-- ##### FUNCTION cairo_quartz_image_surface_get_image ##### -->
+<para>
+
+</para>
+
+@surface: 
+@Returns: 
+
+<!-- ##### STRUCT cairo_skia_context ##### -->
+<para>
+
+</para>
+
+@base: 
+@original: 
+@target: 
+@matrix: 
+@canvas: 
+@paint: 
+@path: 
+@source: 
+@source_image: 
+@source_extra: 
+
+<!-- ##### STRUCT cairo_skia_surface ##### -->
+<para>
+
+</para>
+
+@image: 
+@bitmap: 
+

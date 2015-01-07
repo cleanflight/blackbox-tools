@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "encoder_testbed", "encoder_testbed\encoder_testbed.vcxproj", "{50E54D2A-4259-459A-94E0-679BD64080DD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "blackbox_render", "blackbox_render\blackbox_render.vcxproj", "{9FA8381C-1218-496B-AE19-030734EAEC42}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "blackbox_decode", "blackbox_decode\blackbox_decode.vcxproj", "{6BF61BBA-2038-44E4-BF40-E31E049A9239}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug Dll|Win32 = Debug Dll|Win32
+		Debug Lib|Win32 = Debug Lib|Win32
+		Release Dll|Win32 = Release Dll|Win32
+		Release Lib|Win32 = Release Lib|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Debug Dll|Win32.ActiveCfg = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Debug Dll|Win32.Build.0 = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Debug Lib|Win32.ActiveCfg = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Debug Lib|Win32.Build.0 = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Release Dll|Win32.ActiveCfg = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Release Dll|Win32.Build.0 = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Release Lib|Win32.ActiveCfg = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Release Lib|Win32.Build.0 = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Release|Win32.ActiveCfg = Release|Win32
+		{50E54D2A-4259-459A-94E0-679BD64080DD}.Release|Win32.Build.0 = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Debug Dll|Win32.ActiveCfg = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Debug Dll|Win32.Build.0 = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Debug Lib|Win32.ActiveCfg = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Debug Lib|Win32.Build.0 = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Release Dll|Win32.ActiveCfg = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Release Dll|Win32.Build.0 = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Release Lib|Win32.ActiveCfg = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Release Lib|Win32.Build.0 = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Release|Win32.ActiveCfg = Release|Win32
+		{9FA8381C-1218-496B-AE19-030734EAEC42}.Release|Win32.Build.0 = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Debug Dll|Win32.ActiveCfg = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Debug Dll|Win32.Build.0 = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Debug Lib|Win32.ActiveCfg = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Debug Lib|Win32.Build.0 = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Release Dll|Win32.ActiveCfg = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Release Dll|Win32.Build.0 = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Release Lib|Win32.ActiveCfg = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Release Lib|Win32.Build.0 = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Release|Win32.ActiveCfg = Release|Win32
+		{6BF61BBA-2038-44E4-BF40-E31E049A9239}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
