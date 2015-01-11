@@ -377,7 +377,7 @@ int main(int argc, char **argv)
 
 	parseCommandlineOptions(argc, argv);
 
-	if (options.help) {
+	if (options.help || argc == 1) {
 		printUsage(argv[0]);
 		return -1;
 	}
