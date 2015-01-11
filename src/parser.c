@@ -14,11 +14,11 @@
 
 // Support for memory-mapped files:
 #ifdef WIN32
-	#include <windows.h>
-	#include <io.h>
+    #include <windows.h>
+    #include <io.h>
 #else
-	// Posix-y systems:
-	#include <sys/mman.h>
+    // Posix-y systems:
+    #include <sys/mman.h>
 #endif
 
 #include <errno.h>
@@ -36,8 +36,8 @@
 
 typedef enum ParserState
 {
-	PARSER_STATE_HEADER = 0,
-	PARSER_STATE_DATA
+    PARSER_STATE_HEADER = 0,
+    PARSER_STATE_DATA
 } ParserState;
 
 typedef struct flightLogFrameDefs_t {
@@ -48,44 +48,44 @@ typedef struct flightLogFrameDefs_t {
 typedef struct flightLogPrivate_t
 {
     // We own this memory to store the field names for these frame types (as a single string)
-	char *mainFieldNamesLine, *gpsHomeFieldNamesLine, *gpsFieldNamesLine;
+    char *mainFieldNamesLine, *gpsHomeFieldNamesLine, *gpsFieldNamesLine;
 
-	//Information about fields which we need to decode them properly
-	flightLogFrameDefs_t frameDefs[256];
+    //Information about fields which we need to decode them properly
+    flightLogFrameDefs_t frameDefs[256];
 
-	int dataVersion;
+    int dataVersion;
 
-	// Indexes of named fields that we need to use to apply predictions against
-	int motor0Index, home0Index, home1Index;
+    // Indexes of named fields that we need to use to apply predictions against
+    int motor0Index, home0Index, home1Index;
 
-	// Blackbox state:
-	int32_t blackboxHistoryRing[3][FLIGHT_LOG_MAX_FIELDS];
-	int32_t* mainHistory[3]; // 0 - space to decode new frames into, 1 - previous frame, 2 - previous previous frame
-	bool mainStreamIsValid;
+    // Blackbox state:
+    int32_t blackboxHistoryRing[3][FLIGHT_LOG_MAX_FIELDS];
+    int32_t* mainHistory[3]; // 0 - space to decode new frames into, 1 - previous frame, 2 - previous previous frame
+    bool mainStreamIsValid;
 
-	int32_t gpsHomeHistory[2][FLIGHT_LOG_MAX_FIELDS]; // 0 - space to decode new frames into, 1 - previous frame
-	bool gpsHomeIsValid;
+    int32_t gpsHomeHistory[2][FLIGHT_LOG_MAX_FIELDS]; // 0 - space to decode new frames into, 1 - previous frame
+    bool gpsHomeIsValid;
 
-	//Because these events don't depend on previous events, we don't keep copies of the old state, just the current one:
-	flightLogEvent_t lastEvent;
-	int32_t lastGPS[FLIGHT_LOG_MAX_FIELDS];
+    //Because these events don't depend on previous events, we don't keep copies of the old state, just the current one:
+    flightLogEvent_t lastEvent;
+    int32_t lastGPS[FLIGHT_LOG_MAX_FIELDS];
 
-	// Event handlers:
-	FlightLogMetadataReady onMetadataReady;
-	FlightLogFrameReady onFrameReady;
-	FlightLogEventReady onEvent;
+    // Event handlers:
+    FlightLogMetadataReady onMetadataReady;
+    FlightLogFrameReady onFrameReady;
+    FlightLogEventReady onEvent;
 
-	// Log data stream:
-	int fd;
+    // Log data stream:
+    int fd;
 
-	//The start of the entire log file:
-	const char *logData;
+    //The start of the entire log file:
+    const char *logData;
 
-	//The section of the file which is currently being examined:
-	const char *logStart, *logEnd, *logPos;
+    //The section of the file which is currently being examined:
+    const char *logStart, *logEnd, *logPos;
 
-	//Set to true if we attempt to read from the log when it is already exhausted
-	bool eof;
+    //Set to true if we attempt to read from the log when it is already exhausted
+    bool eof;
 } flightLogPrivate_t;
 
 typedef void (*FlightLogFrameParse)(flightLog_t *log, bool raw);
@@ -119,21 +119,21 @@ static const flightLogFrameType_t frameTypes[] = {
 
 static int readChar(flightLog_t *log)
 {
-	if (log->private->logPos < log->private->logEnd) {
-		int result = (uint8_t) *log->private->logPos;
-		log->private->logPos++;
-		return result;
-	}
+    if (log->private->logPos < log->private->logEnd) {
+        int result = (uint8_t) *log->private->logPos;
+        log->private->logPos++;
+        return result;
+    }
 
-	log->private->eof = true;
-	return EOF;
+    log->private->eof = true;
+    return EOF;
 }
 
 static void unreadChar(flightLog_t *log, int c)
 {
-	(void) c;
+    (void) c;
 
-	log->private->logPos--;
+    log->private->logPos--;
 }
 
 /**
@@ -143,117 +143,117 @@ static void unreadChar(flightLog_t *log, int c)
  */
 static void parseFieldNames(const char *line, char **fieldNamesCombined, char **fieldNames, int *fieldCount)
 {
-	char *start, *end;
-	bool done = false;
+    char *start, *end;
+    bool done = false;
 
-	//Make a copy of the line so we can manage its lifetime (and write to it to null terminate the fields)
-	*fieldNamesCombined = strdup(line);
-	*fieldCount = 0;
+    //Make a copy of the line so we can manage its lifetime (and write to it to null terminate the fields)
+    *fieldNamesCombined = strdup(line);
+    *fieldCount = 0;
 
-	start = *fieldNamesCombined;
+    start = *fieldNamesCombined;
 
-	while (!done && *start) {
-		end = start;
+    while (!done && *start) {
+        end = start;
 
-		do {
-			end++;
-		} while (*end != ',' && *end != 0);
+        do {
+            end++;
+        } while (*end != ',' && *end != 0);
 
-		fieldNames[(*fieldCount)++] = start;
+        fieldNames[(*fieldCount)++] = start;
 
-		if (*end == 0)
-			done = true;
+        if (*end == 0)
+            done = true;
 
-		*end = 0;
+        *end = 0;
 
-		start = end + 1;
-	}
+        start = end + 1;
+    }
 }
 
 static void parseCommaSeparatedIntegers(char *line, int *target, int maxCount)
 {
-	char *start, *end;
-	bool done = false;
+    char *start, *end;
+    bool done = false;
 
-	start = line;
+    start = line;
 
-	while (!done && *start && maxCount > 0) {
-		end = start + 1;
+    while (!done && *start && maxCount > 0) {
+        end = start + 1;
 
-		while (*end != ',' && *end != 0)
-			end++;
+        while (*end != ',' && *end != 0)
+            end++;
 
-		if (*end == 0)
-			done = true;
+        if (*end == 0)
+            done = true;
 
-		*end = 0;
+        *end = 0;
 
-		*target = atoi(start);
-		target++;
-		maxCount--;
+        *target = atoi(start);
+        target++;
+        maxCount--;
 
-		start = end + 1;
-	}
+        start = end + 1;
+    }
 }
 
 static void parseHeaderLine(flightLog_t *log)
 {
-	char *fieldName, *fieldValue;
-	const char *lineStart, *lineEnd, *separatorPos;
-	int i, c;
-	char valueBuffer[1024];
-	union {
-		float f;
-		uint32_t u;
-	} floatConvert;
+    char *fieldName, *fieldValue;
+    const char *lineStart, *lineEnd, *separatorPos;
+    int i, c;
+    char valueBuffer[1024];
+    union {
+        float f;
+        uint32_t u;
+    } floatConvert;
 
-	if (*log->private->logPos != ' ')
-		return;
+    if (*log->private->logPos != ' ')
+        return;
 
-	//Skip the space
-	log->private->logPos++;
+    //Skip the space
+    log->private->logPos++;
 
-	lineStart = log->private->logPos;
-	separatorPos = 0;
+    lineStart = log->private->logPos;
+    separatorPos = 0;
 
-	for (i = 0; i < 1024; i++) {
-		c = readChar(log);
+    for (i = 0; i < 1024; i++) {
+        c = readChar(log);
 
-		if (c == ':' && !separatorPos)
-			separatorPos = log->private->logPos - 1;
+        if (c == ':' && !separatorPos)
+            separatorPos = log->private->logPos - 1;
 
-		if (c == '\n')
-			break;
+        if (c == '\n')
+            break;
 
-		if (c == EOF || c == '\0')
-			// Line ended before we saw a newline or it has binary stuff in there that shouldn't be there
-			return;
-	}
+        if (c == EOF || c == '\0')
+            // Line ended before we saw a newline or it has binary stuff in there that shouldn't be there
+            return;
+    }
 
-	if (!separatorPos)
-		return;
+    if (!separatorPos)
+        return;
 
-	lineEnd = log->private->logPos;
+    lineEnd = log->private->logPos;
 
-	//Make a duplicate copy of the line so we can null-terminate the two parts
-	memcpy(valueBuffer, lineStart, lineEnd - lineStart);
+    //Make a duplicate copy of the line so we can null-terminate the two parts
+    memcpy(valueBuffer, lineStart, lineEnd - lineStart);
 
-	fieldName = valueBuffer;
-	valueBuffer[separatorPos - lineStart] = '\0';
+    fieldName = valueBuffer;
+    valueBuffer[separatorPos - lineStart] = '\0';
 
-	fieldValue = valueBuffer + (separatorPos - lineStart) + 1;
-	valueBuffer[lineEnd - lineStart - 1] = '\0';
+    fieldValue = valueBuffer + (separatorPos - lineStart) + 1;
+    valueBuffer[lineEnd - lineStart - 1] = '\0';
 
-	if (strcmp(fieldName, "Field I name") == 0) {
-		parseFieldNames(fieldValue, &log->private->mainFieldNamesLine, log->mainFieldNames, &log->mainFieldCount);
+    if (strcmp(fieldName, "Field I name") == 0) {
+        parseFieldNames(fieldValue, &log->private->mainFieldNamesLine, log->mainFieldNames, &log->mainFieldCount);
 
-		for (i = 0; i < log->mainFieldCount; i++) {
-			if (strcmp(log->mainFieldNames[i], "motor[0]") == 0) {
-				log->private->motor0Index = i;
-				break;
-			}
-		}
-	} else if (strcmp(fieldName, "Field G name") == 0) {
+        for (i = 0; i < log->mainFieldCount; i++) {
+            if (strcmp(log->mainFieldNames[i], "motor[0]") == 0) {
+                log->private->motor0Index = i;
+                break;
+            }
+        }
+    } else if (strcmp(fieldName, "Field G name") == 0) {
         parseFieldNames(fieldValue, &log->private->gpsFieldNamesLine, log->gpsFieldNames, &log->gpsFieldCount);
     } else if (strcmp(fieldName, "Field H name") == 0) {
         parseFieldNames(fieldValue, &log->private->gpsHomeFieldNamesLine, log->gpsHomeFieldNames, &log->gpsHomeFieldCount);
@@ -265,36 +265,36 @@ static void parseHeaderLine(flightLog_t *log)
                 log->private->home1Index = i;
             }
         }
-	} else if (strlen(fieldName) == strlen("Field X predictor") && startsWith(fieldName, "Field ") && endsWith(fieldName, " predictor")) {
-	    parseCommaSeparatedIntegers(fieldValue, log->private->frameDefs[(uint8_t)fieldName[strlen("Field ")]].predictor, FLIGHT_LOG_MAX_FIELDS);
+    } else if (strlen(fieldName) == strlen("Field X predictor") && startsWith(fieldName, "Field ") && endsWith(fieldName, " predictor")) {
+        parseCommaSeparatedIntegers(fieldValue, log->private->frameDefs[(uint8_t)fieldName[strlen("Field ")]].predictor, FLIGHT_LOG_MAX_FIELDS);
     } else if (strlen(fieldName) == strlen("Field X encoding") && startsWith(fieldName, "Field ") && endsWith(fieldName, " encoding")) {
         parseCommaSeparatedIntegers(fieldValue, log->private->frameDefs[(uint8_t)fieldName[strlen("Field ")]].encoding, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "Field I signed") == 0) {
-		parseCommaSeparatedIntegers(fieldValue, log->mainFieldSigned, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "I interval") == 0) {
-		log->frameIntervalI = atoi(fieldValue);
-		if (log->frameIntervalI < 1)
-			log->frameIntervalI = 1;
-	} else if (strcmp(fieldName, "P interval") == 0) {
-		char *slashPos = strchr(fieldValue, '/');
+    } else if (strcmp(fieldName, "Field I signed") == 0) {
+        parseCommaSeparatedIntegers(fieldValue, log->mainFieldSigned, FLIGHT_LOG_MAX_FIELDS);
+    } else if (strcmp(fieldName, "I interval") == 0) {
+        log->frameIntervalI = atoi(fieldValue);
+        if (log->frameIntervalI < 1)
+            log->frameIntervalI = 1;
+    } else if (strcmp(fieldName, "P interval") == 0) {
+        char *slashPos = strchr(fieldValue, '/');
 
-		if (slashPos) {
-			log->frameIntervalPNum = atoi(fieldValue);
-			log->frameIntervalPDenom = atoi(slashPos + 1);
-		}
-	} else if (strcmp(fieldName, "Data version") == 0) {
-		log->private->dataVersion = atoi(fieldValue);
-	} else if (strcmp(fieldName, "Firmware type") == 0) {
-		if (strcmp(fieldValue, "Cleanflight") == 0)
-			log->firmwareType = FIRMWARE_TYPE_CLEANFLIGHT;
-		else
-			log->firmwareType = FIRMWARE_TYPE_BASEFLIGHT;
-	} else if (strcmp(fieldName, "minthrottle") == 0) {
-		log->minthrottle = atoi(fieldValue);
-	} else if (strcmp(fieldName, "maxthrottle") == 0) {
-		log->maxthrottle = atoi(fieldValue);
-	} else if (strcmp(fieldName, "rcRate") == 0) {
-		log->rcRate = atoi(fieldValue);
+        if (slashPos) {
+            log->frameIntervalPNum = atoi(fieldValue);
+            log->frameIntervalPDenom = atoi(slashPos + 1);
+        }
+    } else if (strcmp(fieldName, "Data version") == 0) {
+        log->private->dataVersion = atoi(fieldValue);
+    } else if (strcmp(fieldName, "Firmware type") == 0) {
+        if (strcmp(fieldValue, "Cleanflight") == 0)
+            log->firmwareType = FIRMWARE_TYPE_CLEANFLIGHT;
+        else
+            log->firmwareType = FIRMWARE_TYPE_BASEFLIGHT;
+    } else if (strcmp(fieldName, "minthrottle") == 0) {
+        log->minthrottle = atoi(fieldValue);
+    } else if (strcmp(fieldName, "maxthrottle") == 0) {
+        log->maxthrottle = atoi(fieldValue);
+    } else if (strcmp(fieldName, "rcRate") == 0) {
+        log->rcRate = atoi(fieldValue);
     } else if (strcmp(fieldName, "vbatscale") == 0) {
         log->vbatscale = atoi(fieldValue);
     } else if (strcmp(fieldName, "vbatref") == 0) {
@@ -306,253 +306,253 @@ static void parseHeaderLine(flightLog_t *log)
         log->vbatmincellvoltage = vbatcellvoltage[0];
         log->vbatwarningcellvoltage = vbatcellvoltage[1];
         log->vbatmaxcellvoltage = vbatcellvoltage[2];
-	} else if (strcmp(fieldName, "gyro.scale") == 0) {
-		floatConvert.u = strtoul(fieldValue, 0, 16);
+    } else if (strcmp(fieldName, "gyro.scale") == 0) {
+        floatConvert.u = strtoul(fieldValue, 0, 16);
 
-		log->gyroScale = floatConvert.f;
+        log->gyroScale = floatConvert.f;
 
-		/* Baseflight uses a gyroScale that'll give radians per microsecond as output, whereas Cleanflight produces degrees
-		 * per second and leaves the conversion to radians per us to the IMU. Let's just convert Cleanflight's scale to
-		 * match Baseflight so we can use Baseflight's IMU for both: */
+        /* Baseflight uses a gyroScale that'll give radians per microsecond as output, whereas Cleanflight produces degrees
+         * per second and leaves the conversion to radians per us to the IMU. Let's just convert Cleanflight's scale to
+         * match Baseflight so we can use Baseflight's IMU for both: */
 
-		if (log->firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
-			log->gyroScale = (float) (log->gyroScale * (M_PI / 180.0) * 0.000001);
-		}
-	} else if (strcmp(fieldName, "acc_1G") == 0) {
-		log->acc_1G = atoi(fieldValue);
-	}
+        if (log->firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
+            log->gyroScale = (float) (log->gyroScale * (M_PI / 180.0) * 0.000001);
+        }
+    } else if (strcmp(fieldName, "acc_1G") == 0) {
+        log->acc_1G = atoi(fieldValue);
+    }
 }
 
 static uint32_t readUnsignedVB(flightLog_t *log)
 {
-	int i, c, shift = 0;
-	uint32_t result = 0;
+    int i, c, shift = 0;
+    uint32_t result = 0;
 
-	// 5 bytes is enough to encode 32-bit unsigned quantities
-	for (i = 0; i < 5; i++) {
-		c = readChar(log);
+    // 5 bytes is enough to encode 32-bit unsigned quantities
+    for (i = 0; i < 5; i++) {
+        c = readChar(log);
 
-		if (c == EOF) {
-			return 0;
-		}
+        if (c == EOF) {
+            return 0;
+        }
 
-		result = result | ((c & ~0x80) << shift);
+        result = result | ((c & ~0x80) << shift);
 
-		//Final byte?
-		if (c < 128) {
-			return result;
-		}
+        //Final byte?
+        if (c < 128) {
+            return result;
+        }
 
-		shift += 7;
-	}
+        shift += 7;
+    }
 
-	// This VB-encoded int is too long!
-	return 0;
+    // This VB-encoded int is too long!
+    return 0;
 }
 
 static int32_t readSignedVB(flightLog_t *log)
 {
-	uint32_t i = readUnsignedVB(log);
+    uint32_t i = readUnsignedVB(log);
 
-	// Apply ZigZag decoding to recover the signed value
-	return (i >> 1) ^ -(int32_t) (i & 1);
+    // Apply ZigZag decoding to recover the signed value
+    return (i >> 1) ^ -(int32_t) (i & 1);
 }
 
 static void readTag2_3S32(flightLog_t *log, int32_t *values)
 {
-	uint8_t leadByte;
-	uint8_t byte1, byte2, byte3, byte4;
-	int i;
+    uint8_t leadByte;
+    uint8_t byte1, byte2, byte3, byte4;
+    int i;
 
-	leadByte = readChar(log);
+    leadByte = readChar(log);
 
-	// Check the selector in the top two bits to determine the field layout
-	switch (leadByte >> 6) {
-		case 0:
-			// 2-bit fields
-			values[0] = signExtend2Bit((leadByte >> 4) & 0x03);
-			values[1] = signExtend2Bit((leadByte >> 2) & 0x03);
-			values[2] = signExtend2Bit(leadByte & 0x03);
-		break;
-		case 1:
-			// 4-bit fields
-			values[0] = signExtend4Bit(leadByte & 0x0F);
+    // Check the selector in the top two bits to determine the field layout
+    switch (leadByte >> 6) {
+        case 0:
+            // 2-bit fields
+            values[0] = signExtend2Bit((leadByte >> 4) & 0x03);
+            values[1] = signExtend2Bit((leadByte >> 2) & 0x03);
+            values[2] = signExtend2Bit(leadByte & 0x03);
+        break;
+        case 1:
+            // 4-bit fields
+            values[0] = signExtend4Bit(leadByte & 0x0F);
 
-			leadByte = readChar(log);
+            leadByte = readChar(log);
 
-			values[1] = signExtend4Bit(leadByte >> 4);
-			values[2] = signExtend4Bit(leadByte & 0x0F);
-		break;
-		case 2:
-			// 6-bit fields
-			values[0] = signExtend6Bit(leadByte & 0x3F);
+            values[1] = signExtend4Bit(leadByte >> 4);
+            values[2] = signExtend4Bit(leadByte & 0x0F);
+        break;
+        case 2:
+            // 6-bit fields
+            values[0] = signExtend6Bit(leadByte & 0x3F);
 
-			leadByte = readChar(log);
-			values[1] = signExtend6Bit(leadByte & 0x3F);
+            leadByte = readChar(log);
+            values[1] = signExtend6Bit(leadByte & 0x3F);
 
-			leadByte = readChar(log);
-			values[2] = signExtend6Bit(leadByte & 0x3F);
-		break;
-		case 3:
-			// Fields are 8, 16 or 24 bits, read selector to figure out which field is which size
+            leadByte = readChar(log);
+            values[2] = signExtend6Bit(leadByte & 0x3F);
+        break;
+        case 3:
+            // Fields are 8, 16 or 24 bits, read selector to figure out which field is which size
 
-			for (i = 0; i < 3; i++) {
-				switch (leadByte & 0x03) {
-					case 0: // 8-bit
-						byte1 = readChar(log);
+            for (i = 0; i < 3; i++) {
+                switch (leadByte & 0x03) {
+                    case 0: // 8-bit
+                        byte1 = readChar(log);
 
-						// Sign extend to 32 bits
-						values[i] = (int32_t) (int8_t) (byte1);
-					break;
-					case 1: // 16-bit
-						byte1 = readChar(log);
-						byte2 = readChar(log);
+                        // Sign extend to 32 bits
+                        values[i] = (int32_t) (int8_t) (byte1);
+                    break;
+                    case 1: // 16-bit
+                        byte1 = readChar(log);
+                        byte2 = readChar(log);
 
-						// Sign extend to 32 bits
-						values[i] = (int32_t) (int16_t) (byte1 | (byte2 << 8));
-					break;
-					case 2: // 24-bit
-						byte1 = readChar(log);
-						byte2 = readChar(log);
-						byte3 = readChar(log);
+                        // Sign extend to 32 bits
+                        values[i] = (int32_t) (int16_t) (byte1 | (byte2 << 8));
+                    break;
+                    case 2: // 24-bit
+                        byte1 = readChar(log);
+                        byte2 = readChar(log);
+                        byte3 = readChar(log);
 
-						values[i] = signExtend24Bit(byte1 | (byte2 << 8) | (byte3 << 16));
-					break;
-					case 3: // 32-bit
-						byte1 = readChar(log);
-						byte2 = readChar(log);
-						byte3 = readChar(log);
-						byte4 = readChar(log);
+                        values[i] = signExtend24Bit(byte1 | (byte2 << 8) | (byte3 << 16));
+                    break;
+                    case 3: // 32-bit
+                        byte1 = readChar(log);
+                        byte2 = readChar(log);
+                        byte3 = readChar(log);
+                        byte4 = readChar(log);
 
-						values[i] = (int32_t) (byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24));
-					break;
-				}
+                        values[i] = (int32_t) (byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24));
+                    break;
+                }
 
-				leadByte >>= 2;
-			}
-		break;
-	}
+                leadByte >>= 2;
+            }
+        break;
+    }
 }
 
 static void readTag8_4S16_v1(flightLog_t *log, int32_t *values)
 {
-	uint8_t selector, combinedChar;
-	uint8_t char1, char2;
-	int i;
+    uint8_t selector, combinedChar;
+    uint8_t char1, char2;
+    int i;
 
-	enum {
-		FIELD_ZERO  = 0,
-		FIELD_4BIT  = 1,
-		FIELD_8BIT  = 2,
-		FIELD_16BIT = 3
-	};
+    enum {
+        FIELD_ZERO  = 0,
+        FIELD_4BIT  = 1,
+        FIELD_8BIT  = 2,
+        FIELD_16BIT = 3
+    };
 
-	selector = readChar(log);
+    selector = readChar(log);
 
-	//Read the 4 values from the stream
-	for (i = 0; i < 4; i++) {
-		switch (selector & 0x03) {
-			case FIELD_ZERO:
-				values[i] = 0;
-			break;
-			case FIELD_4BIT: // Two 4-bit fields
-				combinedChar = (uint8_t) readChar(log);
+    //Read the 4 values from the stream
+    for (i = 0; i < 4; i++) {
+        switch (selector & 0x03) {
+            case FIELD_ZERO:
+                values[i] = 0;
+            break;
+            case FIELD_4BIT: // Two 4-bit fields
+                combinedChar = (uint8_t) readChar(log);
 
-				values[i] = signExtend4Bit(combinedChar & 0x0F);
+                values[i] = signExtend4Bit(combinedChar & 0x0F);
 
-				i++;
-				selector >>= 2;
+                i++;
+                selector >>= 2;
 
-				values[i] = signExtend4Bit(combinedChar >> 4);
-			break;
-			case FIELD_8BIT: // 8-bit field
-				//Sign extend...
-				values[i] = (int32_t) (int8_t) readChar(log);
-			break;
-			case FIELD_16BIT: // 16-bit field
-				char1 = readChar(log);
-				char2 = readChar(log);
+                values[i] = signExtend4Bit(combinedChar >> 4);
+            break;
+            case FIELD_8BIT: // 8-bit field
+                //Sign extend...
+                values[i] = (int32_t) (int8_t) readChar(log);
+            break;
+            case FIELD_16BIT: // 16-bit field
+                char1 = readChar(log);
+                char2 = readChar(log);
 
-				//Sign extend...
-				values[i] = (int16_t) (char1 | (char2 << 8));
-			break;
-		}
+                //Sign extend...
+                values[i] = (int16_t) (char1 | (char2 << 8));
+            break;
+        }
 
-		selector >>= 2;
-	}
+        selector >>= 2;
+    }
 }
 
 static void readTag8_4S16_v2(flightLog_t *log, int32_t *values)
 {
-	uint8_t selector;
-	uint8_t char1, char2;
-	uint8_t buffer;
-	int nibbleIndex;
+    uint8_t selector;
+    uint8_t char1, char2;
+    uint8_t buffer;
+    int nibbleIndex;
 
-	int i;
+    int i;
 
-	enum {
-		FIELD_ZERO  = 0,
-		FIELD_4BIT  = 1,
-		FIELD_8BIT  = 2,
-		FIELD_16BIT = 3
-	};
+    enum {
+        FIELD_ZERO  = 0,
+        FIELD_4BIT  = 1,
+        FIELD_8BIT  = 2,
+        FIELD_16BIT = 3
+    };
 
-	selector = readChar(log);
+    selector = readChar(log);
 
-	//Read the 4 values from the stream
-	nibbleIndex = 0;
-	for (i = 0; i < 4; i++) {
-		switch (selector & 0x03) {
-			case FIELD_ZERO:
-				values[i] = 0;
-			break;
-			case FIELD_4BIT:
-				if (nibbleIndex == 0) {
-					buffer = (uint8_t) readChar(log);
-					values[i] = signExtend4Bit(buffer >> 4);
-					nibbleIndex = 1;
-				} else {
-					values[i] = signExtend4Bit(buffer & 0x0F);
-					nibbleIndex = 0;
-				}
-			break;
-			case FIELD_8BIT:
-				if (nibbleIndex == 0) {
-					//Sign extend...
-					values[i] = (int32_t) (int8_t) readChar(log);
-				} else {
-					char1 = buffer << 4;
-					buffer = (uint8_t) readChar(log);
+    //Read the 4 values from the stream
+    nibbleIndex = 0;
+    for (i = 0; i < 4; i++) {
+        switch (selector & 0x03) {
+            case FIELD_ZERO:
+                values[i] = 0;
+            break;
+            case FIELD_4BIT:
+                if (nibbleIndex == 0) {
+                    buffer = (uint8_t) readChar(log);
+                    values[i] = signExtend4Bit(buffer >> 4);
+                    nibbleIndex = 1;
+                } else {
+                    values[i] = signExtend4Bit(buffer & 0x0F);
+                    nibbleIndex = 0;
+                }
+            break;
+            case FIELD_8BIT:
+                if (nibbleIndex == 0) {
+                    //Sign extend...
+                    values[i] = (int32_t) (int8_t) readChar(log);
+                } else {
+                    char1 = buffer << 4;
+                    buffer = (uint8_t) readChar(log);
 
-					char1 |= buffer >> 4;
-					values[i] = (int32_t) (int8_t) char1;
-				}
-			break;
-			case FIELD_16BIT:
-				if (nibbleIndex == 0) {
-					char1 = (uint8_t) readChar(log);
-					char2 = (uint8_t) readChar(log);
+                    char1 |= buffer >> 4;
+                    values[i] = (int32_t) (int8_t) char1;
+                }
+            break;
+            case FIELD_16BIT:
+                if (nibbleIndex == 0) {
+                    char1 = (uint8_t) readChar(log);
+                    char2 = (uint8_t) readChar(log);
 
-					//Sign extend...
-					values[i] = (int16_t) (uint16_t) ((char1 << 8) | char2);
-				} else {
-					/*
-					 * We're in the low 4 bits of the current buffer, then one byte, then the high 4 bits of the next
-					 * buffer.
-					 */
-					char1 = (uint8_t) readChar(log);
-					char2 = (uint8_t) readChar(log);
+                    //Sign extend...
+                    values[i] = (int16_t) (uint16_t) ((char1 << 8) | char2);
+                } else {
+                    /*
+                     * We're in the low 4 bits of the current buffer, then one byte, then the high 4 bits of the next
+                     * buffer.
+                     */
+                    char1 = (uint8_t) readChar(log);
+                    char2 = (uint8_t) readChar(log);
 
-					values[i] = (int16_t) (uint16_t) ((buffer << 12) | (char1 << 4) | (char2 >> 4));
+                    values[i] = (int16_t) (uint16_t) ((buffer << 12) | (char1 << 4) | (char2 >> 4));
 
-					buffer = char2;
-				}
-			break;
-		}
+                    buffer = char2;
+                }
+            break;
+        }
 
-		selector >>= 2;
-	}
+        selector >>= 2;
+    }
 }
 
 static void readTag8_8SVB(flightLog_t *log, int32_t *values, int valueCount)
@@ -745,20 +745,20 @@ static void parseFrame(flightLog_t *log, uint8_t frameType, int32_t *frame, int3
 static void parseIntraframe(flightLog_t *log, bool raw)
 {
     flightLogPrivate_t *private = log->private;
-	int skippedFrames = 0;
-	int *current, *previous;
+    int skippedFrames = 0;
+    int *current, *previous;
 
-	current = private->mainHistory[0];
-	previous = private->mainHistory[1];
+    current = private->mainHistory[0];
+    previous = private->mainHistory[1];
 
-	if (previous) {
+    if (previous) {
         for (uint32_t frameIndex = previous[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
             skippedFrames++;
         }
         log->stats.intentionallyAbsentIterations += skippedFrames;
     }
 
-	parseFrame(log, 'I', current, previous, NULL, log->mainFieldCount, skippedFrames, raw);
+    parseFrame(log, 'I', current, previous, NULL, log->mainFieldCount, skippedFrames, raw);
 }
 
 /**
@@ -766,27 +766,27 @@ static void parseIntraframe(flightLog_t *log, bool raw)
  */
 static void parseInterframe(flightLog_t *log, bool raw)
 {
-	int32_t *current = log->private->mainHistory[0];
-	int32_t *previous = log->private->mainHistory[1];
+    int32_t *current = log->private->mainHistory[0];
+    int32_t *previous = log->private->mainHistory[1];
     int32_t *previous2 = log->private->mainHistory[2];
 
-	uint32_t frameIndex;
-	uint32_t skippedFrames = 0;
+    uint32_t frameIndex;
+    uint32_t skippedFrames = 0;
 
-	if (previous) {
+    if (previous) {
         //Work out how many frames we skipped to get to this one, based on the log sampling rate
         for (frameIndex = previous[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++)
             skippedFrames++;
     }
 
-	log->stats.intentionallyAbsentIterations += skippedFrames;
+    log->stats.intentionallyAbsentIterations += skippedFrames;
 
-	parseFrame(log, 'P', current, previous, previous2, log->mainFieldCount, skippedFrames, raw);
+    parseFrame(log, 'P', current, previous, previous2, log->mainFieldCount, skippedFrames, raw);
 }
 
 static void parseGPSFrame(flightLog_t *log, bool raw)
 {
-	parseFrame(log, 'G', log->private->lastGPS, NULL, NULL, log->gpsFieldCount, 0, raw);
+    parseFrame(log, 'G', log->private->lastGPS, NULL, NULL, log->gpsFieldCount, 0, raw);
 }
 
 static void parseGPSHomeFrame(flightLog_t *log, bool raw)
@@ -832,30 +832,30 @@ static void parseEventFrame(flightLog_t *log, bool raw)
 
 static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 {
-	int i;
+    int i;
 
-	if (log->stats.frame['I'].validCount + log->stats.frame['P'].validCount <= 1) {
-		//If this is the first frame, there are no minimums or maximums in the stats to compare with
-		for (i = 0; i < log->mainFieldCount; i++) {
-			if (log->mainFieldSigned[i]) {
-				log->stats.field[i].max = fields[i];
-				log->stats.field[i].min = fields[i];
-			} else {
-				log->stats.field[i].max = (uint32_t) fields[i];
-				log->stats.field[i].min = (uint32_t) fields[i];
-			}
-		}
-	} else {
-		for (i = 0; i < log->mainFieldCount; i++) {
-			if (log->mainFieldSigned[i]) {
-				log->stats.field[i].max = fields[i] > log->stats.field[i].max ? fields[i] : log->stats.field[i].max;
-				log->stats.field[i].min = fields[i] < log->stats.field[i].min ? fields[i] : log->stats.field[i].min;
-			} else {
-				log->stats.field[i].max = (uint32_t) fields[i] > log->stats.field[i].max ? (uint32_t) fields[i] : log->stats.field[i].max;
-				log->stats.field[i].min = (uint32_t) fields[i] < log->stats.field[i].min ? (uint32_t) fields[i] : log->stats.field[i].min;
-			}
-		}
-	}
+    if (log->stats.frame['I'].validCount + log->stats.frame['P'].validCount <= 1) {
+        //If this is the first frame, there are no minimums or maximums in the stats to compare with
+        for (i = 0; i < log->mainFieldCount; i++) {
+            if (log->mainFieldSigned[i]) {
+                log->stats.field[i].max = fields[i];
+                log->stats.field[i].min = fields[i];
+            } else {
+                log->stats.field[i].max = (uint32_t) fields[i];
+                log->stats.field[i].min = (uint32_t) fields[i];
+            }
+        }
+    } else {
+        for (i = 0; i < log->mainFieldCount; i++) {
+            if (log->mainFieldSigned[i]) {
+                log->stats.field[i].max = fields[i] > log->stats.field[i].max ? fields[i] : log->stats.field[i].max;
+                log->stats.field[i].min = fields[i] < log->stats.field[i].min ? fields[i] : log->stats.field[i].min;
+            } else {
+                log->stats.field[i].max = (uint32_t) fields[i] > log->stats.field[i].max ? (uint32_t) fields[i] : log->stats.field[i].max;
+                log->stats.field[i].min = (uint32_t) fields[i] < log->stats.field[i].min ? (uint32_t) fields[i] : log->stats.field[i].min;
+            }
+        }
+    }
 }
 
 unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat)
@@ -881,87 +881,87 @@ int flightLogEstimateNumCells(flightLog_t *log)
 
 flightLog_t * flightLogCreate(int fd)
 {
-	const char *mapped;
-	struct stat stats;
-	size_t fileSize;
+    const char *mapped;
+    struct stat stats;
+    size_t fileSize;
 
-	const char *logSearchStart;
-	int logIndex;
+    const char *logSearchStart;
+    int logIndex;
 
-	flightLog_t *log;
-	flightLogPrivate_t *private;
+    flightLog_t *log;
+    flightLogPrivate_t *private;
 
-	// Map the log into memory
-	if (fd < 0 || fstat(fd, &stats) < 0) {
-		fprintf(stderr, "Failed to use log file: %s\n", strerror(errno));
-		return 0;
-	}
+    // Map the log into memory
+    if (fd < 0 || fstat(fd, &stats) < 0) {
+        fprintf(stderr, "Failed to use log file: %s\n", strerror(errno));
+        return 0;
+    }
 
-	fileSize = stats.st_size;
+    fileSize = stats.st_size;
 
-	if (fileSize == 0) {
-		fprintf(stderr, "Error: This log is zero-bytes long!\n");
-		return 0;
-	}
+    if (fileSize == 0) {
+        fprintf(stderr, "Error: This log is zero-bytes long!\n");
+        return 0;
+    }
 
 #ifdef WIN32
-	intptr_t fileHandle = _get_osfhandle(fd);
-	HANDLE mapping = CreateFileMapping((HANDLE) fileHandle, NULL, PAGE_READONLY, 0, 0, NULL);
+    intptr_t fileHandle = _get_osfhandle(fd);
+    HANDLE mapping = CreateFileMapping((HANDLE) fileHandle, NULL, PAGE_READONLY, 0, 0, NULL);
 
-	if (mapping == NULL) {
-		fprintf(stderr, "Failed to map log file into memory\n");
-		return 0;
-	}
+    if (mapping == NULL) {
+        fprintf(stderr, "Failed to map log file into memory\n");
+        return 0;
+    }
 
-	mapped = MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, fileSize);
+    mapped = MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, fileSize);
 
-	if (mapped == NULL) {
-		fprintf(stderr, "Failed to map log file into memory: %s\n", strerror(errno));
+    if (mapped == NULL) {
+        fprintf(stderr, "Failed to map log file into memory: %s\n", strerror(errno));
 
-		return 0;
-	}
+        return 0;
+    }
 #else
-	mapped = mmap(0, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
+    mapped = mmap(0, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
 
-	if (mapped == MAP_FAILED) {
-		fprintf(stderr, "Failed to map log file into memory: %s\n", strerror(errno));
+    if (mapped == MAP_FAILED) {
+        fprintf(stderr, "Failed to map log file into memory: %s\n", strerror(errno));
 
-		return 0;
-	}
+        return 0;
+    }
 #endif
 
-	log = (flightLog_t *) malloc(sizeof(*log));
-	private = (flightLogPrivate_t *) malloc(sizeof(*private));
+    log = (flightLog_t *) malloc(sizeof(*log));
+    private = (flightLogPrivate_t *) malloc(sizeof(*private));
 
-	memset(log, 0, sizeof(*log));
-	memset(private, 0, sizeof(*private));
+    memset(log, 0, sizeof(*log));
+    memset(private, 0, sizeof(*private));
 
     //First check how many logs are in this one file (each time the FC is rearmed, a new log is appended)
     logSearchStart = mapped;
 
     for (logIndex = 0; logIndex < FLIGHT_LOG_MAX_LOGS_IN_FILE && logSearchStart < mapped + fileSize; logIndex++) {
-		log->logBegin[logIndex] = memmem(logSearchStart, (mapped + fileSize) - logSearchStart, LOG_START_MARKER, strlen(LOG_START_MARKER));
+        log->logBegin[logIndex] = memmem(logSearchStart, (mapped + fileSize) - logSearchStart, LOG_START_MARKER, strlen(LOG_START_MARKER));
 
-		if (!log->logBegin[logIndex])
-			break; //No more logs found in the file
+        if (!log->logBegin[logIndex])
+            break; //No more logs found in the file
 
-		//Search for the next log after this header ends
-		logSearchStart = log->logBegin[logIndex] + strlen(LOG_START_MARKER);
-	}
+        //Search for the next log after this header ends
+        logSearchStart = log->logBegin[logIndex] + strlen(LOG_START_MARKER);
+    }
 
-	log->logCount = logIndex;
+    log->logCount = logIndex;
 
-	/*
-	 * Stick the end of the file as the beginning of the "one past end" log, so we can easily compute each log size.
-	 *
-	 * We have room for this because the logBegin array has an extra element on the end for it.
-	 */
-	log->logBegin[log->logCount] = mapped + fileSize;
+    /*
+     * Stick the end of the file as the beginning of the "one past end" log, so we can easily compute each log size.
+     *
+     * We have room for this because the logBegin array has an extra element on the end for it.
+     */
+    log->logBegin[log->logCount] = mapped + fileSize;
 
-	private->logData = mapped;
+    private->logData = mapped;
     private->fd = fd;
 
-	log->private = private;
+    log->private = private;
 
     return log;
 }
@@ -1087,81 +1087,81 @@ static void completeGPSFrame(flightLog_t *log, char frameType, const char *frame
 
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw)
 {
-	ParserState parserState = PARSER_STATE_HEADER;
-	bool looksLikeFrameCompleted = false;
+    ParserState parserState = PARSER_STATE_HEADER;
+    bool looksLikeFrameCompleted = false;
 
-	bool prematureEof = false;
-	const char *frameStart = 0;
-	const flightLogFrameType_t *frameType = 0, *lastFrameType = 0;
+    bool prematureEof = false;
+    const char *frameStart = 0;
+    const flightLogFrameType_t *frameType = 0, *lastFrameType = 0;
 
-	flightLogPrivate_t *private = log->private;
+    flightLogPrivate_t *private = log->private;
 
-	if (logIndex < 0 || logIndex >= log->logCount)
-		return false;
+    if (logIndex < 0 || logIndex >= log->logCount)
+        return false;
 
-	//Reset any parsed information from previous parses
-	memset(&log->stats, 0, sizeof(log->stats));
-	free(log->private->mainFieldNamesLine);
-	free(log->private->gpsFieldNamesLine);
-	free(log->private->gpsHomeFieldNamesLine);
-	log->private->mainFieldNamesLine = NULL;
-	log->private->gpsFieldNamesLine = NULL;
-	log->private->gpsHomeFieldNamesLine = NULL;
-	log->mainFieldCount = 0;
-	log->gpsFieldCount = 0;
-	log->gpsHomeFieldCount = 0;
-	private->gpsHomeIsValid = false;
-	flightLoginvalidateStream(log);
+    //Reset any parsed information from previous parses
+    memset(&log->stats, 0, sizeof(log->stats));
+    free(log->private->mainFieldNamesLine);
+    free(log->private->gpsFieldNamesLine);
+    free(log->private->gpsHomeFieldNamesLine);
+    log->private->mainFieldNamesLine = NULL;
+    log->private->gpsFieldNamesLine = NULL;
+    log->private->gpsHomeFieldNamesLine = NULL;
+    log->mainFieldCount = 0;
+    log->gpsFieldCount = 0;
+    log->gpsHomeFieldCount = 0;
+    private->gpsHomeIsValid = false;
+    flightLoginvalidateStream(log);
 
-	log->private->mainHistory[0] = log->private->blackboxHistoryRing[0];
+    log->private->mainHistory[0] = log->private->blackboxHistoryRing[0];
     log->private->mainHistory[1] = NULL;
     log->private->mainHistory[2] = NULL;
 
-	//Default to MW's defaults
-	log->minthrottle = 1150;
-	log->maxthrottle = 1850;
+    //Default to MW's defaults
+    log->minthrottle = 1150;
+    log->maxthrottle = 1850;
 
-	log->vbatref = 4095;
+    log->vbatref = 4095;
     log->vbatscale = 110;
-	log->vbatmincellvoltage = 33;
-	log->vbatmaxcellvoltage = 43;
+    log->vbatmincellvoltage = 33;
+    log->vbatmaxcellvoltage = 43;
     log->vbatwarningcellvoltage = 35;
 
-	log->frameIntervalI = 32;
-	log->frameIntervalPNum = 1;
-	log->frameIntervalPDenom = 1;
+    log->frameIntervalI = 32;
+    log->frameIntervalPNum = 1;
+    log->frameIntervalPDenom = 1;
 
-	private->motor0Index = -1;
-	private->home0Index = -1;
-	private->home1Index = -1;
-	private->lastEvent.event = -1;
+    private->motor0Index = -1;
+    private->home0Index = -1;
+    private->home1Index = -1;
+    private->lastEvent.event = -1;
 
-	private->onMetadataReady = onMetadataReady;
-	private->onFrameReady = onFrameReady;
-	private->onEvent = onEvent;
+    private->onMetadataReady = onMetadataReady;
+    private->onFrameReady = onFrameReady;
+    private->onEvent = onEvent;
 
-	//Set parsing ranges up for the log the caller selected
-	private->logStart = log->logBegin[logIndex];
+    //Set parsing ranges up for the log the caller selected
+    private->logStart = log->logBegin[logIndex];
     private->logPos = private->logStart;
     private->logEnd = log->logBegin[logIndex + 1];
     private->eof = false;
 
-	while (1) {
-		int command = readChar(log);
+    while (1) {
+        int command = readChar(log);
 
-		switch (parserState) {
-			case PARSER_STATE_HEADER:
-				switch (command) {
-					case 'H':
-						parseHeaderLine(log);
-					break;
-					case EOF:
-						fprintf(stderr, "Data file contained no events\n");
-						return false;
-					default:
-					    frameType = getFrameType(command);
+        switch (parserState) {
+            case PARSER_STATE_HEADER:
+                switch (command) {
+                    case 'H':
+                        parseHeaderLine(log);
+                    break;
+                    case EOF:
+                        fprintf(stderr, "Data file contained no events\n");
+                        return false;
+                    default:
+                        frameType = getFrameType(command);
 
-					    if (frameType) {
+                        if (frameType) {
                             unreadChar(log, command);
 
                             if (log->mainFieldCount == 0) {
@@ -1187,18 +1187,18 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
                                 onMetadataReady(log);
                         } // else skip garbage which apparently precedes the first data frame
                     break;
-				}
-			break;
-			case PARSER_STATE_DATA:
-				if (lastFrameType) {
-					unsigned int lastFrameSize = private->logPos - frameStart;
+                }
+            break;
+            case PARSER_STATE_DATA:
+                if (lastFrameType) {
+                    unsigned int lastFrameSize = private->logPos - frameStart;
 
-					// Is this the beginning of a new frame?
-					frameType = command == EOF ? 0 : getFrameType((uint8_t) command);
-					looksLikeFrameCompleted = frameType || (!prematureEof && command == EOF);
+                    // Is this the beginning of a new frame?
+                    frameType = command == EOF ? 0 : getFrameType((uint8_t) command);
+                    looksLikeFrameCompleted = frameType || (!prematureEof && command == EOF);
 
-					// If we see what looks like the beginning of a new frame, assume that the previous frame was valid:
-					if (lastFrameSize <= FLIGHT_LOG_MAX_FRAME_LENGTH && looksLikeFrameCompleted) {
+                    // If we see what looks like the beginning of a new frame, assume that the previous frame was valid:
+                    if (lastFrameSize <= FLIGHT_LOG_MAX_FRAME_LENGTH && looksLikeFrameCompleted) {
                         //Update statistics for this frame type
                         log->stats.frame[lastFrameType->marker].bytes += lastFrameSize;
                         log->stats.frame[lastFrameType->marker].sizeCount[lastFrameSize]++;
@@ -1207,10 +1207,10 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
                         if (lastFrameType->complete)
                             lastFrameType->complete(log, lastFrameType->marker, frameStart, private->logPos, raw);
 
-					} else {
-						//The previous frame was corrupt
+                    } else {
+                        //The previous frame was corrupt
 
-					    //We need to resynchronise before we can deliver another main frame:
+                        //We need to resynchronise before we can deliver another main frame:
                         log->private->mainStreamIsValid = false;
                         log->stats.frame[lastFrameType->marker].corruptCount++;
                         log->stats.totalCorruptFrames++;
@@ -1230,48 +1230,48 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
                         private->eof = false;
                         continue;
                     }
-				}
+                }
 
                 if (command == EOF)
                     goto done;
 
-				frameType = getFrameType((uint8_t) command);
-				frameStart = private->logPos;
+                frameType = getFrameType((uint8_t) command);
+                frameStart = private->logPos;
 
-				if (frameType) {
-				    frameType->parse(log, raw);
-				} else {
-				    private->mainStreamIsValid = false;
-				}
+                if (frameType) {
+                    frameType->parse(log, raw);
+                } else {
+                    private->mainStreamIsValid = false;
+                }
 
-				//We shouldn't read an EOF during reading a frame (that'd imply the frame was truncated)
-				if (private->eof)
-					prematureEof = true;
+                //We shouldn't read an EOF during reading a frame (that'd imply the frame was truncated)
+                if (private->eof)
+                    prematureEof = true;
 
                 lastFrameType = frameType;
-			break;
-		}
-	}
+            break;
+        }
+    }
 
-	done:
-	log->stats.totalBytes = private->logEnd - private->logStart;
+    done:
+    log->stats.totalBytes = private->logEnd - private->logStart;
 
-	return true;
+    return true;
 }
 
 void flightLogDestroy(flightLog_t *log)
 {
 #ifdef WIN32
-	UnmapViewOfFile(log->private->logData);
+    UnmapViewOfFile(log->private->logData);
 #else
-	munmap((void*)log->private->logData, log->private->logEnd - log->private->logData);
+    munmap((void*)log->private->logData, log->private->logEnd - log->private->logData);
 #endif
 
-	free(log->private->mainFieldNamesLine);
-	free(log->private->gpsFieldNamesLine);
-	free(log->private->gpsHomeFieldNamesLine);
-	free(log->private);
-	free(log);
+    free(log->private->mainFieldNamesLine);
+    free(log->private->gpsFieldNamesLine);
+    free(log->private->gpsHomeFieldNamesLine);
+    free(log->private);
+    free(log);
 
-	//TODO clean up mainFieldNames
+    //TODO clean up mainFieldNames
 }

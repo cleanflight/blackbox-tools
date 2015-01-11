@@ -53,11 +53,13 @@
   <ItemGroup>
     <ClCompile Include="..\..\lib\getopt_mb_uni\getopt.c" />
     <ClCompile Include="..\..\src\blackbox_decode.c" />
+    <ClCompile Include="..\..\src\gpxwriter.c" />
     <ClCompile Include="..\..\src\parser.c" />
     <ClCompile Include="..\..\src\tools.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\lib\getopt_mb_uni\getopt.h" />
+    <ClInclude Include="..\..\src\gpxwriter.h" />
     <ClInclude Include="..\..\src\tools.h" />
     <ClInclude Include="..\src\parser.h" />
   </ItemGroup>

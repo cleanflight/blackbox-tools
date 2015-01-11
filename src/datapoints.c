@@ -8,27 +8,27 @@
 
 datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCapacity)
 {
-	datapoints_t *result = (datapoints_t*) malloc(sizeof(datapoints_t));
+    datapoints_t *result = (datapoints_t*) malloc(sizeof(datapoints_t));
 
-	result->fieldCount = fieldCount;
-	result->fieldNames = fieldNames;
+    result->fieldCount = fieldCount;
+    result->fieldNames = fieldNames;
 
-	result->frameCount = 0;
-	result->frameCapacity = frameCapacity;
+    result->frameCount = 0;
+    result->frameCapacity = frameCapacity;
 
-	result->frames = malloc(sizeof(*result->frames) * fieldCount * frameCapacity);
-	result->frameTime = calloc(1, sizeof(*result->frameTime) * frameCapacity);
-	result->frameGap = calloc(1, sizeof(*result->frameGap) * frameCapacity);
+    result->frames = malloc(sizeof(*result->frames) * fieldCount * frameCapacity);
+    result->frameTime = calloc(1, sizeof(*result->frameTime) * frameCapacity);
+    result->frameGap = calloc(1, sizeof(*result->frameGap) * frameCapacity);
 
-	return result;
+    return result;
 }
 
 void datapointsDestroy(datapoints_t *points)
 {
-	free(points->frames);
-	free(points->frameTime);
-	free(points->frameGap);
-	free(points);
+    free(points->frames);
+    free(points->frameTime);
+    free(points->frameGap);
+    free(points);
 }
 
 /**
@@ -37,81 +37,81 @@ void datapointsDestroy(datapoints_t *points)
  */
 void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadius)
 {
-	int windowSize = windowRadius * 2 + 1;
-	// How many of the frames in the history actually have a valid value in them (so we can average only those)
-	int valuesInHistory = 0;
+    int windowSize = windowRadius * 2 + 1;
+    // How many of the frames in the history actually have a valid value in them (so we can average only those)
+    int valuesInHistory = 0;
 
-	int64_t accumulator;
+    int64_t accumulator;
 
-	if (fieldIndex < 0 || fieldIndex >= points->fieldCount) {
-		fprintf(stderr, "Attempt to smooth field that doesn't exist %d\n", fieldIndex);
-		exit(-1);
-	}
+    if (fieldIndex < 0 || fieldIndex >= points->fieldCount) {
+        fprintf(stderr, "Attempt to smooth field that doesn't exist %d\n", fieldIndex);
+        exit(-1);
+    }
 
-	// Field values so that we know what they were originally before we overwrote them
-	int32_t *history = (int32_t*) malloc(sizeof(*history) * windowSize);
-	int historyHead = 0; //Points to the next location to insert into
-	int historyTail = 0; //Points to the last value in the window
+    // Field values so that we know what they were originally before we overwrote them
+    int32_t *history = (int32_t*) malloc(sizeof(*history) * windowSize);
+    int historyHead = 0; //Points to the next location to insert into
+    int historyTail = 0; //Points to the last value in the window
 
-	int windowCenterIndex;
-	int partitionLeft, partitionRight;
-	int windowLeftIndex, windowRightIndex;
+    int windowCenterIndex;
+    int partitionLeft, partitionRight;
+    int windowLeftIndex, windowRightIndex;
 
-	for (windowCenterIndex = 0; windowCenterIndex < points->frameCount; ) {
-		partitionLeft = windowCenterIndex;
-		//We'll refine this guess later if we find discontinuities:
-		partitionRight = points->frameCount;
+    for (windowCenterIndex = 0; windowCenterIndex < points->frameCount; ) {
+        partitionLeft = windowCenterIndex;
+        //We'll refine this guess later if we find discontinuities:
+        partitionRight = points->frameCount;
 
-		/*
-		 * We start the right edge of the window at the beginning of the partition so that the main loop can begin by
-		 * accumulating windowRadius points in the history. Those are the values we'll need before we can work out
-		 * the moving average of the first value of the partition.
-		 */
-		windowCenterIndex = windowCenterIndex - windowRadius;
+        /*
+         * We start the right edge of the window at the beginning of the partition so that the main loop can begin by
+         * accumulating windowRadius points in the history. Those are the values we'll need before we can work out
+         * the moving average of the first value of the partition.
+         */
+        windowCenterIndex = windowCenterIndex - windowRadius;
 
-		windowLeftIndex = windowCenterIndex - windowRadius;
-		windowRightIndex = windowCenterIndex + windowRadius;
+        windowLeftIndex = windowCenterIndex - windowRadius;
+        windowRightIndex = windowCenterIndex + windowRadius;
 
-		accumulator = 0;
-		valuesInHistory = 0;
-		historyHead = 0;
-		historyTail = 0;
+        accumulator = 0;
+        valuesInHistory = 0;
+        historyHead = 0;
+        historyTail = 0;
 
-		//The main loop, where we march our [leftIndex...rightIndex] history window along until we exhaust this partition
-		for (; windowCenterIndex < partitionRight; windowCenterIndex++, windowLeftIndex++, windowRightIndex++) {
+        //The main loop, where we march our [leftIndex...rightIndex] history window along until we exhaust this partition
+        for (; windowCenterIndex < partitionRight; windowCenterIndex++, windowLeftIndex++, windowRightIndex++) {
 
-			// Oldest value falls out of the window
-			if (windowLeftIndex - 1 >= partitionLeft) {
-				accumulator -= history[historyTail];
-				historyTail = (historyTail + 1) % windowSize;
+            // Oldest value falls out of the window
+            if (windowLeftIndex - 1 >= partitionLeft) {
+                accumulator -= history[historyTail];
+                historyTail = (historyTail + 1) % windowSize;
 
-				valuesInHistory--;
-			}
+                valuesInHistory--;
+            }
 
-			//New value is added to the window
-			if (windowRightIndex < partitionRight) {
-				int32_t fieldValue = (int32_t) points->frames[points->fieldCount * windowRightIndex + fieldIndex];
+            //New value is added to the window
+            if (windowRightIndex < partitionRight) {
+                int32_t fieldValue = (int32_t) points->frames[points->fieldCount * windowRightIndex + fieldIndex];
 
-				accumulator += fieldValue;
+                accumulator += fieldValue;
 
-				history[historyHead] = fieldValue;
-				historyHead = (historyHead + 1) % windowSize;
+                history[historyHead] = fieldValue;
+                historyHead = (historyHead + 1) % windowSize;
 
-				valuesInHistory++;
+                valuesInHistory++;
 
-				//If there is a discontinuity after this point, adjust the right edge of the partition so we stop looking further
-				if (points->frameGap[windowRightIndex])
-					partitionRight = windowRightIndex + 1;
-			}
+                //If there is a discontinuity after this point, adjust the right edge of the partition so we stop looking further
+                if (points->frameGap[windowRightIndex])
+                    partitionRight = windowRightIndex + 1;
+            }
 
-			// Store the average of the history window into the frame in the center of the window
-			if (windowCenterIndex >= partitionLeft) {
-				points->frames[points->fieldCount * windowCenterIndex + fieldIndex] = (int32_t)(accumulator / valuesInHistory);
-			}
-		}
-	}
+            // Store the average of the history window into the frame in the center of the window
+            if (windowCenterIndex >= partitionLeft) {
+                points->frames[points->fieldCount * windowCenterIndex + fieldIndex] = (int32_t)(accumulator / valuesInHistory);
+            }
+        }
+    }
 
-	free(history);
+    free(history);
 }
 
 /**
@@ -121,63 +121,63 @@ void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadiu
  */
 int datapointsFindFrameAtTime(datapoints_t *points, int64_t time)
 {
-	int i, lastGoodFrame = -1;
+    int i, lastGoodFrame = -1;
 
-	//TODO make me a binary search
-	for (i = 0; i < points->frameCount; i++) {
-		if (time < points->frameTime[i]) {
-			return lastGoodFrame;
-		}
-		lastGoodFrame = i;
-	}
+    //TODO make me a binary search
+    for (i = 0; i < points->frameCount; i++) {
+        if (time < points->frameTime[i]) {
+            return lastGoodFrame;
+        }
+        lastGoodFrame = i;
+    }
 
-	return lastGoodFrame;
+    return lastGoodFrame;
 }
 
 bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime, int32_t *frame)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount)
-		return false;
+    if (frameIndex < 0 || frameIndex >= points->frameCount)
+        return false;
 
-	memcpy(frame, points->frames + frameIndex * points->fieldCount, points->fieldCount * sizeof(*points->frames));
-	*frameTime = points->frameTime[frameIndex];
+    memcpy(frame, points->frames + frameIndex * points->fieldCount, points->fieldCount * sizeof(*points->frames));
+    *frameTime = points->frameTime[frameIndex];
 
-	return true;
+    return true;
 }
 
 bool datapointsGetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t *frameValue)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount)
-		return false;
+    if (frameIndex < 0 || frameIndex >= points->frameCount)
+        return false;
 
-	*frameValue = points->frames[frameIndex * points->fieldCount + fieldIndex];
+    *frameValue = points->frames[frameIndex * points->fieldCount + fieldIndex];
 
-	return true;
+    return true;
 }
 
 bool datapointsSetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t frameValue)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount)
-		return false;
+    if (frameIndex < 0 || frameIndex >= points->frameCount)
+        return false;
 
-	points->frames[frameIndex * points->fieldCount + fieldIndex] = frameValue;
+    points->frames[frameIndex * points->fieldCount + fieldIndex] = frameValue;
 
-	return true;
+    return true;
 }
 
 bool datapointsGetTimeAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount)
-		return false;
+    if (frameIndex < 0 || frameIndex >= points->frameCount)
+        return false;
 
-	*frameTime = points->frameTime[frameIndex];
+    *frameTime = points->frameTime[frameIndex];
 
-	return true;
+    return true;
 }
 
 bool datapointsGetGapStartsAtIndex(datapoints_t *points, int frameIndex)
 {
-	return frameIndex >= 0 && frameIndex < points->frameCount && points->frameGap[frameIndex];
+    return frameIndex >= 0 && frameIndex < points->frameCount && points->frameGap[frameIndex];
 }
 
 /**
@@ -186,15 +186,15 @@ bool datapointsGetGapStartsAtIndex(datapoints_t *points, int frameIndex)
  */
 bool datapointsAddFrame(datapoints_t *points, int64_t frameTime, const int32_t *frame)
 {
-	if (points->frameCount >= points->frameCapacity)
-		return false;
+    if (points->frameCount >= points->frameCapacity)
+        return false;
 
-	points->frameTime[points->frameCount] = frameTime;
-	memcpy(points->frames + points->frameCount * points->fieldCount, frame, points->fieldCount * sizeof(*points->frames));
+    points->frameTime[points->frameCount] = frameTime;
+    memcpy(points->frames + points->frameCount * points->fieldCount, frame, points->fieldCount * sizeof(*points->frames));
 
-	points->frameCount++;
+    points->frameCount++;
 
-	return true;
+    return true;
 }
 
 /**
@@ -202,6 +202,6 @@ bool datapointsAddFrame(datapoints_t *points, int64_t frameTime, const int32_t *
  */
 void datapointsAddGap(datapoints_t *points)
 {
-	if (points->frameCount > 0)
-		points->frameGap[points->frameCount - 1] = 1;
+    if (points->frameCount > 0)
+        points->frameGap[points->frameCount - 1] = 1;
 }

@@ -5,13 +5,13 @@
 #include <stdbool.h>
 
 typedef struct datapoints_t {
-	int fieldCount, frameCount;
-	int frameCapacity;
-	char **fieldNames;
+    int fieldCount, frameCount;
+    int frameCapacity;
+    char **fieldNames;
 
-	int32_t *frames;
-	int64_t *frameTime;
-	uint8_t *frameGap;
+    int32_t *frames;
+    int64_t *frameTime;
+    uint8_t *frameGap;
 } datapoints_t;
 
 datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCapacity);

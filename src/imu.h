@@ -14,9 +14,9 @@ typedef union {
 
 // Angles in radians:
 typedef struct attitude_t {
-	float roll;
-	float pitch;
-	float heading;
+    float roll;
+    float pitch;
+    float heading;
 } attitude_t;
 
 void imuInit(void);

@@ -11,9 +11,9 @@
 #define STR(x) STR_HELPER(x)
 
 typedef union floatConvert_t {
-	float f;
-	uint32_t u;
-	int32_t i;
+    float f;
+    uint32_t u;
+    int32_t i;
 } floatConvert_t;
 
 float intToFloat(int32_t i);

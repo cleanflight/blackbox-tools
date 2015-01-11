@@ -15,8 +15,8 @@
 #define FLIGHT_LOG_FIELD_INDEX_TIME 1
 
 typedef enum FirmwareType {
-	FIRMWARE_TYPE_BASEFLIGHT = 0,
-	FIRMWARE_TYPE_CLEANFLIGHT
+    FIRMWARE_TYPE_BASEFLIGHT = 0,
+    FIRMWARE_TYPE_CLEANFLIGHT
 } FirmwareType;
 
 typedef struct flightLogFrameStatistics_t {
@@ -30,29 +30,29 @@ typedef struct flightLogFieldStatistics_t {
 } flightLogFieldStatistics_t;
 
 typedef struct flightLogStatistics_t {
-	uint32_t totalBytes;
+    uint32_t totalBytes;
 
-	// Number of frames that failed to decode:
-	uint32_t totalCorruptFrames;
+    // Number of frames that failed to decode:
+    uint32_t totalCorruptFrames;
 
-	//If our sampling rate is less than 1, we won't log every loop iteration, and that is accounted for here:
-	uint32_t intentionallyAbsentIterations;
+    //If our sampling rate is less than 1, we won't log every loop iteration, and that is accounted for here:
+    uint32_t intentionallyAbsentIterations;
 
-	flightLogFieldStatistics_t field[FLIGHT_LOG_MAX_FIELDS];
-	flightLogFrameStatistics_t frame[256];
+    flightLogFieldStatistics_t field[FLIGHT_LOG_MAX_FIELDS];
+    flightLogFrameStatistics_t frame[256];
 } flightLogStatistics_t;
 
 struct flightLogPrivate_t;
 
 typedef struct flightLog_t {
-	flightLogStatistics_t stats;
+    flightLogStatistics_t stats;
 
-	int minthrottle, maxthrottle;
-	unsigned int rcRate, yawRate;
+    int minthrottle, maxthrottle;
+    unsigned int rcRate, yawRate;
 
-	// Calibration constants from the hardware sensors:
-	uint16_t acc_1G;
-	float gyroScale;
+    // Calibration constants from the hardware sensors:
+    uint16_t acc_1G;
+    float gyroScale;
 
     uint8_t vbatscale;
     uint8_t vbatmaxcellvoltage;
@@ -61,28 +61,28 @@ typedef struct flightLog_t {
 
     uint16_t vbatref;
 
-	FirmwareType firmwareType;
+    FirmwareType firmwareType;
 
-	//Information about log sections:
-	const char *logBegin[FLIGHT_LOG_MAX_LOGS_IN_FILE + 1];
-	int logCount;
+    //Information about log sections:
+    const char *logBegin[FLIGHT_LOG_MAX_LOGS_IN_FILE + 1];
+    int logCount;
 
-	unsigned int frameIntervalI;
-	unsigned int frameIntervalPNum, frameIntervalPDenom;
+    unsigned int frameIntervalI;
+    unsigned int frameIntervalPNum, frameIntervalPDenom;
 
-	int mainFieldSigned[FLIGHT_LOG_MAX_FIELDS];
-	int gpsFieldSigned[FLIGHT_LOG_MAX_FIELDS];
+    int mainFieldSigned[FLIGHT_LOG_MAX_FIELDS];
+    int gpsFieldSigned[FLIGHT_LOG_MAX_FIELDS];
 
-	int mainFieldCount;
-	char *mainFieldNames[FLIGHT_LOG_MAX_FIELDS];
+    int mainFieldCount;
+    char *mainFieldNames[FLIGHT_LOG_MAX_FIELDS];
 
     int gpsHomeFieldCount;
     char *gpsHomeFieldNames[FLIGHT_LOG_MAX_FIELDS];
 
-	int gpsFieldCount;
-	char *gpsFieldNames[FLIGHT_LOG_MAX_FIELDS];
+    int gpsFieldCount;
+    char *gpsFieldNames[FLIGHT_LOG_MAX_FIELDS];
 
-	struct flightLogPrivate_t *private;
+    struct flightLogPrivate_t *private;
 } flightLog_t;
 
 typedef void (*FlightLogMetadataReady)(flightLog_t *log);

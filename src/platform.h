@@ -4,31 +4,31 @@
 #include <stdbool.h>
 
 #if defined(__APPLE__)
-	//MacOS doesn't have POSIX unnamed semaphores. Grand Central Dispatch provides an alternative:
-	#include <dispatch/dispatch.h>
+    //MacOS doesn't have POSIX unnamed semaphores. Grand Central Dispatch provides an alternative:
+    #include <dispatch/dispatch.h>
 #elif defined(WIN32)
-	#include <windows.h>
+    #include <windows.h>
 #else
-	#include <semaphore.h>
+    #include <semaphore.h>
 #endif
 
 #ifndef WIN32
-	#include <pthread.h>
+    #include <pthread.h>
 #endif
 
 #if defined(__APPLE__)
-	typedef pthread_t thread_t;
-	typedef dispatch_semaphore_t semaphore_t;
+    typedef pthread_t thread_t;
+    typedef dispatch_semaphore_t semaphore_t;
 #elif defined(WIN32)
-	typedef HANDLE thread_t;
-	typedef HANDLE semaphore_t;
+    typedef HANDLE thread_t;
+    typedef HANDLE semaphore_t;
 #else
-	typedef pthread_t thread_t;
-	typedef sem_t semaphore_t;
+    typedef pthread_t thread_t;
+    typedef sem_t semaphore_t;
 #endif
 
 #ifdef WIN32
-	#define snprintf _snprintf
+    #define snprintf _snprintf
 #endif
 
 typedef void*(*threadRoutine_t)(void *data);

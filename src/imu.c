@@ -153,13 +153,13 @@ void getEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], uint32_t cu
     float scale, deltaGyroAngle[3];
 
     if (previousTime == 0) {
-    	deltaTime = 1;
+        deltaTime = 1;
     } else {
-		deltaTime = currentTime - previousTime;
-	}
+        deltaTime = currentTime - previousTime;
+    }
 
-	scale = deltaTime * gyroScale;
-	previousTime = currentTime;
+    scale = deltaTime * gyroScale;
+    previousTime = currentTime;
 
     // Initialization
     for (int axis = 0; axis < 3; axis++) {
@@ -183,7 +183,7 @@ void getEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], uint32_t cu
     attitude->roll = atan2f(EstG.V.Y, EstG.V.Z);
     attitude->pitch = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
 
-	rotateVector(&EstN.V, deltaGyroAngle);
-	normalizeVector(&EstN.V, &EstN.V);
-	attitude->heading = calculateHeading(&EstN, attitude->roll, attitude->pitch);
+    rotateVector(&EstN.V, deltaGyroAngle);
+    normalizeVector(&EstN.V, &EstN.V);
+    attitude->heading = calculateHeading(&EstN, attitude->roll, attitude->pitch);
 }
