@@ -60,7 +60,7 @@ void gpxWriterAddPoint(gpxWriter_t *gpx, uint32_t time, int32_t lat, int32_t lon
         hours = mins / 60;
         mins %= 60;
 
-        fprintf(gpx->file, "<time>2000-01-01T%02d:%02d:%02d.%06uZ</time>\n", hours, mins, secs, frac);
+        fprintf(gpx->file, "<time>2000-01-01T%02d:%02d:%02d.%06uZ</time>", hours, mins, secs, frac);
     }
     fprintf(gpx->file, "</trkpt>\n");
 }
