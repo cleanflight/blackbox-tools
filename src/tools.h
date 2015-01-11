@@ -34,4 +34,6 @@ double doubleMax(double a, double b);
 bool startsWith(const char *string, const char *checkStartsWith);
 bool endsWith(const char *string, const char *checkEndsWith);
 
+void* memmem(const void *haystack, size_t haystackLen, const void *needle, size_t needleLen);
+
 #endif

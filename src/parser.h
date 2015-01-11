@@ -76,26 +76,14 @@ typedef struct flightLog_t {
 	int mainFieldCount;
 	char *mainFieldNames[FLIGHT_LOG_MAX_FIELDS];
 
+    int gpsHomeFieldCount;
+    char *gpsHomeFieldNames[FLIGHT_LOG_MAX_FIELDS];
+
 	int gpsFieldCount;
 	char *gpsFieldNames[FLIGHT_LOG_MAX_FIELDS];
 
 	struct flightLogPrivate_t *private;
 } flightLog_t;
-
-typedef struct flightLogEvent_syncBeep_t {
-    uint32_t time;
-} flightLogEvent_syncBeep_t;
-
-typedef union flightLogEventData_t
-{
-    flightLogEvent_syncBeep_t syncBeep;
-} flightLogEventData_t;
-
-typedef struct flightLogEvent_t
-{
-    FlightLogEvent event;
-    flightLogEventData_t data;
-} flightLogEvent_t;
 
 typedef void (*FlightLogMetadataReady)(flightLog_t *log);
 typedef void (*FlightLogFrameReady)(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize);

@@ -47,20 +47,28 @@ typedef struct flightLogFrameDefs_t {
 
 typedef struct flightLogPrivate_t
 {
-	char *fieldNamesCombined;
+    // We own this memory to store the field names for these frame types (as a single string)
+	char *mainFieldNamesLine, *gpsHomeFieldNamesLine, *gpsFieldNamesLine;
 
 	//Information about fields which we need to decode them properly
 	flightLogFrameDefs_t frameDefs[256];
 
 	int dataVersion;
-	int motor0Index;
+
+	// Indexes of named fields that we need to use to apply predictions against
+	int motor0Index, home0Index, home1Index;
 
 	// Blackbox state:
 	int32_t blackboxHistoryRing[3][FLIGHT_LOG_MAX_FIELDS];
-	int32_t* mainHistory[3];
-	flightLogEvent_t lastEvent;
-
+	int32_t* mainHistory[3]; // 0 - space to decode new frames into, 1 - previous frame, 2 - previous previous frame
 	bool mainStreamIsValid;
+
+	int32_t gpsHomeHistory[2][FLIGHT_LOG_MAX_FIELDS]; // 0 - space to decode new frames into, 1 - previous frame
+	bool gpsHomeIsValid;
+
+	//Because these events don't depend on previous events, we don't keep copies of the old state, just the current one:
+	flightLogEvent_t lastEvent;
+	int32_t lastGPS[FLIGHT_LOG_MAX_FIELDS];
 
 	// Event handlers:
 	FlightLogMetadataReady onMetadataReady;
@@ -98,12 +106,14 @@ static void parseEventFrame(flightLog_t *log, bool raw);
 static void completeIntraframe(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
 static void completeInterframe(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
 static void completeEventFrame(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static void completeGPSFrame(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static void completeGPSHomeFrame(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
 
 static const flightLogFrameType_t frameTypes[] = {
     {.marker = 'I', .parse = parseIntraframe,   .complete = completeIntraframe},
     {.marker = 'P', .parse = parseInterframe,   .complete = completeInterframe},
-    {.marker = 'G', .parse = parseGPSFrame,     .complete = 0},
-    {.marker = 'H', .parse = parseGPSHomeFrame, .complete = 0},
+    {.marker = 'G', .parse = parseGPSFrame,     .complete = completeGPSFrame},
+    {.marker = 'H', .parse = parseGPSHomeFrame, .complete = completeGPSHomeFrame},
     {.marker = 'E', .parse = parseEventFrame,   .complete = completeEventFrame}
 };
 
@@ -126,14 +136,21 @@ static void unreadChar(flightLog_t *log, int c)
 	log->private->logPos--;
 }
 
-static void parseFieldNames(flightLog_t *log, const char *names)
+/**
+ * Parse a comma-separated list of field names into the fieldNames array. `fieldNamesCombined` is set to point to
+ * the memory allocated to hold the field names (call `free` later). `fieldCount` is set to the number of field names
+ * parsed.
+ */
+static void parseFieldNames(const char *line, char **fieldNamesCombined, char **fieldNames, int *fieldCount)
 {
 	char *start, *end;
 	bool done = false;
 
-	log->private->fieldNamesCombined = strdup(names);
+	//Make a copy of the line so we can manage its lifetime (and write to it to null terminate the fields)
+	*fieldNamesCombined = strdup(line);
+	*fieldCount = 0;
 
-	start = log->private->fieldNamesCombined;
+	start = *fieldNamesCombined;
 
 	while (!done && *start) {
 		end = start;
@@ -142,7 +159,7 @@ static void parseFieldNames(flightLog_t *log, const char *names)
 			end++;
 		} while (*end != ',' && *end != 0);
 
-		log->mainFieldNames[log->mainFieldCount++] = start;
+		fieldNames[(*fieldCount)++] = start;
 
 		if (*end == 0)
 			done = true;
@@ -228,7 +245,7 @@ static void parseHeaderLine(flightLog_t *log)
 	valueBuffer[lineEnd - lineStart - 1] = '\0';
 
 	if (strcmp(fieldName, "Field I name") == 0) {
-		parseFieldNames(log, fieldValue);
+		parseFieldNames(fieldValue, &log->private->mainFieldNamesLine, log->mainFieldNames, &log->mainFieldCount);
 
 		for (i = 0; i < log->mainFieldCount; i++) {
 			if (strcmp(log->mainFieldNames[i], "motor[0]") == 0) {
@@ -236,6 +253,18 @@ static void parseHeaderLine(flightLog_t *log)
 				break;
 			}
 		}
+	} else if (strcmp(fieldName, "Field G name") == 0) {
+        parseFieldNames(fieldValue, &log->private->gpsFieldNamesLine, log->gpsFieldNames, &log->gpsFieldCount);
+    } else if (strcmp(fieldName, "Field H name") == 0) {
+        parseFieldNames(fieldValue, &log->private->gpsHomeFieldNamesLine, log->gpsHomeFieldNames, &log->gpsHomeFieldCount);
+
+        for (i = 0; i < log->gpsHomeFieldCount; i++) {
+            if (strcmp(log->gpsHomeFieldNames[i], "GPS_home[0]") == 0) {
+                log->private->home0Index = i;
+            } else if (strcmp(log->gpsHomeFieldNames[i], "GPS_home[1]") == 0) {
+                log->private->home1Index = i;
+            }
+        }
 	} else if (strlen(fieldName) == strlen("Field X predictor") && startsWith(fieldName, "Field ") && endsWith(fieldName, " predictor")) {
 	    parseCommaSeparatedIntegers(fieldValue, log->private->frameDefs[(uint8_t)fieldName[strlen("Field ")]].predictor, FLIGHT_LOG_MAX_FIELDS);
     } else if (strlen(fieldName) == strlen("Field X encoding") && startsWith(fieldName, "Field ") && endsWith(fieldName, " encoding")) {
@@ -549,12 +578,174 @@ static int shouldHaveFrame(flightLog_t *log, int32_t frameIndex)
 }
 
 /**
+ * Take the raw value for a a field, apply the prediction that is configured for it, and return it.
+ */
+static int32_t applyPrediction(flightLog_t *log, int fieldIndex, int predictor, uint32_t value, int32_t *current, int32_t *previous, int32_t *previous2)
+{
+    flightLogPrivate_t *private = log->private;
+
+    // First see if we have a prediction that doesn't require a previous frame as reference:
+    switch (predictor) {
+        case FLIGHT_LOG_FIELD_PREDICTOR_0:
+            // No correction to apply
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_MINTHROTTLE:
+            value += log->minthrottle;
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_1500:
+            value += 1500;
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0:
+            if (private->motor0Index < 0) {
+                fprintf(stderr, "Attempted to base prediction on motor0 without that field being defined\n");
+                exit(-1);
+            }
+            value += (uint32_t) current[private->motor0Index];
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_VBATREF:
+            value += log->vbatref;
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS:
+            if (!previous)
+                break;
+
+            value += (uint32_t) previous[fieldIndex];
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE:
+            if (!previous)
+                break;
+
+            value += 2 * (uint32_t) previous[fieldIndex] - (uint32_t) previous2[fieldIndex];
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2:
+            if (!previous)
+                break;
+
+            if (log->mainFieldSigned[fieldIndex])
+                value += (uint32_t) ((int32_t) ((uint32_t) previous[fieldIndex] + (uint32_t) previous2[fieldIndex]) / 2);
+            else
+                value += ((uint32_t) previous[fieldIndex] + (uint32_t) previous2[fieldIndex]) / 2;
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD:
+            if (private->home0Index < 0) {
+                fprintf(stderr, "Attempted to base prediction on GPS home position without GPS home frame definition\n");
+                exit(-1);
+            }
+
+            value += private->gpsHomeHistory[1][private->home0Index];
+        break;
+        case FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD_1:
+            if (private->home1Index < 1) {
+                fprintf(stderr, "Attempted to base prediction on GPS home position without GPS home frame definition\n");
+                exit(-1);
+            }
+
+            value += private->gpsHomeHistory[1][private->home1Index];
+        break;
+
+        default:
+            fprintf(stderr, "Unsupported field predictor %d\n", predictor);
+            exit(-1);
+    }
+
+    return (int32_t) value;
+}
+
+/**
+ * Attempt to parse the frame of the given `frameType` into the supplied `frame` buffer using the encoding/predictor
+ * definitions from log->private->frameDefs[`frameType`].
+ *
+ * raw - Set to true to disable predictions (and so store raw values)
+ * skippedFrames - Set to the number of field iterations that were skipped over by rate settings since the last frame.
+ */
+static void parseFrame(flightLog_t *log, uint8_t frameType, int32_t *frame, int32_t *previous, int32_t *previous2, int fieldCount, int skippedFrames, bool raw)
+{
+    flightLogPrivate_t *private = log->private;
+    int *predictor = private->frameDefs[frameType].predictor;
+    int *encoding = private->frameDefs[frameType].encoding;
+    int i, j, groupCount;
+
+    i = 0;
+    while (i < fieldCount) {
+        uint32_t value;
+        uint32_t values[8];
+
+        if (log->private->frameDefs[frameType].predictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
+            frame[i] = skippedFrames + 1;
+
+            if (previous)
+                frame[i] += previous[i];
+
+            i++;
+        } else {
+            switch (private->frameDefs[frameType].encoding[i]) {
+                case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
+                    value = (uint32_t) readSignedVB(log);
+                break;
+                case FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB:
+                    value = readUnsignedVB(log);
+                break;
+                case FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT:
+                    value = (uint32_t) -signExtend14Bit(readUnsignedVB(log));
+                break;
+                case FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16:
+                    if (log->private->dataVersion < 2)
+                        readTag8_4S16_v1(log, (int32_t*)values);
+                    else
+                        readTag8_4S16_v2(log, (int32_t*)values);
+
+                    //Apply the predictors for the fields:
+                    for (j = 0; j < 4; j++, i++)
+                        frame[i] = applyPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : predictor[i], values[j], frame, previous, previous2);
+
+                    continue;
+                break;
+                case FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32:
+                    readTag2_3S32(log, (int32_t*)values);
+
+                    //Apply the predictors for the fields:
+                    for (j = 0; j < 3; j++, i++)
+                        frame[i] = applyPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : predictor[i], values[j], frame, previous, previous2);
+
+                    continue;
+                break;
+                case FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB:
+                    //How many fields are in this encoded group? Check the subsequent field encodings:
+                    for (j = i + 1; j < i + 8 && j < log->mainFieldCount; j++)
+                        if (encoding[j] != FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB)
+                            break;
+
+                    groupCount = j - i;
+
+                    readTag8_8SVB(log, (int32_t*) values, groupCount);
+
+                    for (j = 0; j < groupCount; j++, i++)
+                        frame[i] = applyPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : predictor[i], values[j], frame, previous, previous2);
+
+                    continue;
+                break;
+                case FLIGHT_LOG_FIELD_ENCODING_NULL:
+                    //Nothing to read
+                    value = 0;
+                break;
+                default:
+                    fprintf(stderr, "Unsupported field encoding %d\n", encoding[i]);
+                    exit(-1);
+            }
+
+            frame[i] = applyPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : predictor[i], value, frame, previous, previous2);
+            i++;
+        }
+    }
+}
+
+/**
  * Attempt to parse the Intraframe at the current log position into the history buffer at mainHistory[0].
  */
 static void parseIntraframe(flightLog_t *log, bool raw)
 {
     flightLogPrivate_t *private = log->private;
-	int i;
+	int skippedFrames = 0;
 	int *current, *previous;
 
 	current = private->mainHistory[0];
@@ -562,97 +753,12 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 
 	if (previous) {
         for (uint32_t frameIndex = previous[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
-            log->stats.intentionallyAbsentIterations++;
+            skippedFrames++;
         }
+        log->stats.intentionallyAbsentIterations += skippedFrames;
     }
 
-	for (i = 0; i < log->mainFieldCount; i++) {
-		uint32_t value;
-
-		switch (private->frameDefs['I'].encoding[i]) {
-			case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
-				value = (uint32_t) readSignedVB(log);
-			break;
-			case FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB:
-				value = readUnsignedVB(log);
-			break;
-			case FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT:
-			    value = (uint32_t) -signExtend14Bit(readUnsignedVB(log));
-			break;
-			default:
-				fprintf(stderr, "Unsupported I-field encoding %d\n", private->frameDefs['I'].encoding[i]);
-				exit(-1);
-		}
-
-		if (!raw) {
-			//Not many predictors can be used in I-frames since they can't depend on any other frame
-			switch (private->frameDefs['I'].predictor[i]) {
-				case FLIGHT_LOG_FIELD_PREDICTOR_0:
-					//No-op
-				break;
-				case FLIGHT_LOG_FIELD_PREDICTOR_MINTHROTTLE:
-					value += log->minthrottle;
-				break;
-				case FLIGHT_LOG_FIELD_PREDICTOR_1500:
-					value += 1500;
-				break;
-				case FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0:
-					if (private->motor0Index < 0) {
-						fprintf(stderr, "Attempted to base I-field prediction on motor0 before it was read\n");
-						exit(-1);
-					}
-					value += (uint32_t) current[private->motor0Index];
-				break;
-				case FLIGHT_LOG_FIELD_PREDICTOR_VBATREF:
-				    value += log->vbatref;
-				break;
-				default:
-					fprintf(stderr, "Unsupported I-field predictor %d\n", private->frameDefs['I'].predictor[i]);
-					exit(-1);
-			}
-		}
-
-		current[i] = (int32_t) value;
-	}
-}
-
-/**
- * Take the raw value for an inter-field, apply the prediction that is configured for it, and return it.
- */
-static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predictor, uint32_t value)
-{
-    int32_t *previous = log->private->mainHistory[1];
-    int32_t *previous2 = log->private->mainHistory[2];
-
-    /*
-     * If we don't have a previous state to refer to (e.g. because previous frame was corrupt) don't apply
-     * a prediction. Instead just show the raw values.
-     */
-    if (!previous)
-        predictor = FLIGHT_LOG_FIELD_PREDICTOR_0;
-
-	switch (predictor) {
-		case FLIGHT_LOG_FIELD_PREDICTOR_0:
-			// No correction to apply
-		break;
-		case FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS:
-			value += (uint32_t) previous[fieldIndex];
-		break;
-		case FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE:
-			value += 2 * (uint32_t) previous[fieldIndex] - (uint32_t) previous2[fieldIndex];
-		break;
-		case FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2:
-			if (log->mainFieldSigned[fieldIndex])
-				value += (uint32_t) ((int32_t) ((uint32_t) previous[fieldIndex] + (uint32_t) previous2[fieldIndex]) / 2);
-			else
-				value += ((uint32_t) previous[fieldIndex] + (uint32_t) previous2[fieldIndex]) / 2;
-		break;
-		default:
-			fprintf(stderr, "Unsupported P-field predictor %d\n", predictor);
-			exit(-1);
-	}
-
-	return (int32_t) value;
+	parseFrame(log, 'I', current, previous, NULL, log->mainFieldCount, skippedFrames, raw);
 }
 
 /**
@@ -660,11 +766,9 @@ static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predic
  */
 static void parseInterframe(flightLog_t *log, bool raw)
 {
-	int i, j;
-	int groupCount;
-
 	int32_t *current = log->private->mainHistory[0];
 	int32_t *previous = log->private->mainHistory[1];
+    int32_t *previous2 = log->private->mainHistory[2];
 
 	uint32_t frameIndex;
 	uint32_t skippedFrames = 0;
@@ -677,100 +781,17 @@ static void parseInterframe(flightLog_t *log, bool raw)
 
 	log->stats.intentionallyAbsentIterations += skippedFrames;
 
-	i = 0;
-	while (i < log->mainFieldCount) {
-		uint32_t value;
-		uint32_t values[8];
-
-		if (log->private->frameDefs['P'].predictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
-		    current[i] = skippedFrames + 1;
-
-		    if (previous)
-		        current[i] += previous[i];
-
-	        i++;
-		} else {
-			switch (log->private->frameDefs['P'].encoding[i]) {
-				case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
-					value = (uint32_t) readSignedVB(log);
-				break;
-				case FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB:
-					value = readUnsignedVB(log);
-				break;
-				case FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16:
-					if (log->private->dataVersion < 2)
-						readTag8_4S16_v1(log, (int32_t*)values);
-					else
-						readTag8_4S16_v2(log, (int32_t*)values);
-
-					//Apply the predictors for the fields:
-					for (j = 0; j < 4; j++, i++)
-					    current[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
-
-					continue;
-				break;
-				case FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32:
-					readTag2_3S32(log, (int32_t*)values);
-
-					//Apply the predictors for the fields:
-					for (j = 0; j < 3; j++, i++)
-					    current[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
-
-					continue;
-				break;
-				case FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB:
-				    //How many fields are in this encoded group? Check the subsequent field encodings:
-				    for (j = i + 1; j < i + 8 && j < log->mainFieldCount; j++)
-				        if (log->private->frameDefs['P'].encoding[j] != FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB)
-				            break;
-
-				    groupCount = j - i;
-
-				    readTag8_8SVB(log, (int32_t*) values, groupCount);
-
-				    for (j = 0; j < groupCount; j++, i++)
-                        current[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
-
-                    continue;
-				break;
-				case FLIGHT_LOG_FIELD_ENCODING_NULL:
-				    //Nothing to read
-				    value = 0;
-				break;
-				default:
-					fprintf(stderr, "Unsupported P-field encoding %d\n", log->private->frameDefs['P'].encoding[i]);
-					exit(-1);
-			}
-
-			current[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], value);
-			i++;
-		}
-	}
+	parseFrame(log, 'P', current, previous, previous2, log->mainFieldCount, skippedFrames, raw);
 }
 
-/**
- * TODO
- */
 static void parseGPSFrame(flightLog_t *log, bool raw)
 {
-	(void) raw;
-
-	readUnsignedVB(log);
-	readSignedVB(log);
-	readSignedVB(log);
-	readUnsignedVB(log);
-	readUnsignedVB(log);
+	parseFrame(log, 'G', log->private->lastGPS, NULL, NULL, log->gpsFieldCount, 0, raw);
 }
 
-/**
- * TODO
- */
 static void parseGPSHomeFrame(flightLog_t *log, bool raw)
 {
-	(void) raw;
-
-	readSignedVB(log);
-	readSignedVB(log);
+    parseFrame(log, 'H', log->private->gpsHomeHistory[0], NULL, NULL, log->gpsHomeFieldCount, 0, raw);
 }
 
 /**
@@ -789,7 +810,20 @@ static void parseEventFrame(flightLog_t *log, bool raw)
 
     switch (eventType) {
         case FLIGHT_LOG_EVENT_SYNC_BEEP:
-            data->syncBeep.time =readUnsignedVB(log);
+            data->syncBeep.time = readUnsignedVB(log);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START:
+            data->autotuneCycleStart.phase = readChar(log);
+            data->autotuneCycleStart.cycle = readChar(log);
+            data->autotuneCycleStart.p = readChar(log);
+            data->autotuneCycleStart.i = readChar(log);
+            data->autotuneCycleStart.d = readChar(log);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
+            data->autotuneCycleResult.overshot = readChar(log);
+            data->autotuneCycleResult.p = readChar(log);
+            data->autotuneCycleResult.i = readChar(log);
+            data->autotuneCycleResult.d = readChar(log);
         break;
         default:
             log->private->lastEvent.event = -1;
@@ -822,24 +856,6 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 			}
 		}
 	}
-}
-
-/**
- * Just like strstr, but for binary strings. Not available on all platforms, so reimplemented here.
- */
-void* memmem(const void *haystack, size_t haystackLen, const void *needle, size_t needleLen)
-{
-	if (needleLen <= haystackLen) {
-		const char* c_haystack = (char*)haystack;
-		const char* c_needle = (char*)needle;
-
-		for (const char *pos = c_haystack; pos <= c_haystack + haystackLen - needleLen; pos++) {
-			if (*pos == *c_needle && memcmp(pos, c_needle, needleLen) == 0)
-				return (void*)pos;
-		}
-	}
-
-	return NULL;
 }
 
 unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat)
@@ -1041,6 +1057,33 @@ static void completeEventFrame(flightLog_t *log, char frameType, const char *fra
         log->private->onEvent(log, &log->private->lastEvent);
 }
 
+static void completeGPSHomeFrame(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+{
+    (void) frameType;
+    (void) frameStart;
+    (void) frameEnd;
+    (void) raw;
+
+    //Copy the decoded frame into the "last state" entry of gpsHomeHistory to publish it:
+    memcpy(&log->private->gpsHomeHistory[1], &log->private->gpsHomeHistory[0], sizeof(*log->private->gpsHomeHistory));
+    log->private->gpsHomeIsValid = true;
+
+    if (log->private->onFrameReady) {
+        log->private->onFrameReady(log, true, log->private->gpsHomeHistory[1], frameType, log->gpsHomeFieldCount, frameStart - log->private->logData, frameEnd - frameStart);
+    }
+}
+
+static void completeGPSFrame(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+{
+    (void) frameType;
+    (void) frameStart;
+    (void) frameEnd;
+    (void) raw;
+
+    if (log->private->onFrameReady) {
+        log->private->onFrameReady(log, log->private->gpsHomeIsValid, log->private->lastGPS, frameType, log->gpsFieldCount, frameStart - log->private->logData, frameEnd - frameStart);
+    }
+}
 
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw)
 {
@@ -1058,10 +1101,16 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 
 	//Reset any parsed information from previous parses
 	memset(&log->stats, 0, sizeof(log->stats));
-	free(log->private->fieldNamesCombined);
-	log->private->fieldNamesCombined = NULL;
+	free(log->private->mainFieldNamesLine);
+	free(log->private->gpsFieldNamesLine);
+	free(log->private->gpsHomeFieldNamesLine);
+	log->private->mainFieldNamesLine = NULL;
+	log->private->gpsFieldNamesLine = NULL;
+	log->private->gpsHomeFieldNamesLine = NULL;
 	log->mainFieldCount = 0;
 	log->gpsFieldCount = 0;
+	log->gpsHomeFieldCount = 0;
+	private->gpsHomeIsValid = false;
 	flightLoginvalidateStream(log);
 
 	log->private->mainHistory[0] = log->private->blackboxHistoryRing[0];
@@ -1083,6 +1132,8 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	log->frameIntervalPDenom = 1;
 
 	private->motor0Index = -1;
+	private->home0Index = -1;
+	private->home1Index = -1;
 	private->lastEvent.event = -1;
 
 	private->onMetadataReady = onMetadataReady;
@@ -1116,6 +1167,16 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
                             if (log->mainFieldCount == 0) {
                                 fprintf(stderr, "Data file is missing field name definitions\n");
                                 return false;
+                            }
+
+                            /* Home coord predictors appear in pairs (lat/lon), but the predictor ID is the same for both. It's easier to
+                             * apply the right predictor during parsing if we rewrite the predictor ID for the second half of the pair here:
+                             */
+                            for (int i = 1; i < log->gpsFieldCount; i++) {
+                                if (private->frameDefs['G'].predictor[i - 1] == FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD &&
+                                        private->frameDefs['G'].predictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD) {
+                                    private->frameDefs['G'].predictor[i] = FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD_1;
+                                }
                             }
 
                             parserState = PARSER_STATE_DATA;
@@ -1206,7 +1267,9 @@ void flightLogDestroy(flightLog_t *log)
 	munmap((void*)log->private->logData, log->private->logEnd - log->private->logData);
 #endif
 
-	free(log->private->fieldNamesCombined);
+	free(log->private->mainFieldNamesLine);
+	free(log->private->gpsFieldNamesLine);
+	free(log->private->gpsHomeFieldNamesLine);
 	free(log->private);
 	free(log);
 

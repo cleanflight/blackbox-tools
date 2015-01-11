@@ -243,22 +243,24 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint
 
 	int32_t frameDup[FLIGHT_LOG_MAX_FIELDS];
 
-	if (frameValid) {
-		/*
-		 * Pull the time field out, since datapoints handles that as a separate argument in this call:
-		 */
+	if (frameType == 'P' || frameType == 'I') {
+        if (frameValid) {
+            /*
+             * Pull the time field out, since datapoints handles that as a separate argument in this call:
+             */
 
-		for (int i = 0; i < fieldCount; i++) {
-			if (i < FLIGHT_LOG_FIELD_INDEX_TIME)
-				frameDup[i] = frame[i];
-			else if (i > FLIGHT_LOG_FIELD_INDEX_TIME)
-				frameDup[i - 1] = frame[i];
-		}
+            for (int i = 0; i < fieldCount; i++) {
+                if (i < FLIGHT_LOG_FIELD_INDEX_TIME)
+                    frameDup[i] = frame[i];
+                else if (i > FLIGHT_LOG_FIELD_INDEX_TIME)
+                    frameDup[i - 1] = frame[i];
+            }
 
-		datapointsAddFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_TIME], frameDup);
-	} else {
-		datapointsAddGap(points);
-	}
+            datapointsAddFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_TIME], frameDup);
+        } else {
+            datapointsAddGap(points);
+        }
+    }
 }
 
 void onLogEvent(flightLog_t *log, flightLogEvent_t *event)

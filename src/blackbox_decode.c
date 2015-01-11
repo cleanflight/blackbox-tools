@@ -22,6 +22,7 @@
 #include "parser.h"
 #include "platform.h"
 #include "tools.h"
+#include "gpxwriter.h"
 
 typedef struct decodeOptions_t {
 	int help, raw, limits, debug, toStdout;
@@ -35,47 +36,58 @@ decodeOptions_t options = {
 	.outputPrefix = 0
 };
 
-uint32_t lastFrameIndex = (uint32_t) -1;
+static uint32_t lastFrameIndex = (uint32_t) -1;
+static uint32_t lastFrameTime = (uint32_t) -1;
 
-FILE *outputFile;
+static FILE *csvFile;
+static gpxWriter_t *gpx = 0;
 
 void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
 	int i;
 
-	if (frame)
-		lastFrameIndex = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
+	if (frameType == 'G') {
+	    if (frameValid) {
+	        gpxWriterAddPoint(gpx, lastFrameTime, frame[1], frame[2], frame[3]);
+        }
+	} else if (frameType == 'P' || frameType == 'I') {
+        if (frame) {
+            lastFrameIndex = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
+        }
 
-	if (frameValid) {
-		for (i = 0; i < fieldCount; i++) {
-			if (i == 0) {
-				fprintf(outputFile, "%u", (uint32_t) frame[i]);
-			} else {
-				if (log->mainFieldSigned[i] || options.raw)
-					fprintf(outputFile,", %3d", frame[i]);
-				else
-					fprintf(outputFile,", %3u", (uint32_t) frame[i]);
-			}
-		}
+        if (frameValid) {
+            lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
 
-		if (options.debug) {
-			fprintf(outputFile,", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
-		} else
-			fprintf(outputFile,"\n");
-	} else if (options.debug) {
-		// Print to stdout so that these messages line up with our other output on stdout (stderr isn't synchronised to it)
-		if (frame) {
-			/*
-			 * We'll assume that the frame's iteration count is still fairly sensible (if an earlier frame was corrupt,
-			 * the frame index will be smaller than it should be)
-			 */
-			fprintf(outputFile,"%c Frame unusuable due to prior corruption %u, offset %d, size %d\n", (char) frameType, lastFrameIndex, frameOffset, frameSize);
-		} else {
-			//We have no frame index for this frame, so just assume it was the one after the previously decoded frame
-			lastFrameIndex++;
-			fprintf(outputFile,"Failed to decode %c frame %u, offset %d, size %d\n", (char) frameType, lastFrameIndex, frameOffset, frameSize);
-		}
-	}
+            for (i = 0; i < fieldCount; i++) {
+                if (i == 0) {
+                    fprintf(csvFile, "%u", (uint32_t) frame[i]);
+                } else {
+                    if (log->mainFieldSigned[i] || options.raw)
+                        fprintf(csvFile, ", %3d", frame[i]);
+                    else
+                        fprintf(csvFile, ", %3u", (uint32_t) frame[i]);
+                }
+            }
+
+            if (options.debug) {
+                fprintf(csvFile, ", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
+            } else
+                fprintf(csvFile, "\n");
+        } else if (options.debug) {
+            // Print to stdout so that these messages line up with our other output on stdout (stderr isn't synchronised to it)
+            if (frame) {
+                /*
+                 * We'll assume that the frame's iteration count is still fairly sensible (if an earlier frame was corrupt,
+                 * the frame index will be smaller than it should be)
+                 */
+                fprintf(csvFile, "%c Frame unusuable due to prior corruption %u, offset %d, size %d\n", (char) frameType, lastFrameIndex, frameOffset, frameSize);
+            } else {
+                //We have no frame index for this frame, so just assume it was the one after the previously decoded frame
+                lastFrameIndex++;
+                fprintf(csvFile, "Failed to decode %c frame %u, offset %d, size %d\n", (char) frameType, lastFrameIndex, frameOffset, frameSize);
+            }
+        }
+    }
 }
 
 void onMetadataReady(flightLog_t *log)
@@ -89,11 +101,11 @@ void onMetadataReady(flightLog_t *log)
 
 	for (i = 0; i < log->mainFieldCount; i++) {
 		if (i > 0)
-			fprintf(outputFile,", ");
+			fprintf(csvFile, ", ");
 
-		fprintf(outputFile,"%s", log->mainFieldNames[i]);
+		fprintf(csvFile, "%s", log->mainFieldNames[i]);
 	}
-	fprintf(outputFile,"\n");
+	fprintf(csvFile, "\n");
 }
 
 void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
@@ -137,12 +149,13 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 
 	fprintf(stderr, "\nLog %d of %d", logIndex + 1, log->logCount);
 
-	if (intervalMS > 0 && !raw)
+	if (intervalMS > 0 && !raw) {
         fprintf(stderr, ", start %02d:%02d.%03d, end %02d:%02d.%03d, duration %02d:%02d.%03d\n\n",
             startTimeMins, startTimeSecs, startTimeMS,
             endTimeMins, endTimeSecs, endTimeMS,
             runningTimeMins, runningTimeSecs, runningTimeMS
         );
+    }
 
 	fprintf(stderr, "Statistics\n");
 
@@ -155,10 +168,11 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
         }
     }
 
-	if (goodFrames)
+	if (goodFrames) {
 		fprintf(stderr, "Frames %9d %6.1f bytes avg %8d bytes total\n", goodFrames, (float) goodBytes / goodFrames, goodBytes);
-	else
+	} else {
 		fprintf(stderr, "Frames %8d\n", 0);
+	}
 
 	if (intervalMS > 0 && !raw) {
 		fprintf(stderr, "Data rate %4uHz %6u bytes/s %10u baud\n",
@@ -290,9 +304,12 @@ void parseCommandlineOptions(int argc, char **argv)
 int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
 {
 	if (options.toStdout) {
-		outputFile = stdout;
+		csvFile = stdout;
+		gpx = NULL;
 	} else {
-		char *outputFilename = 0;
+		char *csvFilename = 0, *gpxFilename = 0;
+		int csvFilenameLen, gpxFilenameLen;
+
 		const char *outputPrefix = 0;
 		int outputPrefixLen;
 
@@ -313,23 +330,30 @@ int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
 			outputPrefixLen = logNameEnd - outputPrefix;
 		}
 
-		int outputFilenameLen = outputPrefixLen + strlen(".00.csv") + 1;
-		outputFilename = malloc(outputFilenameLen);
+		csvFilenameLen = outputPrefixLen + strlen(".00.csv") + 1;
+		csvFilename = malloc(csvFilenameLen * sizeof(char));
 
-		snprintf(outputFilename, outputFilenameLen, "%.*s.%02d.csv", outputPrefixLen, outputPrefix, logIndex + 1);
+		snprintf(csvFilename, csvFilenameLen, "%.*s.%02d.csv", outputPrefixLen, outputPrefix, logIndex + 1);
 
-		outputFile = fopen(outputFilename, "wb");
+        gpxFilenameLen = outputPrefixLen + strlen(".00.gpx") + 1;
+        gpxFilename = malloc(gpxFilenameLen * sizeof(char));
 
-		if (!outputFile) {
-			fprintf(stderr, "Failed to create output file %s\n", outputFilename);
+        snprintf(gpxFilename, gpxFilenameLen, "%.*s.%02d.gpx", outputPrefixLen, outputPrefix, logIndex + 1);
 
-			free(outputFilename);
+		csvFile = fopen(csvFilename, "wb");
+
+		if (!csvFile) {
+			fprintf(stderr, "Failed to create output file %s\n", csvFilename);
+
+			free(csvFilename);
 			return -1;
 		}
 
-		fprintf(stderr, "Decoding log '%s' to '%s'...\n", filename, outputFilename);
+		fprintf(stderr, "Decoding log '%s' to '%s'...\n", filename, csvFilename);
+		free(csvFilename);
 
-		free(outputFilename);
+		gpx = gpxWriterCreate(gpxFilename);
+		free(gpxFilename);
 	}
 
 	int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, NULL, options.raw);
@@ -338,7 +362,9 @@ int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
 		printStats(log, logIndex, options.raw, options.limits);
 
 	if (!options.toStdout)
-		fclose(outputFile);
+		fclose(csvFile);
+
+    gpxWriterDestroy(gpx);
 
 	return success ? 0 : -1;
 }

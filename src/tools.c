@@ -96,3 +96,21 @@ uint32_t floatToUint(float f)
 	convert.f = f;
 	return convert.u;
 }
+
+/**
+ * Just like strstr, but for binary strings. Not available on all platforms, so reimplemented here.
+ */
+void* memmem(const void *haystack, size_t haystackLen, const void *needle, size_t needleLen)
+{
+    if (needleLen <= haystackLen) {
+        const char* c_haystack = (char*)haystack;
+        const char* c_needle = (char*)needle;
+
+        for (const char *pos = c_haystack; pos <= c_haystack + haystackLen - needleLen; pos++) {
+            if (*pos == *c_needle && memcmp(pos, c_needle, needleLen) == 0)
+                return (void*)pos;
+        }
+    }
+
+    return NULL;
+}
