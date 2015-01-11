@@ -22,6 +22,9 @@ That'll decode the log to `LOG00001.01.csv` and print out some statistics about 
 can drag and drop your log files onto `blackbox_decode` and they'll all be decoded. Please note that you shouldn't
 discard the original ".TXT" file, because it is required as input for other tools like the PNG image renderer.
 
+If your log file contains GPS data then a ".gpx" file will also be produced. This file can be opened in Google Earth
+or some other GPS mapping software for analysis. This feature is experimental.
+
 Use the `--help` option to show more details:
 
 ```text
@@ -116,7 +119,7 @@ output folder for the "render to:" setting. Then click the "add job to render qu
 
 ## Building tools
 The `blackbox_decode` tool for turning binary flight logs into CSV doesn't depend on any libraries, so can be built by
-entering running `make obj/blackbox_decode` . You can add the resulting `obj/blackbox_decode` program to your system path to
+running `make obj/blackbox_decode`. You can add the resulting `obj/blackbox_decode` program to your system path to
 make it easier to run.
 
 The `blackbox_render` tool renders a binary flight log into a series of PNG images which you can overlay on your flight
@@ -131,7 +134,7 @@ sudo apt-get update
 sudo apt-get install make gcc libcairo2-dev
 ```
 
-Build the tool by running `make obj/blackbox_render` (or build both tools by just running `make` ).
+Build blackbox_render by running `make obj/blackbox_render` (or build both tools by just running `make`).
 
 #### MacOSX
 The easiest way to build is to install the [Xcode development tool][],
