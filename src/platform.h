@@ -27,13 +27,35 @@
     typedef sem_t semaphore_t;
 #endif
 
+// Support for memory-mapped files:
+#ifdef WIN32
+    #include <windows.h>
+    #include <io.h>
+#else
+    // Posix-y systems:
+    #include <sys/mman.h>
+#endif
+
 #ifdef WIN32
     #define snprintf _snprintf
 #endif
 
+typedef struct fileMapping_t {
+#if defined(WIN32)
+    HANDLE mapping;
+#endif
+
+    int fd;
+    const char *data;
+    size_t size;
+} fileMapping_t;
+
 typedef void*(*threadRoutine_t)(void *data);
 
 void thread_create(thread_t *thread, threadRoutine_t threadFunc, void *data);
+
+bool mmap_file(fileMapping_t *mapping, int fd);
+void munmap_file(fileMapping_t *mapping);
 
 void semaphore_create(semaphore_t *sem, int initialCount);
 void semaphore_destroy(semaphore_t *sem);

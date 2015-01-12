@@ -6,6 +6,7 @@
     #include <sys/stat.h>
 #endif
 
+#include <sys/stat.h>
 
 #ifdef WIN32
     /*
@@ -96,4 +97,63 @@ bool directory_create(const char *name)
 #else
     return mkdir(name, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH) == 0;
 #endif
+}
+
+/**
+ * Map the open file with the given file handle `fd` into memory. Store the details about the mapping into `mapping`.
+ *
+ * Returns true on success
+ */
+bool mmap_file(fileMapping_t *mapping, int fd)
+{
+    struct stat stats;
+
+    //Need the file size to complete the mapping
+    if (fd < 0 || fstat(fd, &stats) < 0) {
+        return 0;
+    }
+
+    mapping->fd = fd;
+    mapping->size = stats.st_size;
+
+    // The APIs don't like mapping a file of size zero
+    if (mapping->size > 0) {
+        #ifdef WIN32
+            intptr_t fileHandle = _get_osfhandle(fd);
+            mapping->mapping = CreateFileMapping((HANDLE) fileHandle, NULL, PAGE_READONLY, 0, 0, NULL);
+
+            if (mapping->mapping == NULL) {
+                return false;
+            }
+
+            mapping->data = MapViewOfFile(mapping->mapping, FILE_MAP_READ, 0, 0, mapping->size);
+
+            if (mapping->data == NULL) {
+                CloseHandle(mapping->mapping);
+                return false;
+            }
+        #else
+            mapping->data = mmap(0, mapping->size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+            if (mapping->data == MAP_FAILED) {
+                return false;
+            }
+        #endif
+    } else {
+        mapping->data = 0;
+    }
+
+    return true;
+}
+
+void munmap_file(fileMapping_t *mapping)
+{
+    if (mapping->data) {
+        #ifdef WIN32
+            UnmapViewOfFile(mapping->data);
+            CloseHandle(mapping->mapping);
+        #else
+            munmap((void*)mapping->data, mapping->size);
+        #endif
+    }
 }

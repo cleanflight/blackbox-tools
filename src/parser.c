@@ -10,17 +10,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include <sys/stat.h>
-
-// Support for memory-mapped files:
-#ifdef WIN32
-    #include <windows.h>
-    #include <io.h>
-#else
-    // Posix-y systems:
-    #include <sys/mman.h>
-#endif
-
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
@@ -31,6 +20,7 @@
 
 #include "parser.h"
 #include "tools.h"
+#include "platform.h"
 
 #define LOG_START_MARKER "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
 
@@ -76,7 +66,7 @@ typedef struct flightLogPrivate_t
     FlightLogEventReady onEvent;
 
     // Log data stream:
-    int fd;
+    fileMapping_t mapping;
 
     //The start of the entire log file:
     const char *logData;
@@ -881,54 +871,11 @@ int flightLogEstimateNumCells(flightLog_t *log)
 
 flightLog_t * flightLogCreate(int fd)
 {
-    const char *mapped;
-    struct stat stats;
-    size_t fileSize;
-
     const char *logSearchStart;
     int logIndex;
 
     flightLog_t *log;
     flightLogPrivate_t *private;
-
-    // Map the log into memory
-    if (fd < 0 || fstat(fd, &stats) < 0) {
-        fprintf(stderr, "Failed to use log file: %s\n", strerror(errno));
-        return 0;
-    }
-
-    fileSize = stats.st_size;
-
-    if (fileSize == 0) {
-        fprintf(stderr, "Error: This log is zero-bytes long!\n");
-        return 0;
-    }
-
-#ifdef WIN32
-    intptr_t fileHandle = _get_osfhandle(fd);
-    HANDLE mapping = CreateFileMapping((HANDLE) fileHandle, NULL, PAGE_READONLY, 0, 0, NULL);
-
-    if (mapping == NULL) {
-        fprintf(stderr, "Failed to map log file into memory\n");
-        return 0;
-    }
-
-    mapped = MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, fileSize);
-
-    if (mapped == NULL) {
-        fprintf(stderr, "Failed to map log file into memory: %s\n", strerror(errno));
-
-        return 0;
-    }
-#else
-    mapped = mmap(0, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
-
-    if (mapped == MAP_FAILED) {
-        fprintf(stderr, "Failed to map log file into memory: %s\n", strerror(errno));
-
-        return 0;
-    }
-#endif
 
     log = (flightLog_t *) malloc(sizeof(*log));
     private = (flightLogPrivate_t *) malloc(sizeof(*private));
@@ -936,11 +883,29 @@ flightLog_t * flightLogCreate(int fd)
     memset(log, 0, sizeof(*log));
     memset(private, 0, sizeof(*private));
 
-    //First check how many logs are in this one file (each time the FC is rearmed, a new log is appended)
-    logSearchStart = mapped;
+    if (!mmap_file(&private->mapping, fd)) {
+        free(log);
+        free(private);
 
-    for (logIndex = 0; logIndex < FLIGHT_LOG_MAX_LOGS_IN_FILE && logSearchStart < mapped + fileSize; logIndex++) {
-        log->logBegin[logIndex] = memmem(logSearchStart, (mapped + fileSize) - logSearchStart, LOG_START_MARKER, strlen(LOG_START_MARKER));
+        return 0;
+    }
+
+    if (private->mapping.size == 0) {
+        fprintf(stderr, "Error: This log is zero-bytes long!\n");
+
+        munmap_file(&private->mapping);
+
+        free(log);
+        free(private);
+
+        return 0;
+    }
+
+    //First check how many logs are in this one file (each time the FC is rearmed, a new log is appended)
+    logSearchStart = private->mapping.data;
+
+    for (logIndex = 0; logIndex < FLIGHT_LOG_MAX_LOGS_IN_FILE && logSearchStart < private->mapping.data + private->mapping.size; logIndex++) {
+        log->logBegin[logIndex] = memmem(logSearchStart, (private->mapping.data + private->mapping.size) - logSearchStart, LOG_START_MARKER, strlen(LOG_START_MARKER));
 
         if (!log->logBegin[logIndex])
             break; //No more logs found in the file
@@ -956,10 +921,9 @@ flightLog_t * flightLogCreate(int fd)
      *
      * We have room for this because the logBegin array has an extra element on the end for it.
      */
-    log->logBegin[log->logCount] = mapped + fileSize;
+    log->logBegin[log->logCount] = private->mapping.data + private->mapping.size;
 
-    private->logData = mapped;
-    private->fd = fd;
+    private->logData = private->mapping.data;
 
     log->private = private;
 
@@ -1261,11 +1225,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 
 void flightLogDestroy(flightLog_t *log)
 {
-#ifdef WIN32
-    UnmapViewOfFile(log->private->logData);
-#else
-    munmap((void*)log->private->logData, log->private->logEnd - log->private->logData);
-#endif
+    munmap_file(&log->private->mapping);
 
     free(log->private->mainFieldNamesLine);
     free(log->private->gpsFieldNamesLine);
