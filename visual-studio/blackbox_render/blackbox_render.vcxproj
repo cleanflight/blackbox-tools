@@ -54,22 +54,26 @@
   <ItemGroup>
     <ClInclude Include="..\..\lib\getopt_mb_uni\getopt.h" />
     <ClInclude Include="..\..\src\datapoints.h" />
+    <ClInclude Include="..\..\src\decoders.h" />
     <ClInclude Include="..\..\src\embeddedfont.h" />
     <ClInclude Include="..\..\src\expo.h" />
     <ClInclude Include="..\..\src\imu.h" />
     <ClInclude Include="..\..\src\parser.h" />
     <ClInclude Include="..\..\src\platform.h" />
+    <ClInclude Include="..\..\src\stream.h" />
     <ClInclude Include="..\..\src\tools.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\lib\getopt_mb_uni\getopt.c" />
     <ClCompile Include="..\..\src\blackbox_render.c" />
     <ClCompile Include="..\..\src\datapoints.c" />
+    <ClCompile Include="..\..\src\decoders.c" />
     <ClCompile Include="..\..\src\embeddedfont.c" />
     <ClCompile Include="..\..\src\expo.c" />
     <ClCompile Include="..\..\src\imu.c" />
     <ClCompile Include="..\..\src\parser.c" />
     <ClCompile Include="..\..\src\platform.c" />
+    <ClCompile Include="..\..\src\stream.c" />
     <ClCompile Include="..\..\src\tools.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
