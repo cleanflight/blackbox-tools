@@ -39,8 +39,51 @@ decodeOptions_t options = {
 static uint32_t lastFrameIndex = (uint32_t) -1;
 static uint32_t lastFrameTime = (uint32_t) -1;
 
-static FILE *csvFile;
+static FILE *csvFile, *eventFile;
+static char *eventFilename = 0;
 static gpxWriter_t *gpx = 0;
+
+void onEvent(flightLog_t *log, flightLogEvent_t *event)
+{
+    (void) log;
+
+    // Open the event log if it wasn't open already
+    if (!eventFile) {
+        if (eventFilename) {
+            eventFile = fopen(eventFilename, "wb");
+
+            if (!eventFile) {
+                fprintf(stderr, "Failed to create event log file %s\n", eventFilename);
+                return;
+            }
+        } else {
+            //Nowhere to log
+            return;
+        }
+    }
+
+    switch (event->event) {
+        case FLIGHT_LOG_EVENT_SYNC_BEEP:
+            fprintf(eventFile, "%u: Sync beep\n", event->data.syncBeep.time);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START:
+            fprintf(eventFile, "%u: Autotune cycle start,%d,%d,%u,%u,%u\n", lastFrameTime,
+                event->data.autotuneCycleStart.phase, event->data.autotuneCycleStart.cycle,
+                event->data.autotuneCycleStart.p, event->data.autotuneCycleStart.i, event->data.autotuneCycleStart.d);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
+            fprintf(eventFile, "%u: Autotune cycle result,%u,%u,%u,%u\n", lastFrameTime,
+                event->data.autotuneCycleResult.overshot,
+                event->data.autotuneCycleResult.p, event->data.autotuneCycleResult.i, event->data.autotuneCycleResult.d);
+        break;
+        case FLIGHT_LOG_EVENT_LOG_END:
+            fprintf(eventFile, "%u: Log clean end\n", lastFrameTime);
+        break;
+        default:
+            fprintf(eventFile, "%u: Unknown event %u\n", lastFrameTime, event->event);
+        break;
+    }
+}
 
 void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
@@ -303,12 +346,14 @@ void parseCommandlineOptions(int argc, char **argv)
 
 int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
 {
+    eventFile = NULL;
+
     if (options.toStdout) {
         csvFile = stdout;
         gpx = NULL;
     } else {
         char *csvFilename = 0, *gpxFilename = 0;
-        int csvFilenameLen, gpxFilenameLen;
+        int csvFilenameLen, gpxFilenameLen, eventFilenameLen;
 
         const char *outputPrefix = 0;
         int outputPrefixLen;
@@ -340,6 +385,11 @@ int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
 
         snprintf(gpxFilename, gpxFilenameLen, "%.*s.%02d.gpx", outputPrefixLen, outputPrefix, logIndex + 1);
 
+        eventFilenameLen = outputPrefixLen + strlen(".00.event") + 1;
+        eventFilename = malloc(eventFilenameLen * sizeof(char));
+
+        snprintf(eventFilename, eventFilenameLen, "%.*s.%02d.event", outputPrefixLen, outputPrefix, logIndex + 1);
+
         csvFile = fopen(csvFilename, "wb");
 
         if (!csvFile) {
@@ -356,13 +406,16 @@ int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
         free(gpxFilename);
     }
 
-    int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, NULL, options.raw);
+    int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, onEvent, options.raw);
 
     if (success)
         printStats(log, logIndex, options.raw, options.limits);
 
     if (!options.toStdout)
         fclose(csvFile);
+
+    if (eventFile)
+        fclose(eventFile);
 
     gpxWriterDestroy(gpx);
 

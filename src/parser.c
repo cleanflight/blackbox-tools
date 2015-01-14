@@ -745,7 +745,8 @@ static void completeEventFrame(flightLog_t *log, mmapStream_t *stream, char fram
     (void) frameEnd;
     (void) raw;
 
-    if (log->private->onEvent)
+    //Don't bother reporting invalid event types since they're likely just garbage data that happened to look like an event
+    if (log->private->lastEvent.event != (FlightLogEvent) -1 && log->private->onEvent)
         log->private->onEvent(log, &log->private->lastEvent);
 }
 
