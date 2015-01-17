@@ -34,12 +34,13 @@ Usage:
      blackbox_decode [options] <input logs>
 
 Options:
-   --help           This page
-   --index <num>    Choose the log from the file that should be decoded (or omit to decode all)
-   --limits         Print the limits and range of each field
-   --stdout         Write log to stdout instead of to a file
-   --debug          Show extra debugging information
-   --raw            Don't apply predictions to fields (show raw field deltas)
+   --help                  This page
+   --index <num>           Choose the log from the file that should be decoded (or omit to decode all)
+   --limits                Print the limits and range of each field
+   --stdout                Write log to stdout instead of to a file
+   --unit-gps-speed <unit> GPS speed unit (mps|kph|mph), default is mps (meters per second)
+   --debug                 Show extra debugging information
+   --raw                   Don't apply predictions to fields (show raw field deltas)
 ```
 
 ## Using the blackbox_render tool
