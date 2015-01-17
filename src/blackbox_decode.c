@@ -54,15 +54,30 @@ decodeOptions_t options = {
     .unitGPSSpeed = UNIT_METERS_PER_SECOND
 };
 
+typedef struct gpsGFieldIndexes_t {
+    int time;
+    int GPS_numSat;
+    int GPS_coord[2];
+    int GPS_altitude;
+    int GPS_speed;
+    int GPS_ground_course;
+} gpsGFieldIndexes_t;
+
+typedef struct gpsHFieldIndexes_t {
+    int GPS_home[2];
+} gpsHFieldIndexes_t;
+
 //We'll use field names to identify GPS field units so the values can be formatted for display
 typedef enum {
     GPS_FIELD_TYPE_INTEGER,
     GPS_FIELD_TYPE_DEGREES_TIMES_10, // for headings
     GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000,
     GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100,
-    GPS_FIELD_TYPE_METERS_TIMES_10
+    GPS_FIELD_TYPE_METERS
 } GPSFieldType;
 
+static gpsGFieldIndexes_t gpsGFieldIndexes;
+static gpsHFieldIndexes_t gpsHFieldIndexes;
 static GPSFieldType gpsFieldTypes[FLIGHT_LOG_MAX_FIELDS];
 
 static uint32_t lastFrameIndex = (uint32_t) -1;
@@ -168,15 +183,31 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
     int i;
     int32_t degrees;
     uint32_t fracDegrees;
+    uint32_t gpsFrameTime;
 
-    gpxWriterAddPoint(gpx, lastFrameTime, frame[1], frame[2], frame[3]);
+    // If we're not logging every loop iteration, we include a timestamp field in the GPS frame:
+    if (gpsGFieldIndexes.time != -1) {
+        gpsFrameTime = frame[gpsGFieldIndexes.time];
+    } else {
+        // Otherwise this GPS frame was recorded at the same time as the main stream frame we read before the GPS frame:
+        gpsFrameTime = lastFrameTime;
+    }
+
+    // We need at least lat/lon/altitude from the log to write a useful GPX track
+    if (gpsGFieldIndexes.GPS_coord[0] != -1 && gpsGFieldIndexes.GPS_coord[0] != -1 && gpsGFieldIndexes.GPS_altitude != -1) {
+        gpxWriterAddPoint(gpx, lastFrameTime, frame[gpsGFieldIndexes.GPS_coord[0]], frame[gpsGFieldIndexes.GPS_coord[1]], frame[gpsGFieldIndexes.GPS_altitude]);
+    }
 
     createGPSCSVFile(log);
 
     if (gpsCsvFile) {
-        fprintf(gpsCsvFile, "%u", lastFrameTime);
+        fprintf(gpsCsvFile, "%u", gpsFrameTime);
 
         for (i = 0; i < log->gpsFieldCount; i++) {
+            //We've already printed the time:
+            if (i == gpsGFieldIndexes.time)
+                continue;
+
             fprintf(gpsCsvFile, ", ");
 
             switch (gpsFieldTypes[i]) {
@@ -198,8 +229,8 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
                         fprintf(gpsCsvFile, "%.2f", convertMetersPerSecondToUnit(frame[i] / 100.0, options.unitGPSSpeed));
                     }
                 break;
-                case GPS_FIELD_TYPE_METERS_TIMES_10:
-                    fprintf(gpsCsvFile, "%d.%01u", frame[i] / 10, abs(frame[i]) % 10);
+                case GPS_FIELD_TYPE_METERS:
+                    fprintf(gpsCsvFile, "%d", frame[i]);
                 break;
                 case GPS_FIELD_TYPE_INTEGER:
                 default:
@@ -266,25 +297,58 @@ void resetGPSFieldIdents()
 }
 
 /**
- * Identify the units/display format we should use for each GPS field by examining their field names.
+ * Check which GPS fields are present and log the indexes of well-known fields in `gps{G|H}FieldIndexes`.
+ *
+ * Sets the units/display format we should use for each GPS field in `gpsFieldTypes`.
  */
 void identifyGPSFields(flightLog_t *log)
 {
-    for (int i = 0; i < log->gpsFieldCount; i++) {
+    int i;
+
+    // Start by marking all fields as not-present (index -1)
+    gpsGFieldIndexes.time = -1;
+    gpsGFieldIndexes.GPS_altitude = -1;
+    gpsGFieldIndexes.GPS_coord[0] = -1;
+    gpsGFieldIndexes.GPS_coord[1] = -1;
+    gpsGFieldIndexes.GPS_ground_course = -1;
+    gpsGFieldIndexes.GPS_numSat = -1;
+    gpsGFieldIndexes.GPS_speed = -1;
+
+    gpsHFieldIndexes.GPS_home[0] = -1;
+    gpsHFieldIndexes.GPS_home[1] = -1;
+
+    for (i = 0; i < log->gpsFieldCount; i++) {
         const char *fieldName = log->gpsFieldNames[i];
 
-        if (strncmp(fieldName, "GPS_home", strlen("GPS_home")) == 0
-                || strncmp(fieldName, "GPS_coord", strlen("GPS_coord")) == 0) {
+        if (strcmp(fieldName, "GPS_coord[0]") == 0) {
+            gpsGFieldIndexes.GPS_coord[0] = i;
+            gpsFieldTypes[i] = GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000;
+        } else if (strcmp(fieldName, "GPS_coord[1]") == 0) {
+            gpsGFieldIndexes.GPS_coord[1] = i;
             gpsFieldTypes[i] = GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000;
         } else if (strcmp(fieldName, "GPS_altitude") == 0) {
-            gpsFieldTypes[i] = GPS_FIELD_TYPE_METERS_TIMES_10;
+            gpsGFieldIndexes.GPS_altitude = i;
+            gpsFieldTypes[i] = GPS_FIELD_TYPE_METERS;
         } else if (strcmp(fieldName, "GPS_speed") == 0) {
+            gpsGFieldIndexes.GPS_speed = i;
             gpsFieldTypes[i] = GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100;
         } else if (strcmp(fieldName, "GPS_ground_course") == 0) {
+            gpsGFieldIndexes.GPS_ground_course = i;
             gpsFieldTypes[i] = GPS_FIELD_TYPE_DEGREES_TIMES_10;
+        } else if (strcmp(fieldName, "GPS_numSat") == 0) {
+            gpsGFieldIndexes.GPS_numSat = i;
         } else {
             gpsFieldTypes[i] = GPS_FIELD_TYPE_INTEGER;
         }
+    }
+
+    for (i = 0; i < log->gpsHomeFieldCount; i++) {
+        const char *fieldName = log->gpsHomeFieldNames[i];
+
+        if (strcmp(fieldName, "GPS_home[0]") == 0)
+            gpsHFieldIndexes.GPS_home[0] = i;
+        else if (strcmp(fieldName, "GPS_home[1]") == 0)
+            gpsHFieldIndexes.GPS_home[1] = i;
     }
 }
 

@@ -52,7 +52,14 @@ typedef struct flightLogPrivate_t
 
     // Blackbox state:
     int32_t blackboxHistoryRing[3][FLIGHT_LOG_MAX_FIELDS];
-    int32_t* mainHistory[3]; // 0 - space to decode new frames into, 1 - previous frame, 2 - previous previous frame
+
+    /* Points into blackboxHistoryRing to give us a circular buffer.
+     *
+     * 0 - space to decode new frames into, 1 - previous frame, 2 - previous previous frame
+     *
+     * Previous frame pointers are NULL when no valid history exists of that age.
+     */
+    int32_t* mainHistory[3];
     bool mainStreamIsValid;
 
     int32_t gpsHomeHistory[2][FLIGHT_LOG_MAX_FIELDS]; // 0 - space to decode new frames into, 1 - previous frame
@@ -359,7 +366,10 @@ static int32_t applyPrediction(flightLog_t *log, int fieldIndex, int predictor, 
 
             value += private->gpsHomeHistory[1][private->home1Index];
         break;
-
+        case FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME:
+            if (private->mainHistory[1])
+                value += private->mainHistory[1][FLIGHT_LOG_FIELD_INDEX_TIME];
+        break;
         default:
             fprintf(stderr, "Unsupported field predictor %d\n", predictor);
             exit(-1);

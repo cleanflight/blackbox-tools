@@ -487,14 +487,6 @@ static bool testBlackboxCondition(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
             return numberMotor == 3;
 
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_0:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_1:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_2:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_0:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_1:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_2:
-            return true;
-
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
             return true;

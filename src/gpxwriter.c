@@ -25,9 +25,9 @@ void gpxWriterAddPreamble(gpxWriter_t *gpx)
  * Add a point to the current track.
  *
  * Time is in microseconds since device power-on. Lat and lon are degrees multiplied by GPS_DEGREES_DIVIDER. Altitude
- * is in metres.
+ * is in meters.
  */
-void gpxWriterAddPoint(gpxWriter_t *gpx, uint32_t time, int32_t lat, int32_t lon, uint16_t altitude)
+void gpxWriterAddPoint(gpxWriter_t *gpx, uint32_t time, int32_t lat, int32_t lon, int16_t altitude)
 {
     if (!gpx)
         return;

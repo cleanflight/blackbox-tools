@@ -16,7 +16,7 @@ typedef struct gpxWriter_t {
     char *filename;
 } gpxWriter_t;
 
-void gpxWriterAddPoint(gpxWriter_t *gpx, uint32_t time, int32_t lat, int32_t lon, uint16_t altitude);
+void gpxWriterAddPoint(gpxWriter_t *gpx, uint32_t time, int32_t lat, int32_t lon, int16_t altitude);
 gpxWriter_t* gpxWriterCreate(const char *filename);
 void gpxWriterDestroy(gpxWriter_t* gpx);
 
