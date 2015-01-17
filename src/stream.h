@@ -27,6 +27,8 @@ int streamReadChar(mmapStream_t *stream);
 int streamReadByte(mmapStream_t *stream);
 void streamUnreadChar(mmapStream_t *stream, int c);
 
+void streamRead(mmapStream_t *stream, void *buf, int len);
+
 uint32_t streamReadUnsignedVB(mmapStream_t *stream);
 int32_t streamReadSignedVB(mmapStream_t *stream);
 

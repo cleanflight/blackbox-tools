@@ -92,6 +92,20 @@ void streamUnreadChar(mmapStream_t *stream, int c)
     stream->pos--;
 }
 
+void streamRead(mmapStream_t *stream, void *buf, int len)
+{
+    char *buffer = (char*) buf;
+
+    if (len >= stream->end - stream->pos) {
+        len = stream->end - stream->pos;
+        stream->eof = true;
+    }
+
+    for (int i = 0; i < len; i++, stream->pos++, buffer++) {
+        *buffer = *stream->pos;
+    }
+}
+
 mmapStream_t* streamCreate(int fd)
 {
     mmapStream_t *result = malloc(sizeof(*result));

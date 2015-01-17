@@ -518,6 +518,10 @@ static void parseGPSHomeFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
  */
 static void parseEventFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
 {
+    static const char END_OF_LOG_MESSAGE[] = "End of log\0";
+    enum { END_OF_LOG_MESSAGE_LEN = 11};
+
+    char endMessage[END_OF_LOG_MESSAGE_LEN];
     (void) raw;
 
     uint8_t eventType = streamReadByte(stream);
@@ -541,6 +545,20 @@ static void parseEventFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
             data->autotuneCycleResult.p = streamReadByte(stream);
             data->autotuneCycleResult.i = streamReadByte(stream);
             data->autotuneCycleResult.d = streamReadByte(stream);
+        break;
+        case FLIGHT_LOG_EVENT_LOG_END:
+            streamRead(stream, endMessage, END_OF_LOG_MESSAGE_LEN);
+
+            if (strncmp(endMessage, END_OF_LOG_MESSAGE, END_OF_LOG_MESSAGE_LEN) == 0) {
+                //Adjust the end of stream so we stop reading, this log is done
+                stream->end = stream->pos;
+            } else {
+                /*
+                 * This isn't the real end of log message, it's probably just some bytes that happened to look like
+                 * an event header.
+                 */
+                log->private->lastEvent.event = -1;
+            }
         break;
         default:
             log->private->lastEvent.event = -1;

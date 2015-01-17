@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <inttypes.h>
+#include <math.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -24,23 +25,51 @@
 #include "tools.h"
 #include "gpxwriter.h"
 
+typedef enum Unit {
+    UNIT_RAW = 0,
+    UNIT_METERS_PER_SECOND,
+    UNIT_KILOMETERS_PER_HOUR,
+    UNIT_MILES_PER_HOUR
+} Unit;
+
+static const char* const UNIT_NAME[] = {
+    "raw",
+    "m/s",
+    "km/h",
+    "mi/h"
+};
+
 typedef struct decodeOptions_t {
     int help, raw, limits, debug, toStdout;
     int logNumber;
     const char *outputPrefix;
+    Unit unitGPSSpeed;
 } decodeOptions_t;
 
 decodeOptions_t options = {
     .help = 0, .raw = 0, .limits = 0, .debug = 0, .toStdout = 0,
     .logNumber = -1,
-    .outputPrefix = 0
+    .outputPrefix = 0,
+
+    .unitGPSSpeed = UNIT_METERS_PER_SECOND
 };
+
+//We'll use field names to identify GPS field units so the values can be formatted for display
+typedef enum {
+    GPS_FIELD_TYPE_INTEGER,
+    GPS_FIELD_TYPE_DEGREES_TIMES_10, // for headings
+    GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000,
+    GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100,
+    GPS_FIELD_TYPE_METERS_TIMES_10
+} GPSFieldType;
+
+static GPSFieldType gpsFieldTypes[FLIGHT_LOG_MAX_FIELDS];
 
 static uint32_t lastFrameIndex = (uint32_t) -1;
 static uint32_t lastFrameTime = (uint32_t) -1;
 
-static FILE *csvFile, *eventFile;
-static char *eventFilename = 0;
+static FILE *csvFile = 0, *eventFile = 0, *gpsCsvFile = 0;
+static char *eventFilename = 0, *gpsCsvFilename = 0;
 static gpxWriter_t *gpx = 0;
 
 void onEvent(flightLog_t *log, flightLogEvent_t *event)
@@ -85,13 +114,110 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
     }
 }
 
+/**
+ * Attempt to create a file to log GPS data in CSV format. On success, gpsCsvFile is non-NULL.
+ */
+void createGPSCSVFile(flightLog_t *log)
+{
+    if (!gpsCsvFile && gpsCsvFilename) {
+        gpsCsvFile = fopen(gpsCsvFilename, "wb");
+
+        if (gpsCsvFile) {
+            // Print GPS fieldname header
+            fprintf(gpsCsvFile, "time");
+
+            for (int i = 0; i < log->gpsFieldCount; i++) {
+                fprintf(gpsCsvFile, ", %s", log->gpsFieldNames[i]);
+
+                if (gpsFieldTypes[i] == GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100)
+                    fprintf(gpsCsvFile, " (%s)", UNIT_NAME[options.unitGPSSpeed]);
+            }
+            fprintf(gpsCsvFile, "\n");
+        }
+    }
+}
+
+double convertMetersPerSecondToUnit(double meterspersec, Unit unit)
+{
+    static const double MILES_PER_METER = 0.00062137;
+
+    switch (unit) {
+        case UNIT_KILOMETERS_PER_HOUR:
+            return meterspersec * 60 * 60 / 1000;
+        break;
+
+        case UNIT_MILES_PER_HOUR:
+            return meterspersec * MILES_PER_METER * 60 * 60;
+        break;
+
+        case UNIT_METERS_PER_SECOND:
+            return meterspersec;
+
+        case UNIT_RAW:
+            fprintf(stderr, "Attempted to convert speed to raw units but this data is already cooked\n");
+            exit(-1);
+        break;
+        default:
+            fprintf(stderr, "Bad speed unit in conversion\n");
+            exit(-1);
+    }
+}
+
+void outputGPSFrame(flightLog_t *log, int32_t *frame)
+{
+    int i;
+    int32_t degrees;
+    uint32_t fracDegrees;
+
+    gpxWriterAddPoint(gpx, lastFrameTime, frame[1], frame[2], frame[3]);
+
+    createGPSCSVFile(log);
+
+    if (gpsCsvFile) {
+        fprintf(gpsCsvFile, "%u", lastFrameTime);
+
+        for (i = 0; i < log->gpsFieldCount; i++) {
+            fprintf(gpsCsvFile, ", ");
+
+            switch (gpsFieldTypes[i]) {
+                case GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000:
+                    degrees = frame[i] / 10000000;
+                    fracDegrees = abs(frame[i]) % 10000000;
+
+                    fprintf(gpsCsvFile, "%d.%07u", degrees, fracDegrees);
+                break;
+                case GPS_FIELD_TYPE_DEGREES_TIMES_10:
+                    fprintf(gpsCsvFile, "%d.%01u", frame[i] / 10, abs(frame[i]) % 10);
+                break;
+                case GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100:
+                    if (options.unitGPSSpeed == UNIT_RAW) {
+                        fprintf(gpsCsvFile, "%d", frame[i]);
+                    } else if (options.unitGPSSpeed == UNIT_METERS_PER_SECOND) {
+                        fprintf(gpsCsvFile, "%d.%02u", frame[i] / 100, abs(frame[i]) % 100);
+                    } else {
+                        fprintf(gpsCsvFile, "%.2f", convertMetersPerSecondToUnit(frame[i] / 100.0, options.unitGPSSpeed));
+                    }
+                break;
+                case GPS_FIELD_TYPE_METERS_TIMES_10:
+                    fprintf(gpsCsvFile, "%d.%01u", frame[i] / 10, abs(frame[i]) % 10);
+                break;
+                case GPS_FIELD_TYPE_INTEGER:
+                default:
+                    fprintf(gpsCsvFile, "%d", frame[i]);
+            }
+
+        }
+        fprintf(gpsCsvFile, "\n");
+    }
+}
+
 void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
     int i;
 
     if (frameType == 'G') {
         if (frameValid) {
-            gpxWriterAddPoint(gpx, lastFrameTime, frame[1], frame[2], frame[3]);
+            outputGPSFrame(log, frame);
         }
     } else if (frameType == 'P' || frameType == 'I') {
         if (frame) {
@@ -133,14 +259,38 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
     }
 }
 
-void onMetadataReady(flightLog_t *log)
+void resetGPSFieldIdents()
+{
+    for (int i = 0; i < FLIGHT_LOG_MAX_FIELDS; i++)
+        gpsFieldTypes[i] = GPS_FIELD_TYPE_INTEGER;
+}
+
+/**
+ * Identify the units/display format we should use for each GPS field by examining their field names.
+ */
+void identifyGPSFields(flightLog_t *log)
+{
+    for (int i = 0; i < log->gpsFieldCount; i++) {
+        const char *fieldName = log->gpsFieldNames[i];
+
+        if (strncmp(fieldName, "GPS_home", strlen("GPS_home")) == 0
+                || strncmp(fieldName, "GPS_coord", strlen("GPS_coord")) == 0) {
+            gpsFieldTypes[i] = GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000;
+        } else if (strcmp(fieldName, "GPS_altitude") == 0) {
+            gpsFieldTypes[i] = GPS_FIELD_TYPE_METERS_TIMES_10;
+        } else if (strcmp(fieldName, "GPS_speed") == 0) {
+            gpsFieldTypes[i] = GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100;
+        } else if (strcmp(fieldName, "GPS_ground_course") == 0) {
+            gpsFieldTypes[i] = GPS_FIELD_TYPE_DEGREES_TIMES_10;
+        } else {
+            gpsFieldTypes[i] = GPS_FIELD_TYPE_INTEGER;
+        }
+    }
+}
+
+void writeMainCSVHeader(flightLog_t *log)
 {
     int i;
-
-    if (log->mainFieldCount == 0) {
-        fprintf(stderr, "No fields found in log, is it missing its header?\n");
-        exit(-1);
-    }
 
     for (i = 0; i < log->mainFieldCount; i++) {
         if (i > 0)
@@ -149,6 +299,16 @@ void onMetadataReady(flightLog_t *log)
         fprintf(csvFile, "%s", log->mainFieldNames[i]);
     }
     fprintf(csvFile, "\n");
+}
+
+void onMetadataReady(flightLog_t *log)
+{
+    if (log->mainFieldCount == 0) {
+        fprintf(stderr, "No fields found in log, is it missing its header?\n");
+    } else {
+        writeMainCSVHeader(log);
+        identifyGPSFields(log);
+    }
 }
 
 void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
@@ -263,6 +423,100 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
     fprintf(stderr, "\n");
 }
 
+int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
+{
+    // Organise output files/streams
+    gpx = NULL;
+
+    gpsCsvFile = NULL;
+    gpsCsvFilename = NULL;
+
+    eventFile = NULL;
+    eventFilename = NULL;
+
+    if (options.toStdout) {
+        csvFile = stdout;
+    } else {
+        char *csvFilename = 0, *gpxFilename = 0;
+        int filenameLen;
+
+        const char *outputPrefix = 0;
+        int outputPrefixLen;
+
+        if (options.outputPrefix) {
+            outputPrefix = options.outputPrefix;
+            outputPrefixLen = strlen(options.outputPrefix);
+        } else {
+            const char *fileExtensionPeriod = strrchr(filename, '.');
+            const char *logNameEnd;
+
+            if (fileExtensionPeriod) {
+                logNameEnd = fileExtensionPeriod;
+            } else {
+                logNameEnd = filename + strlen(filename);
+            }
+
+            outputPrefix = filename;
+            outputPrefixLen = logNameEnd - outputPrefix;
+        }
+
+        filenameLen = outputPrefixLen + strlen(".00.csv") + 1;
+        csvFilename = malloc(filenameLen * sizeof(char));
+
+        snprintf(csvFilename, filenameLen, "%.*s.%02d.csv", outputPrefixLen, outputPrefix, logIndex + 1);
+
+        filenameLen = outputPrefixLen + strlen(".00.gps.gpx") + 1;
+        gpxFilename = malloc(filenameLen * sizeof(char));
+
+        snprintf(gpxFilename, filenameLen, "%.*s.%02d.gps.gpx", outputPrefixLen, outputPrefix, logIndex + 1);
+
+        filenameLen = outputPrefixLen + strlen(".00.gps.csv") + 1;
+        gpsCsvFilename = malloc(filenameLen * sizeof(char));
+
+        snprintf(gpsCsvFilename, filenameLen, "%.*s.%02d.gps.csv", outputPrefixLen, outputPrefix, logIndex + 1);
+
+        filenameLen = outputPrefixLen + strlen(".00.event") + 1;
+        eventFilename = malloc(filenameLen * sizeof(char));
+
+        snprintf(eventFilename, filenameLen, "%.*s.%02d.event", outputPrefixLen, outputPrefix, logIndex + 1);
+
+        csvFile = fopen(csvFilename, "wb");
+
+        if (!csvFile) {
+            fprintf(stderr, "Failed to create output file %s\n", csvFilename);
+
+            free(csvFilename);
+            return -1;
+        }
+
+        fprintf(stderr, "Decoding log '%s' to '%s'...\n", filename, csvFilename);
+        free(csvFilename);
+
+        gpx = gpxWriterCreate(gpxFilename);
+        free(gpxFilename);
+    }
+
+    int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, onEvent, options.raw);
+
+    if (success)
+        printStats(log, logIndex, options.raw, options.limits);
+
+    if (!options.toStdout)
+        fclose(csvFile);
+
+    free(eventFilename);
+    if (eventFile)
+        fclose(eventFile);
+
+    free(gpsCsvFilename);
+    if (gpsCsvFile)
+        fclose(gpsCsvFile);
+
+    gpxWriterDestroy(gpx);
+
+    return success ? 0 : -1;
+}
+
 int validateLogIndex(flightLog_t *log)
 {
     //Did the user pick a log to render?
@@ -299,19 +553,40 @@ void printUsage(const char *argv0)
         "Usage:\n"
         "     %s [options] <input logs>\n\n"
         "Options:\n"
-        "   --help           This page\n"
-        "   --index <num>    Choose the log from the file that should be decoded (or omit to decode all)\n"
-        "   --limits         Print the limits and range of each field\n"
-        "   --stdout         Write log to stdout instead of to a file\n"
-        "   --debug          Show extra debugging information\n"
-        "   --raw            Don't apply predictions to fields (show raw field deltas)\n"
+        "   --help                  This page\n"
+        "   --index <num>           Choose the log from the file that should be decoded (or omit to decode all)\n"
+        "   --limits                Print the limits and range of each field\n"
+        "   --stdout                Write log to stdout instead of to a file\n"
+        "   --unit-gps-speed <unit> GPS speed unit (mps|kph|mph), default is mps (meters per second)\n"
+        "   --debug                 Show extra debugging information\n"
+        "   --raw                   Don't apply predictions to fields (show raw field deltas)\n"
         "\n", argv0
     );
+}
+
+bool parseUnit(const char *text, Unit *unit)
+{
+    if (strcmp(text, "kph") == 0 || strcmp(text, "kmph") == 0  || strcmp(text, "km/h") == 0 || strcmp(text, "km/hr") == 0) {
+        *unit = UNIT_KILOMETERS_PER_HOUR;
+    } else if (strcmp(text, "mps") == 0 || strcmp(text, "m/s") == 0) {
+        *unit = UNIT_METERS_PER_SECOND;
+    } else if (strcmp(text, "mph") == 0 || strcmp(text, "mi/h") == 0 || strcmp(text, "mi/hr") == 0) {
+        *unit = UNIT_MILES_PER_HOUR;
+    } else
+        return false;
+
+    return true;
 }
 
 void parseCommandlineOptions(int argc, char **argv)
 {
     int c;
+
+    enum {
+        SETTING_PREFIX = 1,
+        SETTING_INDEX,
+        SETTING_UNIT_GPS_SPEED,
+    };
 
     while (1)
     {
@@ -321,8 +596,9 @@ void parseCommandlineOptions(int argc, char **argv)
             {"debug", no_argument, &options.debug, 1},
             {"limits", no_argument, &options.limits, 1},
             {"stdout", no_argument, &options.toStdout, 1},
-            {"prefix", required_argument, 0, 'p'},
-            {"index", required_argument, 0, 'i'},
+            {"prefix", required_argument, 0, SETTING_PREFIX},
+            {"index", required_argument, 0, SETTING_INDEX},
+            {"unit-gps-speed", required_argument, 0, SETTING_UNIT_GPS_SPEED},
             {0, 0, 0, 0}
         };
 
@@ -334,92 +610,20 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
 
         switch (c) {
-            case 'i':
+            case SETTING_INDEX:
                 options.logNumber = atoi(optarg);
             break;
-            case 'o':
+            case SETTING_PREFIX:
                 options.outputPrefix = optarg;
+            break;
+            case SETTING_UNIT_GPS_SPEED:
+                if (!parseUnit(optarg, &options.unitGPSSpeed)) {
+                    fprintf(stderr, "Bad GPS speed unit\n");
+                    exit(-1);
+                }
             break;
         }
     }
-}
-
-int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
-{
-    eventFile = NULL;
-
-    if (options.toStdout) {
-        csvFile = stdout;
-        gpx = NULL;
-    } else {
-        char *csvFilename = 0, *gpxFilename = 0;
-        int csvFilenameLen, gpxFilenameLen, eventFilenameLen;
-
-        const char *outputPrefix = 0;
-        int outputPrefixLen;
-
-        if (options.outputPrefix) {
-            outputPrefix = options.outputPrefix;
-            outputPrefixLen = strlen(options.outputPrefix);
-        } else {
-            const char *fileExtensionPeriod = strrchr(filename, '.');
-            const char *logNameEnd;
-
-            if (fileExtensionPeriod) {
-                logNameEnd = fileExtensionPeriod;
-            } else {
-                logNameEnd = filename + strlen(filename);
-            }
-
-            outputPrefix = filename;
-            outputPrefixLen = logNameEnd - outputPrefix;
-        }
-
-        csvFilenameLen = outputPrefixLen + strlen(".00.csv") + 1;
-        csvFilename = malloc(csvFilenameLen * sizeof(char));
-
-        snprintf(csvFilename, csvFilenameLen, "%.*s.%02d.csv", outputPrefixLen, outputPrefix, logIndex + 1);
-
-        gpxFilenameLen = outputPrefixLen + strlen(".00.gpx") + 1;
-        gpxFilename = malloc(gpxFilenameLen * sizeof(char));
-
-        snprintf(gpxFilename, gpxFilenameLen, "%.*s.%02d.gpx", outputPrefixLen, outputPrefix, logIndex + 1);
-
-        eventFilenameLen = outputPrefixLen + strlen(".00.event") + 1;
-        eventFilename = malloc(eventFilenameLen * sizeof(char));
-
-        snprintf(eventFilename, eventFilenameLen, "%.*s.%02d.event", outputPrefixLen, outputPrefix, logIndex + 1);
-
-        csvFile = fopen(csvFilename, "wb");
-
-        if (!csvFile) {
-            fprintf(stderr, "Failed to create output file %s\n", csvFilename);
-
-            free(csvFilename);
-            return -1;
-        }
-
-        fprintf(stderr, "Decoding log '%s' to '%s'...\n", filename, csvFilename);
-        free(csvFilename);
-
-        gpx = gpxWriterCreate(gpxFilename);
-        free(gpxFilename);
-    }
-
-    int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, onEvent, options.raw);
-
-    if (success)
-        printStats(log, logIndex, options.raw, options.limits);
-
-    if (!options.toStdout)
-        fclose(csvFile);
-
-    if (eventFile)
-        fclose(eventFile);
-
-    gpxWriterDestroy(gpx);
-
-    return success ? 0 : -1;
 }
 
 int main(int argc, char **argv)
