@@ -21,7 +21,15 @@ typedef enum FirmwareType {
 
 typedef struct flightLogFrameStatistics_t {
     uint32_t bytes;
-    uint32_t validCount, desyncCount, corruptCount;
+    // Frames decoded to the right length and had reasonable data in them:
+    uint32_t validCount;
+
+    // Frames decoded to the right length but the data looked bad so they were rejected, or stream was desynced from previous lost frames:
+    uint32_t desyncCount;
+
+    // Frames didn't decode to the right length at all
+    uint32_t corruptCount;
+
     uint32_t sizeCount[FLIGHT_LOG_MAX_FRAME_LENGTH + 1];
 } flightLogFrameStatistics_t;
 
@@ -38,6 +46,7 @@ typedef struct flightLogStatistics_t {
     //If our sampling rate is less than 1, we won't log every loop iteration, and that is accounted for here:
     uint32_t intentionallyAbsentIterations;
 
+    bool haveFieldStats;
     flightLogFieldStatistics_t field[FLIGHT_LOG_MAX_FIELDS];
     flightLogFrameStatistics_t frame[256];
 } flightLogStatistics_t;

@@ -26,6 +26,12 @@
 
 #define LOG_START_MARKER "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
 
+//Assume that even in the most woeful logging situation, we won't miss 10 seconds of frames
+#define MAXIMUM_TIME_JUMP_BETWEEN_FRAMES (10 * 1000000)
+
+//Likewise for iteration count
+#define MAXIMUM_ITERATION_JUMP_BETWEEN_FRAMES (500 * 10)
+
 typedef enum ParserState
 {
     PARSER_STATE_HEADER = 0,
@@ -69,6 +75,13 @@ typedef struct flightLogPrivate_t
     flightLogEvent_t lastEvent;
     int32_t lastGPS[FLIGHT_LOG_MAX_FIELDS];
 
+    // How many intentionally un-logged frames did we skip over before we decoded the current frame?
+    uint32_t lastSkippedFrames;
+    
+    // Details about the last main frame that was successfully parsed
+    uint32_t lastMainFrameIteration;
+    uint32_t lastMainFrameTime;
+
     // Event handlers:
     FlightLogMetadataReady onMetadataReady;
     FlightLogFrameReady onFrameReady;
@@ -78,7 +91,7 @@ typedef struct flightLogPrivate_t
 } flightLogPrivate_t;
 
 typedef void (*FlightLogFrameParse)(flightLog_t *log, mmapStream_t *stream, bool raw);
-typedef void (*FlightLogFrameComplete)(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+typedef bool (*FlightLogFrameComplete)(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
 
 typedef struct flightLogFrameType_t {
     uint8_t marker;
@@ -92,11 +105,11 @@ static void parseGPSFrame(flightLog_t *log, mmapStream_t *stream, bool raw);
 static void parseGPSHomeFrame(flightLog_t *log, mmapStream_t *stream, bool raw);
 static void parseEventFrame(flightLog_t *log, mmapStream_t *stream, bool raw);
 
-static void completeIntraframe(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
-static void completeInterframe(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
-static void completeEventFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
-static void completeGPSFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
-static void completeGPSHomeFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static bool completeIntraframe(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static bool completeInterframe(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static bool completeEventFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static bool completeGPSFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static bool completeGPSHomeFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw);
 
 static const flightLogFrameType_t frameTypes[] = {
     {.marker = 'I', .parse = parseIntraframe,   .complete = completeIntraframe},
@@ -131,8 +144,9 @@ static void parseFieldNames(const char *line, char **fieldNamesCombined, char **
 
         fieldNames[(*fieldCount)++] = start;
 
-        if (*end == 0)
+        if (*end == 0) {
             done = true;
+        }
 
         *end = 0;
 
@@ -153,8 +167,9 @@ static void parseCommaSeparatedIntegers(char *line, int *target, int maxCount)
         while (*end != ',' && *end != 0)
             end++;
 
-        if (*end == 0)
+        if (*end == 0) {
             done = true;
+        }
 
         *end = 0;
 
@@ -189,8 +204,9 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
     for (i = 0; i < 1024; i++) {
         c = streamReadChar(stream);
 
-        if (c == ':' && !separatorPos)
+        if (c == ':' && !separatorPos) {
             separatorPos = stream->pos - 1;
+        }
 
         if (c == '\n')
             break;
@@ -466,26 +482,61 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
     }
 }
 
+/*
+ * Based on the log sampling rate, work out how many frames would have been skipped after the last frame that was
+ * parsed until we get to the next logged iteration.
+ */
+static uint32_t countIntentionallySkippedFrames(flightLog_t *log)
+{
+    flightLogPrivate_t *private = log->private;
+    uint32_t count = 0, frameIndex;
+
+    if (private->lastMainFrameIteration == (uint32_t) -1) {
+        // Haven't parsed a frame yet so there's no frames to skip
+        return 0;
+    } else {
+        for (frameIndex = private->lastMainFrameIteration + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+/*
+ * Based on the log sampling rate, work out how many frames would have been skipped after the last frame that was
+ * parsed until we get to the iteration with the given index.
+ */
+static uint32_t countIntentionallySkippedFramesTo(flightLog_t *log, uint32_t targetIteration)
+{
+    flightLogPrivate_t *private = log->private;
+    uint32_t count = 0, frameIndex;
+
+    if (private->lastMainFrameIteration == (uint32_t) -1) {
+        // Haven't parsed a frame yet so there's no frames to skip
+        return 0;
+    } else {
+        for (frameIndex = private->lastMainFrameIteration + 1; frameIndex < targetIteration; frameIndex++) {
+            if (!shouldHaveFrame(log, frameIndex)) {
+                count++;
+            }
+        }
+    }
+
+    return count;
+}
+
 /**
  * Attempt to parse the Intraframe at the current log position into the history buffer at mainHistory[0].
  */
 static void parseIntraframe(flightLog_t *log, mmapStream_t *stream, bool raw)
 {
     flightLogPrivate_t *private = log->private;
-    int skippedFrames = 0;
-    int *current, *previous;
 
-    current = private->mainHistory[0];
-    previous = private->mainHistory[1];
+    int32_t *current = private->mainHistory[0];
+    int32_t *previous = private->mainHistory[1];
 
-    if (previous) {
-        for (uint32_t frameIndex = previous[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
-            skippedFrames++;
-        }
-        log->stats.intentionallyAbsentIterations += skippedFrames;
-    }
-
-    parseFrame(log, stream, 'I', current, previous, NULL, log->mainFieldCount, skippedFrames, raw);
+    parseFrame(log, stream, 'I', current, previous, NULL, log->mainFieldCount, 0, raw);
 }
 
 /**
@@ -493,22 +544,15 @@ static void parseIntraframe(flightLog_t *log, mmapStream_t *stream, bool raw)
  */
 static void parseInterframe(flightLog_t *log, mmapStream_t *stream, bool raw)
 {
+    flightLogPrivate_t *private = log->private;
+
     int32_t *current = log->private->mainHistory[0];
     int32_t *previous = log->private->mainHistory[1];
     int32_t *previous2 = log->private->mainHistory[2];
 
-    uint32_t frameIndex;
-    uint32_t skippedFrames = 0;
+    private->lastSkippedFrames = countIntentionallySkippedFrames(log);
 
-    if (previous) {
-        //Work out how many frames we skipped to get to this one, based on the log sampling rate
-        for (frameIndex = previous[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++)
-            skippedFrames++;
-    }
-
-    log->stats.intentionallyAbsentIterations += skippedFrames;
-
-    parseFrame(log, stream, 'P', current, previous, previous2, log->mainFieldCount, skippedFrames, raw);
+    parseFrame(log, stream, 'P', current, previous, previous2, log->mainFieldCount, log->private->lastSkippedFrames, raw);
 }
 
 static void parseGPSFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
@@ -579,7 +623,7 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 {
     int i;
 
-    if (log->stats.frame['I'].validCount + log->stats.frame['P'].validCount <= 1) {
+    if (!log->stats.haveFieldStats) {
         //If this is the first frame, there are no minimums or maximums in the stats to compare with
         for (i = 0; i < log->mainFieldCount; i++) {
             if (log->mainFieldSigned[i]) {
@@ -590,6 +634,8 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
                 log->stats.field[i].min = (uint32_t) fields[i];
             }
         }
+
+        log->stats.haveFieldStats = true;
     } else {
         for (i = 0; i < log->mainFieldCount; i++) {
             if (log->mainFieldSigned[i]) {
@@ -701,17 +747,32 @@ static void flightLoginvalidateStream(flightLog_t *log)
     log->private->mainHistory[2] = 0;
 }
 
-static void completeIntraframe(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+static bool completeIntraframe(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
 {
     flightLogPrivate_t *private = log->private;
+    bool acceptFrame = true;
 
     (void) frameType;
 
-    // Only accept this frame as valid if time and iteration count are moving forward:
-    if (raw || ((uint32_t)private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.field[FLIGHT_LOG_FIELD_INDEX_ITERATION].max
-        && (uint32_t)private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].max)) {
+    // Do we have a previous frame to use as a reference to validate field values against?
+    if (!raw && private->lastMainFrameIteration != (uint32_t) -1) {
+        /*
+         * Check that iteration count and time both moved forward, and time didn't move forward too much.
+         */
+        acceptFrame =
+            (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] > private->lastMainFrameIteration
+            && (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] < private->lastMainFrameIteration + MAXIMUM_ITERATION_JUMP_BETWEEN_FRAMES
+            && (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= private->lastMainFrameTime
+            && (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] < private->lastMainFrameTime + MAXIMUM_TIME_JUMP_BETWEEN_FRAMES;
+    }
 
-        log->private->mainStreamIsValid = true;
+    if (acceptFrame) {
+        log->stats.intentionallyAbsentIterations += countIntentionallySkippedFramesTo(log, (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION]);
+
+        private->lastMainFrameIteration = (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION];
+        private->lastMainFrameTime = (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME];
+
+        private->mainStreamIsValid = true;
 
         updateFieldStatistics(log, log->private->mainHistory[0]);
     } else {
@@ -721,7 +782,7 @@ static void completeIntraframe(flightLog_t *log, mmapStream_t *stream, char fram
     if (log->private->onFrameReady)
         log->private->onFrameReady(log, private->mainStreamIsValid, private->mainHistory[0], frameType, log->mainFieldCount, frameStart - stream->data, frameEnd - frameStart);
 
-    if (log->private->mainStreamIsValid) {
+    if (acceptFrame) {
         // Rotate history buffers
 
         // Both the previous and previous-previous states become the I-frame, because we can't look further into the past than the I-frame
@@ -733,19 +794,34 @@ static void completeIntraframe(flightLog_t *log, mmapStream_t *stream, char fram
         if (private->mainHistory[0] >= &private->blackboxHistoryRing[3][0])
             private->mainHistory[0] = &private->blackboxHistoryRing[0][0];
     }
+
+    return acceptFrame;
 }
 
-static void completeInterframe(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+static bool completeInterframe(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
 {
     flightLogPrivate_t *private = log->private;
 
     (void) frameType;
     (void) raw;
 
-    if (log->private->mainStreamIsValid)
+    // Reject this frame if the time or iteration count jumped too far
+    if (log->private->mainStreamIsValid && !raw
+            && (
+                (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] > private->lastMainFrameTime + MAXIMUM_TIME_JUMP_BETWEEN_FRAMES
+                || (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] > private->lastMainFrameIteration + MAXIMUM_ITERATION_JUMP_BETWEEN_FRAMES
+            )) {
+        log->private->mainStreamIsValid = false;
+    }
+    
+    if (log->private->mainStreamIsValid) {
+        private->lastMainFrameIteration = (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION];
+        private->lastMainFrameTime = (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME];
+
+        log->stats.intentionallyAbsentIterations += private->lastSkippedFrames;
+
         updateFieldStatistics(log, log->private->mainHistory[0]);
-    else
-        log->stats.frame['P'].desyncCount++;
+    }
 
     //Receiving a P frame can't resynchronise the stream so it doesn't set mainStreamIsValid to true
 
@@ -754,7 +830,6 @@ static void completeInterframe(flightLog_t *log, mmapStream_t *stream, char fram
 
     if (log->private->mainStreamIsValid) {
         // Rotate history buffers
-
         private->mainHistory[2] = private->mainHistory[1];
         private->mainHistory[1] = private->mainHistory[0];
 
@@ -763,9 +838,11 @@ static void completeInterframe(flightLog_t *log, mmapStream_t *stream, char fram
         if (private->mainHistory[0] >= &private->blackboxHistoryRing[3][0])
             private->mainHistory[0] = &private->blackboxHistoryRing[0][0];
     }
+
+    return log->private->mainStreamIsValid;
 }
 
-static void completeEventFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+static bool completeEventFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
 {
     (void) stream;
     (void) frameType;
@@ -774,11 +851,17 @@ static void completeEventFrame(flightLog_t *log, mmapStream_t *stream, char fram
     (void) raw;
 
     //Don't bother reporting invalid event types since they're likely just garbage data that happened to look like an event
-    if (log->private->lastEvent.event != (FlightLogEvent) -1 && log->private->onEvent)
-        log->private->onEvent(log, &log->private->lastEvent);
+    if (log->private->lastEvent.event != (FlightLogEvent) -1) {
+        if (log->private->onEvent)
+            log->private->onEvent(log, &log->private->lastEvent);
+
+        return true;
+    }
+
+    return false;
 }
 
-static void completeGPSHomeFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+static bool completeGPSHomeFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
 {
     (void) frameType;
     (void) frameStart;
@@ -792,9 +875,11 @@ static void completeGPSHomeFrame(flightLog_t *log, mmapStream_t *stream, char fr
     if (log->private->onFrameReady) {
         log->private->onFrameReady(log, true, log->private->gpsHomeHistory[1], frameType, log->gpsHomeFieldCount, frameStart - stream->data, frameEnd - frameStart);
     }
+
+    return true;
 }
 
-static void completeGPSFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+static bool completeGPSFrame(flightLog_t *log, mmapStream_t *stream, char frameType, const char *frameStart, const char *frameEnd, bool raw)
 {
     (void) frameType;
     (void) frameStart;
@@ -804,6 +889,8 @@ static void completeGPSFrame(flightLog_t *log, mmapStream_t *stream, char frameT
     if (log->private->onFrameReady) {
         log->private->onFrameReady(log, log->private->gpsHomeIsValid, log->private->lastGPS, frameType, log->gpsFieldCount, frameStart - stream->data, frameEnd - frameStart);
     }
+
+    return true;
 }
 
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw)
@@ -859,6 +946,10 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
     private->home0Index = -1;
     private->home1Index = -1;
     private->lastEvent.event = -1;
+
+    private->lastSkippedFrames = 0;
+    private->lastMainFrameIteration = (uint32_t) -1;
+    private->lastMainFrameTime = (uint32_t) -1;
 
     private->onMetadataReady = onMetadataReady;
     private->onFrameReady = onFrameReady;
@@ -923,14 +1014,19 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 
                     // If we see what looks like the beginning of a new frame, assume that the previous frame was valid:
                     if (lastFrameSize <= FLIGHT_LOG_MAX_FRAME_LENGTH && looksLikeFrameCompleted) {
-                        //Update statistics for this frame type
-                        log->stats.frame[lastFrameType->marker].bytes += lastFrameSize;
-                        log->stats.frame[lastFrameType->marker].sizeCount[lastFrameSize]++;
-                        log->stats.frame[lastFrameType->marker].validCount++;
+                        bool frameAccepted = true;
 
                         if (lastFrameType->complete)
-                            lastFrameType->complete(log, log->private->stream, lastFrameType->marker, frameStart, private->stream->pos, raw);
+                            frameAccepted = lastFrameType->complete(log, log->private->stream, lastFrameType->marker, frameStart, private->stream->pos, raw);
 
+                        if (frameAccepted) {
+                            //Update statistics for this frame type
+                            log->stats.frame[lastFrameType->marker].bytes += lastFrameSize;
+                            log->stats.frame[lastFrameType->marker].sizeCount[lastFrameSize]++;
+                            log->stats.frame[lastFrameType->marker].validCount++;
+                        } else {
+                            log->stats.frame[lastFrameType->marker].desyncCount++;
+                        }
                     } else {
                         //The previous frame was corrupt
 

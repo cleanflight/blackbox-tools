@@ -80,7 +80,6 @@ static gpsGFieldIndexes_t gpsGFieldIndexes;
 static gpsHFieldIndexes_t gpsHFieldIndexes;
 static GPSFieldType gpsFieldTypes[FLIGHT_LOG_MAX_FIELDS];
 
-static uint32_t lastFrameIndex = (uint32_t) -1;
 static uint32_t lastFrameTime = (uint32_t) -1;
 
 static FILE *csvFile = 0, *eventFile = 0, *gpsCsvFile = 0;
@@ -251,16 +250,15 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
             outputGPSFrame(log, frame);
         }
     } else if (frameType == 'P' || frameType == 'I') {
-        if (frame) {
-            lastFrameIndex = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
-        }
-
-        if (frameValid) {
+        if (frameValid || (frame && options.raw)) {
             lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
 
             for (i = 0; i < fieldCount; i++) {
                 if (i == 0) {
-                    fprintf(csvFile, "%u", (uint32_t) frame[i]);
+                    if (frameValid)
+                        fprintf(csvFile, "%u", (uint32_t) frame[i]);
+                    else
+                        fprintf(csvFile, "X");
                 } else {
                     if (log->mainFieldSigned[i] || options.raw)
                         fprintf(csvFile, ", %3d", frame[i]);
@@ -280,11 +278,9 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
                  * We'll assume that the frame's iteration count is still fairly sensible (if an earlier frame was corrupt,
                  * the frame index will be smaller than it should be)
                  */
-                fprintf(csvFile, "%c Frame unusuable due to prior corruption %u, offset %d, size %d\n", (char) frameType, lastFrameIndex, frameOffset, frameSize);
+                fprintf(csvFile, "%c Frame unusuable due to prior corruption, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
             } else {
-                //We have no frame index for this frame, so just assume it was the one after the previously decoded frame
-                lastFrameIndex++;
-                fprintf(csvFile, "Failed to decode %c frame %u, offset %d, size %d\n", (char) frameType, lastFrameIndex, frameOffset, frameSize);
+                fprintf(csvFile, "Failed to decode %c frame, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
             }
         }
     }
@@ -383,7 +379,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
     uint32_t goodBytes = stats->frame['I'].bytes + stats->frame['P'].bytes;
     uint32_t goodFrames = stats->frame['I'].validCount + stats->frame['P'].validCount;
     uint32_t totalFrames = (uint32_t) (stats->field[FLIGHT_LOG_FIELD_INDEX_ITERATION].max - stats->field[FLIGHT_LOG_FIELD_INDEX_ITERATION].min + 1);
-    int32_t missingFrames = totalFrames - goodFrames - stats->intentionallyAbsentIterations + stats->frame['P'].desyncCount;
+    int32_t missingFrames = totalFrames - goodFrames - stats->intentionallyAbsentIterations;
 
     uint32_t runningTimeMS, runningTimeSecs, runningTimeMins;
     uint32_t startTimeMS, startTimeSecs, startTimeMins;
@@ -429,9 +425,9 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
     for (i = 0; i < (int) sizeof(frameTypes); i++) {
         uint8_t frameType = frameTypes[i];
 
-        if (stats->frame[frameType].validCount + stats->frame[frameType].desyncCount) {
-            fprintf(stderr, "%c frames %7d %6.1f bytes avg %8d bytes total\n", (char) frameType, stats->frame[frameType].validCount + stats->frame[frameType].desyncCount,
-                (float) stats->frame[frameType].bytes / (stats->frame[frameType].validCount + stats->frame[frameType].desyncCount), stats->frame[frameType].bytes);
+        if (stats->frame[frameType].validCount ) {
+            fprintf(stderr, "%c frames %7d %6.1f bytes avg %8d bytes total\n", (char) frameType, stats->frame[frameType].validCount,
+                (float) stats->frame[frameType].bytes / stats->frame[frameType].validCount, stats->frame[frameType].bytes);
         }
     }
 
@@ -450,10 +446,10 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
         fprintf(stderr, "Data rate: Unknown, no timing information available.\n");
     }
 
-    if (totalFrames && (stats->totalCorruptFrames || stats->frame['P'].desyncCount || missingFrames || stats->intentionallyAbsentIterations)) {
+    if (totalFrames && (stats->totalCorruptFrames || missingFrames || stats->intentionallyAbsentIterations)) {
         fprintf(stderr, "\n");
 
-        if (stats->totalCorruptFrames || stats->frame['P'].desyncCount) {
+        if (stats->totalCorruptFrames || stats->frame['P'].desyncCount || stats->frame['I'].desyncCount) {
             fprintf(stderr, "%d frames failed to decode, rendering %d loop iterations unreadable. ", stats->totalCorruptFrames, stats->frame['P'].desyncCount + stats->frame['P'].corruptCount + stats->frame['I'].desyncCount + stats->frame['I'].corruptCount);
             if (!missingFrames)
                 fprintf(stderr, "\n");
@@ -461,12 +457,14 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
         if (missingFrames) {
             fprintf(stderr, "%d iterations are missing in total (%ums, %.2f%%)\n",
                 missingFrames,
-                (unsigned int) (missingFrames * (intervalMS / totalFrames)), (double) missingFrames / totalFrames * 100);
+                (unsigned int) (((int64_t) missingFrames * intervalMS) / totalFrames),
+                (double) missingFrames / totalFrames * 100);
         }
         if (stats->intentionallyAbsentIterations) {
             fprintf(stderr, "%d loop iterations weren't logged because of your blackbox_rate settings (%ums, %.2f%%)\n",
                 stats->intentionallyAbsentIterations,
-                (unsigned int) (stats->intentionallyAbsentIterations * (intervalMS / totalFrames)), (double) stats->intentionallyAbsentIterations / totalFrames * 100);
+                (unsigned int) (((int64_t)stats->intentionallyAbsentIterations * intervalMS) / totalFrames),
+                (double) stats->intentionallyAbsentIterations / totalFrames * 100);
         }
     }
 
@@ -477,8 +475,8 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
         for (i = 0; i < log->mainFieldCount; i++) {
             fprintf(stderr, "%14s %12" PRId64 " %12" PRId64 " %12" PRId64 "\n",
                 log->mainFieldNames[i],
-                stats->field[i].max,
                 stats->field[i].min,
+                stats->field[i].max,
                 stats->field[i].max - stats->field[i].min
             );
         }
