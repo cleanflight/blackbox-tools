@@ -64,10 +64,10 @@ void imuInit(void)
 /**
  * Set the magnetic declination in decimal degrees.
  */
-void imuSetMagneticDeclination(float declination)
+void imuSetMagneticDeclination(double declination)
 {
     //Convert to radians now so we don't have to later on
-    magneticDeclination = declination * RAD;
+    magneticDeclination = (float) (declination * RAD);
 }
 
 // **************************************************

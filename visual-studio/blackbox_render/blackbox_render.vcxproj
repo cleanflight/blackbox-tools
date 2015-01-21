@@ -9,7 +9,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9FA8381C-1218-496B-AE19-030734EAEC42}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>blackbox_render</RootNamespace>
+    <RootNamespace>w</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">

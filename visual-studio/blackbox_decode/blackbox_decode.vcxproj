@@ -55,6 +55,7 @@
     <ClCompile Include="..\..\src\blackbox_decode.c" />
     <ClCompile Include="..\..\src\decoders.c" />
     <ClCompile Include="..\..\src\gpxwriter.c" />
+    <ClCompile Include="..\..\src\imu.c" />
     <ClCompile Include="..\..\src\parser.c" />
     <ClCompile Include="..\..\src\platform.c" />
     <ClCompile Include="..\..\src\stream.c" />
@@ -64,6 +65,7 @@
     <ClInclude Include="..\..\lib\getopt_mb_uni\getopt.h" />
     <ClInclude Include="..\..\src\decoders.h" />
     <ClInclude Include="..\..\src\gpxwriter.h" />
+    <ClInclude Include="..\..\src\imu.h" />
     <ClInclude Include="..\..\src\platform.h" />
     <ClInclude Include="..\..\src\stream.h" />
     <ClInclude Include="..\..\src\tools.h" />

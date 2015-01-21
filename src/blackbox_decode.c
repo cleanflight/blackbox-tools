@@ -841,7 +841,7 @@ bool parseUnit(const char *text, Unit *unit)
 
 double parseDegreesMinutes(const char *s)
 {
-    int combined = round(atof(s) * 100);
+    int combined = (int) round(atof(s) * 100);
 
     int degrees = combined / 100;
     int minutes = combined % 100;
