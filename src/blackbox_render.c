@@ -140,37 +140,25 @@ const int DOTTED_LINE_NUM_POINTS = sizeof (DOTTED_LINE) / sizeof(DOTTED_LINE[0])
 #define PID_TOTAL 3
 
 typedef struct fieldIdentifications_t {
-    int rcCommandFields[4];
-
     int numMotors;
-    int motorFields[MAX_MOTORS];
     color_t motorColors[MAX_MOTORS];
 
     bool hasPIDs;
-    int axisPIDFields[3][3]; //First dimension is [P, I, D], second dimension is axis
     color_t PIDAxisColors[3][3]; //PID, axis
     int PIDLineStyle[3]; //Indexed by PID_P etc
 
     bool hasGyros;
-    int gyroFields[3];
     color_t gyroColors[3];
 
     bool hasAccs;
-    int accFields[3];
     color_t accColors[3];
 
+    bool hasMagADC;
+
     int numServos;
-    int servoFields[MAX_SERVOS];
     color_t servoColors[MAX_SERVOS];
 
-    int vbatField;
     int numCells;
-
-    int baroField;
-
-    int numMisc;
-    int miscFields[FLIGHT_LOG_MAX_FIELDS];
-    color_t miscColors[FLIGHT_LOG_MAX_FIELDS];
 
     int roll, pitch, heading;
     int axisPIDSum[3];
@@ -227,7 +215,7 @@ static datapoints_t *points;
 static int selectedLogIndex;
 
 //Information about fields we have classified
-static fieldIdentifications_t idents;
+static fieldIdentifications_t fieldMeta;
 
 static FT_Library freetypeLibrary;
 
@@ -241,22 +229,9 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint
     (void) frameType;
     (void) fieldCount;
 
-    int32_t frameDup[FLIGHT_LOG_MAX_FIELDS];
-
     if (frameType == 'P' || frameType == 'I') {
         if (frameValid) {
-            /*
-             * Pull the time field out, since datapoints handles that as a separate argument in this call:
-             */
-
-            for (int i = 0; i < fieldCount; i++) {
-                if (i < FLIGHT_LOG_FIELD_INDEX_TIME)
-                    frameDup[i] = frame[i];
-                else if (i > FLIGHT_LOG_FIELD_INDEX_TIME)
-                    frameDup[i - 1] = frame[i];
-            }
-
-            datapointsAddFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_TIME], frameDup);
+            datapointsAddFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame);
         } else {
             datapointsAddGap(points);
         }
@@ -276,144 +251,69 @@ void onLogEvent(flightLog_t *log, flightLogEvent_t *event)
     }
 }
 
-/**
- * Examine the field metadata from the flight log and assign their details to the "idents" global.
- */
-void identifyFields()
+void updateFieldMetadata()
 {
-    unsigned int i;
     int motorGraphColorIndex = 0;
-    int fieldIndex;
 
-    //Start off all the fields as -1 so we can use it as a not-present identifier
-    for (i = 0; i < ARRAY_LENGTH(idents.rcCommandFields); i++)
-        idents.rcCommandFields[i] = -1;
+    fieldMeta.numMotors = 0;
+    fieldMeta.numServos = 0;
+    
+    fieldMeta.hasGyros = flightLog->mainFieldIndexes.gyroData[0] > -1;
+    fieldMeta.hasAccs = flightLog->mainFieldIndexes.accSmooth[0] > -1;
+    fieldMeta.hasMagADC = flightLog->mainFieldIndexes.magADC[0] > -1;
 
-    for (i = 0; i < ARRAY_LENGTH(idents.motorFields); i++)
-        idents.motorFields[i] = -1;
+    fieldMeta.hasPIDs = flightLog->mainFieldIndexes.pid[0][0] > -1;
 
-    for (i = 0; i < ARRAY_LENGTH(idents.servoFields); i++)
-        idents.servoFields[i] = -1;
+    if (fieldMeta.hasPIDs) {
+        for (int axisIndex = 0; axisIndex < 3; axisIndex++) {
+            if (options.plotPids) {
+                fieldMeta.PIDAxisColors[PID_P][axisIndex] = lineColors[PID_P];
+                fieldMeta.PIDAxisColors[PID_I][axisIndex] = lineColors[PID_I];
+                fieldMeta.PIDAxisColors[PID_D][axisIndex] = lineColors[PID_D];
+            } else {
+                fieldMeta.PIDAxisColors[PID_P][axisIndex] = WHITE;
+                fieldMeta.PIDAxisColors[PID_I][axisIndex] = WHITE;
+                fieldMeta.PIDAxisColors[PID_D][axisIndex] = WHITE;
+            }
 
-    for (i = 0; i < ARRAY_LENGTH(idents.gyroFields); i++)
-        idents.gyroFields[i] = -1;
-
-    for (int pidType = PID_P; pidType <= PID_D; pidType++)
-        for (int axis = 0; axis < 3; axis++)
-            idents.axisPIDFields[pidType][axis] = -1;
-
-    for (int axis = 0; axis < 3; axis++) {
-        idents.axisPIDSum[axis] = -1;
-        idents.accFields[axis] = -1;
+            fieldMeta.PIDLineStyle[axisIndex] = 0; //TODO
+        }
     }
 
-    idents.vbatField = -1;
-    idents.baroField = -1;
+    for (int motorIndex = 0; motorIndex < MAX_MOTORS; motorIndex++) {
+        if (flightLog->mainFieldIndexes.motor[motorIndex] > -1) {
+            fieldMeta.motorColors[motorIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
+            fieldMeta.numMotors++;
+        }
+    }
 
-    for (i = 0; i < ARRAY_LENGTH(idents.miscFields); i++)
-        idents.miscFields[i] = -1;
-
-    idents.numMisc = 0;
-    idents.numMotors = 0;
-    idents.numServos = 0;
-
-    idents.roll = idents.pitch = idents.heading = -1;
-    idents.hasGyros = false;
-    idents.hasPIDs = false;
-    idents.hasAccs = false;
-
-    //Now look through the field names and assign fields we recognize to each of those categories
-    for (fieldIndex = 0; fieldIndex < points->fieldCount; fieldIndex++) {
-        const char *fieldName = points->fieldNames[fieldIndex];
-
-        if (startsWith(fieldName, "motor[")) {
-            int motorIndex = atoi(fieldName + strlen("motor["));
-
-            if (motorIndex >= 0 && motorIndex < MAX_MOTORS) {
-                idents.motorFields[motorIndex] = fieldIndex;
-                idents.motorColors[motorIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
-                idents.numMotors++;
-            }
-        } else if (startsWith(fieldName, "rcCommand[")) {
-            int rcCommandIndex = atoi(fieldName + strlen("rcCommand["));
-
-            if (rcCommandIndex >= 0 && rcCommandIndex < 4) {
-                idents.rcCommandFields[rcCommandIndex] = fieldIndex;
-            }
-        } else if (startsWith(fieldName, "axisPID[")) {
-            int axisIndex = atoi(fieldName + strlen("axisPID["));
-
-            idents.axisPIDSum[axisIndex] = fieldIndex;
-        } else if (startsWith(fieldName, "axis")) {
-            int axisIndex = atoi(fieldName + strlen("axisX["));
-
-            switch (fieldName[strlen("axis")]) {
-                case 'P':
-                    idents.axisPIDFields[PID_P][axisIndex] = fieldIndex;
-                break;
-                case 'I':
-                    idents.axisPIDFields[PID_I][axisIndex] = fieldIndex;
-                break;
-                case 'D':
-                    idents.axisPIDFields[PID_D][axisIndex] = fieldIndex;
-                break;
-            }
-
-            idents.hasPIDs = true;
-
-            if (options.plotPids) {
-                idents.PIDAxisColors[PID_P][axisIndex] = lineColors[PID_P];
-                idents.PIDAxisColors[PID_I][axisIndex] = lineColors[PID_I];
-                idents.PIDAxisColors[PID_D][axisIndex] = lineColors[PID_D];
-            } else {
-                idents.PIDAxisColors[PID_P][axisIndex] = WHITE;
-                idents.PIDAxisColors[PID_I][axisIndex] = WHITE;
-                idents.PIDAxisColors[PID_D][axisIndex] = WHITE;
-            }
-
-            idents.PIDLineStyle[axisIndex] = 0; //TODO
-        } else if (startsWith(fieldName, "gyroData[")) {
-            int axisIndex = atoi(fieldName + strlen("gyroData["));
-
-            idents.hasGyros = true;
-            idents.gyroFields[axisIndex] = fieldIndex;
-
+    for (int axisIndex = 0; axisIndex < 3; axisIndex++) {
+        if (flightLog->mainFieldIndexes.gyroData[axisIndex]) {
             if (options.plotGyros) {
                 if (options.bottomGraphSplitAxes)
-                    idents.gyroColors[axisIndex] = lineColors[(PID_D + 2) % NUM_LINE_COLORS];
+                    fieldMeta.gyroColors[axisIndex] = lineColors[(PID_D + 2) % NUM_LINE_COLORS];
                 else
-                    idents.gyroColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
+                    fieldMeta.gyroColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
             } else
-                idents.gyroColors[axisIndex] = WHITE;
-        } else if (startsWith(fieldName, "accSmooth[")) {
-            int axisIndex = atoi(fieldName + strlen("accSmooth["));
-
-            idents.hasAccs = true;
-            idents.accFields[axisIndex] = fieldIndex;
-            idents.accColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
-        } else if (startsWith(fieldName, "servo[")) {
-            int servoIndex = atoi(fieldName + strlen("servo["));
-
-            idents.numServos++;
-            idents.servoFields[servoIndex] = fieldIndex;
-            idents.servoColors[servoIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
-        } else if (strcmp(fieldName, "vbatLatest") == 0) {
-            idents.vbatField = fieldIndex;
-
-            idents.numCells = flightLogEstimateNumCells(flightLog);
-        } else if (strcmp(fieldName, "BaroAlt") == 0) {
-            idents.baroField = fieldIndex;
-        } else if (strcmp(fieldName, "roll") == 0) {
-            idents.roll = fieldIndex;
-        } else if (strcmp(fieldName, "pitch") == 0) {
-            idents.pitch = fieldIndex;
-        } else if (strcmp(fieldName, "heading") == 0) {
-            idents.heading = fieldIndex;
-        } else {
-            idents.miscFields[idents.numMisc] = fieldIndex;
-            idents.miscColors[idents.numMisc] = lineColors[idents.numMisc % NUM_LINE_COLORS];
-            idents.numMisc++;
+                fieldMeta.gyroColors[axisIndex] = WHITE;
         }
+    }
+
+    for (int axisIndex = 0; axisIndex < 3; axisIndex++) {
+        if (flightLog->mainFieldIndexes.accSmooth[axisIndex]) {
+            fieldMeta.accColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
+        }
+    }
+
+    for (int servoIndex = 0; servoIndex < MAX_SERVOS; servoIndex++) {
+        if (flightLog->mainFieldIndexes.servo[servoIndex] > -1) {
+            fieldMeta.numServos++;
+            fieldMeta.servoColors[servoIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
+        }
+    }
+
+    if (flightLog->mainFieldIndexes.vbatLatest > -1) {
+        fieldMeta.numCells = flightLogEstimateNumCells(flightLog);
     }
 }
 
@@ -431,10 +331,10 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 
     for (stickIndex = 0; stickIndex < 4; stickIndex++) {
         //Check that stick data is present to be drawn:
-        if (idents.rcCommandFields[stickIndex] < 0)
+        if (flightLog->mainFieldIndexes.rcCommand[stickIndex] < 0)
             return;
 
-        rcCommand[stickIndex] = frame[idents.rcCommandFields[stickIndex]];
+        rcCommand[stickIndex] = frame[flightLog->mainFieldIndexes.rcCommand[stickIndex]];
     }
 
     //Compute the position of the sticks in the range [-1..1] (left stick x, left stick y, right stick x, right stick y)
@@ -484,7 +384,7 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
         //Draw horizontal stick label
         int32_t labelValue;
 
-        labelValue = frame[idents.rcCommandFields[(1 - i) * 2 + 0]];
+        labelValue = frame[flightLog->mainFieldIndexes.rcCommand[(1 - i) * 2 + 0]];
 
         snprintf(stickLabel, sizeof(stickLabel), "%d", labelValue);
         cairo_text_extents(cr, stickLabel, &extent);
@@ -493,7 +393,7 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
         cairo_show_text(cr, stickLabel);
 
         //Draw vertical stick label
-        snprintf(stickLabel, sizeof(stickLabel), "%d", frame[idents.rcCommandFields[(1 - i) * 2 + 1]]);
+        snprintf(stickLabel, sizeof(stickLabel), "%d", frame[flightLog->mainFieldIndexes.rcCommand[(1 - i) * 2 + 1]]);
         cairo_text_extents(cr, stickLabel, &extent);
 
         cairo_move_to(cr, -stickSurroundRadius - extent.width - 8, extent.height / 2);
@@ -539,8 +439,8 @@ void drawCraft(cairo_t *cr, int32_t *frame, int64_t timeElapsedMicros, craft_par
     char motorLabel[16];
     cairo_text_extents_t extent;
 
-    /*if (idents.heading) {
-        cairo_rotate(cr, intToFloat(frame[idents.heading]));
+    /*if (fieldMeta.heading) {
+        cairo_rotate(cr, intToFloat(frame[fieldMeta.heading]));
     }*/
 
     //Draw arms
@@ -567,8 +467,8 @@ void drawCraft(cairo_t *cr, int32_t *frame, int64_t timeElapsedMicros, craft_par
 
     //Compute prop speed and position
     for (motorIndex = 0; motorIndex < parameters->numMotors; motorIndex++) {
-        if (idents.motorFields[motorIndex] > -1) {
-            double scaled = doubleMax(frame[idents.motorFields[motorIndex]] - (int32_t) flightLog->minthrottle, 0) / (flightLog->maxthrottle - flightLog->minthrottle);
+        if (flightLog->mainFieldIndexes.motor[motorIndex] > -1) {
+            double scaled = doubleMax(frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->minthrottle, 0) / (flightLog->maxthrottle - flightLog->minthrottle);
 
             //If motors are armed (above minthrottle), keep them spinning at least a bit
             if (scaled > 0)
@@ -642,11 +542,16 @@ void drawCraft(cairo_t *cr, int32_t *frame, int64_t timeElapsedMicros, craft_par
                 );
 
                 cairo_move_to(cr, 0, 0);
-                cairo_arc(cr, 0, 0, parameters->bladeLength, -M_PI_2, -M_PI_2 + M_PI * 2 * doubleMax(frame[idents.motorFields[motorIndex]] - (int32_t) flightLog->minthrottle, 0) / (flightLog->maxthrottle - flightLog->minthrottle));
+
+                /* Attempting to plot super high (corrupt) values for motors results in cairo_arc() taking forever
+                 * (as it spins round and round the axis I bet) so be careful to clamp the angle properly.
+                 */
+                cairo_arc(cr, 0, 0, parameters->bladeLength, -M_PI_2, -M_PI_2 + M_PI * 2 *
+                    doubleMin(doubleMax((double) (frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->minthrottle) / (flightLog->maxthrottle - flightLog->minthrottle), 0.0), 1.0));
                 cairo_fill(cr);
             }
 
-            snprintf(motorLabel, sizeof(motorLabel), "%d", frame[idents.motorFields[motorIndex]]);
+            snprintf(motorLabel, sizeof(motorLabel), "%d", frame[flightLog->mainFieldIndexes.motor[motorIndex]]);
 
             cairo_text_extents(cr, motorLabel, &extent);
 
@@ -677,7 +582,7 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
 {
     (void) imageHeight;
 
-    parameters->numMotors = idents.numMotors == 3 || idents.numMotors == 4 ? idents.numMotors : 4;
+    parameters->numMotors = fieldMeta.numMotors == 3 || fieldMeta.numMotors == 4 ? fieldMeta.numMotors : 4;
     parameters->numBlades = 2;
     parameters->bladeLength = imageWidth / 25;
     parameters->tipBezierWidth = 0.2 * parameters->bladeLength;
@@ -717,7 +622,7 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
 
     //TODO we can let the user choose their prop colours to match their model if they like
     for (int i = 0; i < parameters->numMotors; i++)
-        parameters->propColor[i] = idents.motorColors[i];
+        parameters->propColor[i] = fieldMeta.motorColors[i];
 }
 
 /**
@@ -856,21 +761,21 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
             int32_t fieldValue;
 
             if (pidType == PID_P - 1) {
-                if (idents.hasGyros) {
-                    fieldValue = frame[idents.gyroFields[axisIndex]];
+                if (fieldMeta.hasGyros) {
+                    fieldValue = frame[flightLog->mainFieldIndexes.gyroData[axisIndex]];
 
                     if (options.gyroUnit == UNIT_DEGREES_PER_SEC) {
                         fieldValue = (int32_t) round((double)flightLog->gyroScale * 1000000 / (M_PI / 180.0) * fieldValue);
                     }
                 } else
                     fieldValue = 0;
-            } else if (idents.hasPIDs) {
+            } else if (fieldMeta.hasPIDs) {
                 if (pidType == PID_TOTAL) {
-                    fieldValue = frame[idents.axisPIDFields[PID_P][axisIndex]]
-                        + frame[idents.axisPIDFields[PID_I][axisIndex]]
-                        + (idents.axisPIDFields[PID_D][axisIndex] > -1 ? frame[idents.axisPIDFields[PID_D][axisIndex]] : 0);
-                } else if (idents.axisPIDFields[pidType][axisIndex] > -1)
-                    fieldValue = frame[idents.axisPIDFields[pidType][axisIndex]];
+                    fieldValue = frame[flightLog->mainFieldIndexes.pid[PID_P][axisIndex]]
+                        + frame[flightLog->mainFieldIndexes.pid[PID_I][axisIndex]]
+                        + (flightLog->mainFieldIndexes.pid[PID_D][axisIndex] > -1 ? frame[flightLog->mainFieldIndexes.pid[PID_D][axisIndex]] : 0);
+                } else if (flightLog->mainFieldIndexes.pid[pidType][axisIndex] > -1)
+                    fieldValue = frame[flightLog->mainFieldIndexes.pid[pidType][axisIndex]];
                 else
                     fieldValue = 0;
             } else
@@ -882,9 +787,9 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
                 case PID_P - 1:
                     cairo_set_source_rgb(
                         cr,
-                        idents.gyroColors[axisIndex].r,
-                        idents.gyroColors[axisIndex].g,
-                        idents.gyroColors[axisIndex].b
+                        fieldMeta.gyroColors[axisIndex].r,
+                        fieldMeta.gyroColors[axisIndex].g,
+                        fieldMeta.gyroColors[axisIndex].b
                     );
                 break;
                 case PID_TOTAL:
@@ -898,9 +803,9 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
                 default:
                     cairo_set_source_rgb(
                         cr,
-                        idents.PIDAxisColors[pidType][axisIndex].r,
-                        idents.PIDAxisColors[pidType][axisIndex].g,
-                        idents.PIDAxisColors[pidType][axisIndex].b
+                        fieldMeta.PIDAxisColors[pidType][axisIndex].r,
+                        fieldMeta.PIDAxisColors[pidType][axisIndex].g,
+                        fieldMeta.PIDAxisColors[pidType][axisIndex].b
                     );
                 break;
             }
@@ -994,13 +899,13 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 
     cairo_text_extents(cr, "Acceleration 0.0G", &extent);
 
-    if (flightLog->acc_1G && idents.hasAccs) {
+    if (flightLog->acc_1G && fieldMeta.hasAccs) {
         for (int axis = 0; axis < 3; axis++)
-            accSmooth[axis] = frame[idents.accFields[axis]];
+            accSmooth[axis] = frame[flightLog->mainFieldIndexes.accSmooth[axis]];
 
-        attitude.roll = intToFloat(frame[idents.roll]);
-        attitude.pitch = intToFloat(frame[idents.pitch]);
-        attitude.heading = intToFloat(frame[idents.heading]);
+        attitude.roll = intToFloat(frame[fieldMeta.roll]);
+        attitude.pitch = intToFloat(frame[fieldMeta.pitch]);
+        attitude.heading = intToFloat(frame[fieldMeta.heading]);
 
         //Need to calculate acc in earth frame in order to subtract the 1G of gravity from the result
         acceleration = calculateAccelerationInEarthFrame(accSmooth, &attitude, flightLog->acc_1G);
@@ -1021,8 +926,8 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
         cairo_show_text(cr, labelBuf);
     }
 
-    if (idents.vbatField > -1) {
-        lastVoltage = (lastVoltage * 2 + flightLogVbatToMillivolts(flightLog, frame[idents.vbatField]) / (1000.0 * idents.numCells)) / 3;
+    if (flightLog->mainFieldIndexes.vbatLatest > -1) {
+        lastVoltage = (lastVoltage * 2 + flightLogVbatToMillivolts(flightLog, frame[flightLog->mainFieldIndexes.vbatLatest]) / (1000.0 * fieldMeta.numCells)) / 3;
 
         snprintf(labelBuf, sizeof(labelBuf), "Batt. cell %.2fV", lastVoltage);
 
@@ -1031,8 +936,8 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
     }
 
 
-    if (idents.baroField > -1) {
-        lastAlt = (lastAlt * 2 + frame[idents.baroField]) / 3;
+    if (flightLog->mainFieldIndexes.BaroAlt > -1) {
+        lastAlt = (lastAlt * 2 + frame[flightLog->mainFieldIndexes.BaroAlt]) / 3;
 
         snprintf(labelBuf, sizeof(labelBuf), "Altitude %.1fm", lastAlt / 100.0);
 
@@ -1190,16 +1095,16 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
                 cairo_set_line_width(cr, 2.5);
 
-                for (i = 0; i < idents.numMotors; i++) {
-                    plotLine(cr, idents.motorColors[i], windowStartTime, windowEndTime, firstFrameIndex,
-                            idents.motorFields[i], motorCurve, motorGraphHeight);
+                for (i = 0; i < fieldMeta.numMotors; i++) {
+                    plotLine(cr, fieldMeta.motorColors[i], windowStartTime, windowEndTime, firstFrameIndex,
+                            flightLog->mainFieldIndexes.motor[i], motorCurve, motorGraphHeight);
                 }
 
-                if (idents.numServos) {
+                if (fieldMeta.numServos) {
                     for (i = 0; i < MAX_SERVOS; i++) {
-                        if (idents.servoFields[i] > -1) {
-                            plotLine(cr, idents.servoColors[i], windowStartTime, windowEndTime, firstFrameIndex,
-                                    idents.servoFields[i], motorCurve, motorGraphHeight);
+                        if (flightLog->mainFieldIndexes.servo[i] > -1) {
+                            plotLine(cr, fieldMeta.servoColors[i], windowStartTime, windowEndTime, firstFrameIndex,
+                                flightLog->mainFieldIndexes.servo[i], motorCurve, motorGraphHeight);
                         }
                     }
                 }
@@ -1223,7 +1128,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
                     drawAxisLine(cr);
 
                     for (int pidType = PID_D; pidType >= PID_P; pidType--) {
-                        if (idents.axisPIDFields[pidType][axis] > -1) {
+                        if (flightLog->mainFieldIndexes.pid[pidType][axis] > -1) {
                             switch (pidType) {
                                 case PID_P:
                                     cairo_set_line_width(cr, 2);
@@ -1237,8 +1142,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
                                     cairo_set_line_width(cr, 2);
                             }
 
-                            plotLine(cr, idents.PIDAxisColors[pidType][axis], windowStartTime, windowEndTime, firstFrameIndex,
-                                    idents.axisPIDFields[pidType][axis], pidCurve, (int) (options.imageHeight * 0.15));
+                            plotLine(cr, fieldMeta.PIDAxisColors[pidType][axis], windowStartTime, windowEndTime, firstFrameIndex,
+                                    flightLog->mainFieldIndexes.pid[pidType][axis], pidCurve, (int) (options.imageHeight * 0.15));
 
                             cairo_set_dash(cr, 0, 0, 0);
                         }
@@ -1247,8 +1152,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
                     if (options.plotGyros) {
                         cairo_set_line_width(cr, 3);
 
-                        plotLine(cr, idents.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
-                            idents.gyroFields[axis], gyroCurve, (int) (options.imageHeight * 0.15));
+                        plotLine(cr, fieldMeta.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
+                            flightLog->mainFieldIndexes.gyroData[axis], gyroCurve, (int) (options.imageHeight * 0.15));
                     }
 
                     const char *axisLabel;
@@ -1293,22 +1198,12 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
                 drawAxisLine(cr);
 
                 for (int axis = 0; axis < 3; axis++) {
-                    plotLine(cr, idents.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
-                        idents.gyroFields[axis], gyroCurve, (int) (options.imageHeight * 0.25));
-
-                    /*plotLine(cr, idents.gyroColors[axis], windowStartTime,
-                            windowEndTime, firstFrameIndex, idents.accFields[axis], accCurve, (int) (options.imageHeight * 0.25));*/
+                    plotLine(cr, fieldMeta.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
+                            flightLog->mainFieldIndexes.gyroData[axis], gyroCurve, (int) (options.imageHeight * 0.25));
                 }
 
                 drawAxisLabel(cr, "Gyro");
             }
-
-            //Plot other misc fields
-            /*for (i = 0; i < idents.numMisc; i++) {
-                plotLine(cr, idents.miscColors[i], windowStartTime,
-                        windowEndTime, firstFrameIndex, idents.miscFields[i], 0, 400, options.imageHeight / 4,
-                        false);
-            }*/
         }
         cairo_restore(cr);
 
@@ -1607,30 +1502,30 @@ void parseCommandlineOptions(int argc, char **argv)
 }
 
 static void applySmoothing() {
-    if (options.gyroSmoothing && idents.hasGyros) {
+    if (options.gyroSmoothing && fieldMeta.hasGyros) {
         for (int axis = 0; axis < 3; axis++)
-            datapointsSmoothField(points, idents.gyroFields[axis], options.gyroSmoothing);
+            datapointsSmoothField(points, flightLog->mainFieldIndexes.gyroData[axis], options.gyroSmoothing);
     }
 
-    if (options.pidSmoothing && idents.hasPIDs) {
+    if (options.pidSmoothing && fieldMeta.hasPIDs) {
         for (int pid = PID_P; pid <= PID_D; pid++)
             for (int axis = 0; axis < 3; axis++)
-                if (idents.axisPIDFields[pid][axis] > -1)
-                    datapointsSmoothField(points, idents.axisPIDFields[pid][axis], options.pidSmoothing);
+                if (flightLog->mainFieldIndexes.pid[pid][axis] > -1)
+                    datapointsSmoothField(points, flightLog->mainFieldIndexes.pid[pid][axis], options.pidSmoothing);
 
         //Smooth the synthetic PID sum field too
         for (int axis = 0; axis < 3; axis++)
-            datapointsSmoothField(points, idents.axisPIDSum[axis], options.pidSmoothing);
+            datapointsSmoothField(points, fieldMeta.axisPIDSum[axis], options.pidSmoothing);
     }
 
     if (options.motorSmoothing) {
-        for (int motor = 0; motor < idents.numMotors; motor++)
-            datapointsSmoothField(points, idents.motorFields[motor], options.motorSmoothing);
+        for (int motor = 0; motor < fieldMeta.numMotors; motor++)
+            datapointsSmoothField(points, flightLog->mainFieldIndexes.motor[motor], options.motorSmoothing);
     }
 }
 
 void computeExtraFields(void) {
-    int16_t accSmooth[3], gyroData[3];
+    int16_t accSmooth[3], gyroData[3], magADC[3];
     int64_t frameTime;
     int32_t frameIndex;
     int32_t frame[FLIGHT_LOG_MAX_FIELDS];
@@ -1638,31 +1533,37 @@ void computeExtraFields(void) {
 
     imuInit();
 
-    if (idents.hasAccs && flightLog->acc_1G) {
+    if (fieldMeta.hasGyros && fieldMeta.hasAccs && flightLog->acc_1G) {
         for (frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
             if (datapointsGetFrameAtIndex(points, frameIndex, &frameTime, frame)) {
                 for (int axis = 0; axis < 3; axis++) {
-                    accSmooth[axis] = frame[idents.accFields[axis]];
-                    gyroData[axis] = frame[idents.gyroFields[axis]];
+                    accSmooth[axis] = frame[flightLog->mainFieldIndexes.accSmooth[axis]];
+                    gyroData[axis] = frame[flightLog->mainFieldIndexes.gyroData[axis]];
                 }
 
-                getEstimatedAttitude(gyroData, accSmooth, (uint32_t) frameTime, flightLog->acc_1G, flightLog->gyroScale, &attitude);
+                if (fieldMeta.hasMagADC) {
+                    for (int axis = 0; axis < 3; axis++) {
+                        magADC[axis] = frame[flightLog->mainFieldIndexes.magADC[axis]];
+                    }
+                }
+
+                updateEstimatedAttitude(gyroData, accSmooth, fieldMeta.hasMagADC ? magADC : 0, (uint32_t) frameTime, flightLog->acc_1G, flightLog->gyroScale, &attitude);
 
                 //Pack those floats into signed ints to store into the datapoints array:
-                datapointsSetFieldAtIndex(points, frameIndex, idents.roll, floatToInt(attitude.roll));
-                datapointsSetFieldAtIndex(points, frameIndex, idents.pitch, floatToInt(attitude.pitch));
-                datapointsSetFieldAtIndex(points, frameIndex, idents.heading, floatToInt(attitude.heading));
+                datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.roll, floatToInt(attitude.roll));
+                datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.pitch, floatToInt(attitude.pitch));
+                datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.heading, floatToInt(attitude.heading));
             }
         }
     }
 
-    if (idents.hasPIDs) {
+    if (fieldMeta.hasPIDs) {
         for (frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
             if (datapointsGetFrameAtIndex(points, frameIndex, &frameTime, frame)) {
                 for (int axis = 0; axis < 3; axis++) {
-                    int32_t pidSum = frame[idents.axisPIDFields[PID_P][axis]] + frame[idents.axisPIDFields[PID_I][axis]] - frame[idents.axisPIDFields[PID_D][axis]];
+                    int32_t pidSum = frame[flightLog->mainFieldIndexes.pid[PID_P][axis]] + frame[flightLog->mainFieldIndexes.pid[PID_I][axis]] + frame[flightLog->mainFieldIndexes.pid[PID_D][axis]];
 
-                    datapointsSetFieldAtIndex(points, frameIndex, idents.axisPIDSum[axis], pidSum);
+                    datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.axisPIDSum[axis], pidSum);
                 }
             }
         }
@@ -1765,32 +1666,41 @@ int main(int argc, char **argv)
     //First check out how many frames we need to store so we can pre-allocate (parsing will update the flightlog stats which contain that info)
     flightLogParse(flightLog, selectedLogIndex, NULL, NULL, NULL, false);
 
-    /* Configure our data points array.
-     *
-     * Don't include the time field in the field names / counts, but add on fields that we'll synthesize
-     */
-    fieldNames = malloc(sizeof(*fieldNames) * (flightLog->mainFieldCount - 1 + DATAPOINTS_EXTRA_COMPUTED_FIELDS));
+    // Assign field indexes to the fields we'll add
+    int newFieldIndex = flightLog->mainFieldCount, combinedFieldCount;
+
+    fieldMeta.roll = newFieldIndex++;
+    fieldMeta.pitch = newFieldIndex++;
+    fieldMeta.heading = newFieldIndex++;
+
+    fieldMeta.axisPIDSum[0] = newFieldIndex++;
+    fieldMeta.axisPIDSum[1] = newFieldIndex++;
+    fieldMeta.axisPIDSum[2] = newFieldIndex++;
+
+    combinedFieldCount = newFieldIndex;
+
+    // Create a copy of the array of field names so we can add our custom fields to it
+    fieldNames = malloc(sizeof(*fieldNames) * combinedFieldCount);
 
     for (int i = 0; i < flightLog->mainFieldCount; i++) {
-        if (i < FLIGHT_LOG_FIELD_INDEX_TIME)
-            fieldNames[i] = strdup(flightLog->mainFieldNames[i]);
-        else if (i > FLIGHT_LOG_FIELD_INDEX_TIME)
-            fieldNames[i - 1] = strdup(flightLog->mainFieldNames[i]);
+        fieldNames[i] = strdup(flightLog->mainFieldNames[i]);
     }
 
-    fieldNames[flightLog->mainFieldCount - 1] = strdup("roll");
-    fieldNames[flightLog->mainFieldCount + 0] = strdup("pitch");
-    fieldNames[flightLog->mainFieldCount + 1] = strdup("heading");
-    fieldNames[flightLog->mainFieldCount + 2] = strdup("axisPID[0]");
-    fieldNames[flightLog->mainFieldCount + 3] = strdup("axisPID[1]");
-    fieldNames[flightLog->mainFieldCount + 4] = strdup("axisPID[2]");
+    // And add our synthetic field names
+    fieldNames[fieldMeta.roll] = strdup("roll");
+    fieldNames[fieldMeta.pitch] = strdup("pitch");
+    fieldNames[fieldMeta.heading] = strdup("heading");
+    fieldNames[fieldMeta.axisPIDSum[0]] = strdup("axisPID[0]");
+    fieldNames[fieldMeta.axisPIDSum[1]] = strdup("axisPID[1]");
+    fieldNames[fieldMeta.axisPIDSum[2]] = strdup("axisPID[2]");
 
-    points = datapointsCreate(flightLog->mainFieldCount - 1 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, (int) (flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_ITERATION].max + 1));
+    // Create the pre-allocated array of frames that we'll decode into
+    points = datapointsCreate(combinedFieldCount, fieldNames, (int) (flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_ITERATION].max + 1));
 
     //Now decode the flight log into the points array
     flightLogParse(flightLog, selectedLogIndex, 0, loadFrameIntoPoints, onLogEvent, false);
 
-    identifyFields();
+    updateFieldMetadata();
 
     computeExtraFields();
 

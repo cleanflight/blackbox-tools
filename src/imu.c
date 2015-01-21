@@ -31,13 +31,19 @@ typedef enum {
 static const uint16_t gyro_cmpf_factor = 600;
 static const float accz_lpf_cutoff = 5.0f;
 static const float magneticDeclination = 0.0f;
+static const uint16_t gyro_cmpfm_factor = 250;
 
 //IMU fields:
 static float fc_acc;
+static float invGyroComplimentaryFilter_M_Factor;
 
+/**
+ * Call before any other routines in order to set up IMU constants and such.
+ */
 void imuInit(void)
 {
     fc_acc = (float) (0.5f / (M_PI * accz_lpf_cutoff)); // calculate RC time constant used in the accZ lpf
+    invGyroComplimentaryFilter_M_Factor = (1.0f / (gyro_cmpfm_factor + 1.0f));
 }
 
 // **************************************************
@@ -144,9 +150,10 @@ static float calculateHeading(t_fp_vector *vec, float angleradRoll, float angler
     return hd;
 }
 
-void getEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], uint32_t currentTime, uint16_t acc_1G, float gyroScale, attitude_t *attitude)
+void updateEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], int16_t magADC[3], uint32_t currentTime, uint16_t acc_1G, float gyroScale, attitude_t *attitude)
 {
     int32_t accMag = 0;
+    static t_fp_vector EstM;
     static t_fp_vector EstN = { .A = { 1.0f, 0.0f, 0.0f } };
     static uint32_t previousTime = 0;
     uint32_t deltaTime;
@@ -183,7 +190,16 @@ void getEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], uint32_t cu
     attitude->roll = atan2f(EstG.V.Y, EstG.V.Z);
     attitude->pitch = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
 
-    rotateVector(&EstN.V, deltaGyroAngle);
-    normalizeVector(&EstN.V, &EstN.V);
-    attitude->heading = calculateHeading(&EstN, attitude->roll, attitude->pitch);
+    if (magADC) {
+        rotateVector(&EstM.V, deltaGyroAngle);
+        
+        for (int axis = 0; axis < 3; axis++) {
+            EstM.A[axis] = (EstM.A[axis] * gyro_cmpfm_factor + magADC[axis]) * invGyroComplimentaryFilter_M_Factor;
+        }
+        attitude->heading = calculateHeading(&EstM, attitude->roll, attitude->pitch);
+    } else {
+        rotateVector(&EstN.V, deltaGyroAngle);
+        normalizeVector(&EstN.V, &EstN.V);
+        attitude->heading = calculateHeading(&EstN, attitude->roll, attitude->pitch);
+    }
 }

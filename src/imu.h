@@ -20,7 +20,7 @@ typedef struct attitude_t {
 } attitude_t;
 
 void imuInit(void);
-void getEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], uint32_t currentTime, uint16_t acc_1G, float gyroScale, attitude_t *attitude);
+void updateEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], int16_t magADC[3], uint32_t currentTime, uint16_t acc_1G, float gyroScale, attitude_t *attitude);
 t_fp_vector calculateAccelerationInEarthFrame(int16_t accSmooth[3], attitude_t *attitude, uint16_t acc_1G);
 
 #endif

@@ -14,6 +14,9 @@
 #define FLIGHT_LOG_FIELD_INDEX_ITERATION 0
 #define FLIGHT_LOG_FIELD_INDEX_TIME 1
 
+#define FLIGHT_LOG_MAX_MOTORS 8
+#define FLIGHT_LOG_MAX_SERVOS 8
+
 typedef enum FirmwareType {
     FIRMWARE_TYPE_BASEFLIGHT = 0,
     FIRMWARE_TYPE_CLEANFLIGHT
@@ -53,6 +56,42 @@ typedef struct flightLogStatistics_t {
 
 struct flightLogPrivate_t;
 
+/*
+ * We provide a list of indexes of well-known fields to save callers the trouble of comparing field name strings
+ * to hunt down the fields they're interested in. Absent fields will have index -1.
+ */
+typedef struct gpsGFieldIndexes_t {
+    int time;
+    int GPS_numSat;
+    int GPS_coord[2];
+    int GPS_altitude;
+    int GPS_speed;
+    int GPS_ground_course;
+} gpsGFieldIndexes_t;
+
+typedef struct gpsHFieldIndexes_t {
+    int GPS_home[2];
+} gpsHFieldIndexes_t;
+
+typedef struct mainFieldIndexes_t {
+    int loopIteration;
+    int time;
+
+    int pid[3][3]; //First dimension is [P, I, D], second dimension is axis
+
+    int rcCommand[4];
+
+    int vbatLatest;
+    int magADC[3];
+    int BaroAlt;
+
+    int gyroData[3];
+    int accSmooth[3];
+
+    int motor[FLIGHT_LOG_MAX_MOTORS];
+    int servo[FLIGHT_LOG_MAX_SERVOS];
+} mainFieldIndexes_t;
+
 typedef struct flightLog_t {
     flightLogStatistics_t stats;
 
@@ -90,6 +129,10 @@ typedef struct flightLog_t {
 
     int gpsFieldCount;
     char *gpsFieldNames[FLIGHT_LOG_MAX_FIELDS];
+
+    gpsGFieldIndexes_t gpsFieldIndexes;
+    gpsHFieldIndexes_t gpsHomeFieldIndexes;
+    mainFieldIndexes_t mainFieldIndexes;
 
     struct flightLogPrivate_t *private;
 } flightLog_t;

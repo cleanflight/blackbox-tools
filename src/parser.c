@@ -53,9 +53,6 @@ typedef struct flightLogPrivate_t
 
     int dataVersion;
 
-    // Indexes of named fields that we need to use to apply predictions against
-    int motor0Index, home0Index, home1Index;
-
     // Blackbox state:
     int32_t blackboxHistoryRing[3][FLIGHT_LOG_MAX_FIELDS];
 
@@ -181,6 +178,119 @@ static void parseCommaSeparatedIntegers(char *line, int *target, int maxCount)
     }
 }
 
+static void identifyMainFields(flightLog_t *log)
+{
+    int fieldIndex;
+
+    for (fieldIndex = 0; fieldIndex < log->mainFieldCount; fieldIndex++) {
+        const char *fieldName = log->mainFieldNames[fieldIndex];
+
+        if (startsWith(fieldName, "motor[")) {
+            int motorIndex = atoi(fieldName + strlen("motor["));
+
+            if (motorIndex >= 0 && motorIndex < FLIGHT_LOG_MAX_MOTORS) {
+                log->mainFieldIndexes.motor[motorIndex] = fieldIndex;
+            }
+        } else if (startsWith(fieldName, "rcCommand[")) {
+            int rcCommandIndex = atoi(fieldName + strlen("rcCommand["));
+
+            if (rcCommandIndex >= 0 && rcCommandIndex < 4) {
+                log->mainFieldIndexes.rcCommand[rcCommandIndex] = fieldIndex;
+            }
+        } else if (startsWith(fieldName, "axis")) {
+            int axisIndex = atoi(fieldName + strlen("axisX["));
+
+            switch (fieldName[strlen("axis")]) {
+            case 'P':
+                log->mainFieldIndexes.pid[0][axisIndex] = fieldIndex;
+                break;
+            case 'I':
+                log->mainFieldIndexes.pid[1][axisIndex] = fieldIndex;
+                break;
+            case 'D':
+                log->mainFieldIndexes.pid[2][axisIndex] = fieldIndex;
+                break;
+            }
+        } else if (startsWith(fieldName, "gyroData[")) {
+            int axisIndex = atoi(fieldName + strlen("gyroData["));
+
+            log->mainFieldIndexes.gyroData[axisIndex] = fieldIndex;
+        } else if (startsWith(fieldName, "magADC[")) {
+            int axisIndex = atoi(fieldName + strlen("magADC["));
+
+            log->mainFieldIndexes.magADC[axisIndex] = fieldIndex;
+        } else if (startsWith(fieldName, "accSmooth[")) {
+            int axisIndex = atoi(fieldName + strlen("accSmooth["));
+
+            log->mainFieldIndexes.accSmooth[axisIndex] = fieldIndex;
+        } else if (startsWith(fieldName, "servo[")) {
+            int servoIndex = atoi(fieldName + strlen("servo["));
+
+            log->mainFieldIndexes.servo[servoIndex] = fieldIndex;
+        } else if (strcmp(fieldName, "vbatLatest") == 0) {
+            log->mainFieldIndexes.vbatLatest = fieldIndex;
+        } else if (strcmp(fieldName, "BaroAlt") == 0) {
+            log->mainFieldIndexes.BaroAlt = fieldIndex;
+        } else if (strcmp(fieldName, "loopIteration") == 0) {
+            log->mainFieldIndexes.loopIteration = fieldIndex;
+        } else if (strcmp(fieldName, "time") == 0) {
+            log->mainFieldIndexes.time = fieldIndex;
+        }
+    }
+}
+
+static void clearFieldIdents(flightLog_t *log)
+{
+    /*
+     * Start off all the field indexes as -1 so we can use that as a not-present identifier.
+     * Conveniently, -1 has all bits set so we can just byte-fill
+     */
+
+    memset(&log->mainFieldIndexes, (char) 0xFF, sizeof(log->mainFieldIndexes));
+    memset(&log->gpsFieldIndexes, (char) 0xFF, sizeof(log->gpsFieldIndexes));
+    memset(&log->gpsHomeFieldIndexes, (char) 0xFF, sizeof(log->gpsHomeFieldIndexes));
+}
+
+static void identifyGPSFields(flightLog_t *log)
+{
+    int i;
+
+    for (i = 0; i < log->gpsFieldCount; i++) {
+        const char *fieldName = log->gpsFieldNames[i];
+
+        if (strcmp(fieldName, "time") == 0) {
+            log->gpsFieldIndexes.time = i;
+        } else if (strcmp(fieldName, "GPS_numSat") == 0) {
+            log->gpsFieldIndexes.GPS_numSat = i;
+        } else if (strcmp(fieldName, "GPS_altitude") == 0)  {
+            log->gpsFieldIndexes.GPS_altitude = i;
+        } else if (strcmp(fieldName, "GPS_speed") == 0) {
+            log->gpsFieldIndexes.GPS_speed = i;
+        } else if (strcmp(fieldName, "GPS_ground_course") == 0) {
+            log->gpsFieldIndexes.GPS_ground_course = i;
+        } else if (startsWith(fieldName, "GPS_coord[")) {
+            int coordIndex = atoi(fieldName + strlen("GPS_coord["));
+
+            log->gpsFieldIndexes.GPS_coord[coordIndex] = i;
+        }
+    }
+}
+
+static void identifyGPSHomeFields(flightLog_t *log)
+{
+    int i;
+
+    for (i = 0; i < log->gpsHomeFieldCount; i++) {
+        const char *fieldName = log->gpsHomeFieldNames[i];
+
+        if (strcmp(fieldName, "GPS_home[0]") == 0) {
+            log->gpsHomeFieldIndexes.GPS_home[0] = i;
+        } else if (strcmp(fieldName, "GPS_home[1]") == 0) {
+            log->gpsHomeFieldIndexes.GPS_home[1] = i;
+        }
+    }
+}
+
 static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
 {
     char *fieldName, *fieldValue;
@@ -233,24 +343,15 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
     if (strcmp(fieldName, "Field I name") == 0) {
         parseFieldNames(fieldValue, &log->private->mainFieldNamesLine, log->mainFieldNames, &log->mainFieldCount);
 
-        for (i = 0; i < log->mainFieldCount; i++) {
-            if (strcmp(log->mainFieldNames[i], "motor[0]") == 0) {
-                log->private->motor0Index = i;
-                break;
-            }
-        }
+        identifyMainFields(log);
     } else if (strcmp(fieldName, "Field G name") == 0) {
         parseFieldNames(fieldValue, &log->private->gpsFieldNamesLine, log->gpsFieldNames, &log->gpsFieldCount);
+
+        identifyGPSFields(log);
     } else if (strcmp(fieldName, "Field H name") == 0) {
         parseFieldNames(fieldValue, &log->private->gpsHomeFieldNamesLine, log->gpsHomeFieldNames, &log->gpsHomeFieldCount);
 
-        for (i = 0; i < log->gpsHomeFieldCount; i++) {
-            if (strcmp(log->gpsHomeFieldNames[i], "GPS_home[0]") == 0) {
-                log->private->home0Index = i;
-            } else if (strcmp(log->gpsHomeFieldNames[i], "GPS_home[1]") == 0) {
-                log->private->home1Index = i;
-            }
-        }
+        identifyGPSHomeFields(log);
     } else if (strlen(fieldName) == strlen("Field X predictor") && startsWith(fieldName, "Field ") && endsWith(fieldName, " predictor")) {
         parseCommaSeparatedIntegers(fieldValue, log->private->frameDefs[(uint8_t)fieldName[strlen("Field ")]].predictor, FLIGHT_LOG_MAX_FIELDS);
     } else if (strlen(fieldName) == strlen("Field X encoding") && startsWith(fieldName, "Field ") && endsWith(fieldName, " encoding")) {
@@ -336,11 +437,11 @@ static int32_t applyPrediction(flightLog_t *log, int fieldIndex, int predictor, 
             value += 1500;
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0:
-            if (private->motor0Index < 0) {
-                fprintf(stderr, "Attempted to base prediction on motor0 without that field being defined\n");
+            if (log->mainFieldIndexes.motor[0] < 0) {
+                fprintf(stderr, "Attempted to base prediction on motor[0] without that field being defined\n");
                 exit(-1);
             }
-            value += (uint32_t) current[private->motor0Index];
+            value += (uint32_t) current[log->mainFieldIndexes.motor[0]];
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_VBATREF:
             value += log->vbatref;
@@ -367,20 +468,20 @@ static int32_t applyPrediction(flightLog_t *log, int fieldIndex, int predictor, 
                 value += ((uint32_t) previous[fieldIndex] + (uint32_t) previous2[fieldIndex]) / 2;
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD:
-            if (private->home0Index < 0) {
+            if (log->gpsHomeFieldIndexes.GPS_home[0] < 0) {
                 fprintf(stderr, "Attempted to base prediction on GPS home position without GPS home frame definition\n");
                 exit(-1);
             }
 
-            value += private->gpsHomeHistory[1][private->home0Index];
+            value += private->gpsHomeHistory[1][log->gpsHomeFieldIndexes.GPS_home[0]];
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD_1:
-            if (private->home1Index < 1) {
+            if (log->gpsHomeFieldIndexes.GPS_home[1] < 1) {
                 fprintf(stderr, "Attempted to base prediction on GPS home position without GPS home frame definition\n");
                 exit(-1);
             }
 
-            value += private->gpsHomeHistory[1][private->home1Index];
+            value += private->gpsHomeHistory[1][log->gpsHomeFieldIndexes.GPS_home[1]];
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME:
             if (private->mainHistory[1])
@@ -942,10 +1043,9 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
     log->frameIntervalPNum = 1;
     log->frameIntervalPDenom = 1;
 
-    private->motor0Index = -1;
-    private->home0Index = -1;
-    private->home1Index = -1;
     private->lastEvent.event = -1;
+
+    clearFieldIdents(log);
 
     private->lastSkippedFrames = 0;
     private->lastMainFrameIteration = (uint32_t) -1;
