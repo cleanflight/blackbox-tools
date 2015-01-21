@@ -34,13 +34,18 @@ Usage:
      blackbox_decode [options] <input logs>
 
 Options:
-   --help                  This page
-   --index <num>           Choose the log from the file that should be decoded (or omit to decode all)
-   --limits                Print the limits and range of each field
-   --stdout                Write log to stdout instead of to a file
-   --unit-gps-speed <unit> GPS speed unit (mps|kph|mph), default is mps (meters per second)
-   --debug                 Show extra debugging information
-   --raw                   Don't apply predictions to fields (show raw field deltas)
+   --help                   This page
+   --index <num>            Choose the log from the file that should be decoded (or omit to decode all)
+   --limits                 Print the limits and range of each field
+   --stdout                 Write log to stdout instead of to a file
+   --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)
+   --merge-gps              Merge GPS data into the main CSV log file instead of writing it separately
+   --simulate-imu           Compute tilt/roll/heading fields from gyro/accel/mag data
+   --imu-ignore-mag         Ignore magnetometer data when computing heading
+   --declination <val>      Set magnetic declination in degrees.minutes format (e.g. -12.58 for New York)
+   --declination-dec <val>  Set magnetic declination in decimal degrees (e.g. -12.97 for New York)
+   --debug                  Show extra debugging information
+   --raw                    Don't apply predictions to fields (show raw field deltas)
 ```
 
 ## Using the blackbox_render tool
