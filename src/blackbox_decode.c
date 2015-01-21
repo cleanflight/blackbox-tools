@@ -48,6 +48,7 @@ typedef struct decodeOptions_t {
     int help, raw, limits, debug, toStdout;
     int logNumber;
     int simulateIMU, imuIgnoreMag;
+    int mergeGPS;
     const char *outputPrefix;
     Unit unitGPSSpeed;
 } decodeOptions_t;
@@ -56,6 +57,7 @@ decodeOptions_t options = {
     .help = 0, .raw = 0, .limits = 0, .debug = 0, .toStdout = 0,
     .logNumber = -1,
     .simulateIMU = false, .imuIgnoreMag = 0,
+    .mergeGPS = 0,
 
     .outputPrefix = NULL,
 
@@ -78,6 +80,15 @@ static uint32_t lastFrameTime = (uint32_t) -1;
 static FILE *csvFile = 0, *eventFile = 0, *gpsCsvFile = 0;
 static char *eventFilename = 0, *gpsCsvFilename = 0;
 static gpxWriter_t *gpx = 0;
+
+attitude_t attitude;
+
+static int32_t bufferedMainFrame[FLIGHT_LOG_MAX_FIELDS];
+static bool haveBufferedMainFrame;
+
+static uint32_t bufferedFrameTime;
+
+static int32_t bufferedGPSFrame[FLIGHT_LOG_MAX_FIELDS];
 
 void onEvent(flightLog_t *log, flightLogEvent_t *event)
 {
@@ -122,6 +133,31 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
 }
 
 /**
+ * Print out a comma separated list of GPS field names, minus the time field.
+ */
+void outputGPSFieldNamesHeader(flightLog_t *log, FILE *file)
+{
+    bool needComma = false;
+
+    for (int i = 0; i < log->gpsFieldCount; i++) {
+        if (i == log->gpsFieldIndexes.time)
+            continue;
+
+        if (needComma) {
+            fprintf(file, ", ");
+        } else {
+            needComma = true;
+        }
+
+        fprintf(file, "%s", log->gpsFieldNames[i]);
+
+        if (gpsFieldTypes[i] == GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100) {
+            fprintf(file, " (%s)", UNIT_NAME[options.unitGPSSpeed]);
+        }
+    }
+}
+
+/**
  * Attempt to create a file to log GPS data in CSV format. On success, gpsCsvFile is non-NULL.
  */
 void createGPSCSVFile(flightLog_t *log)
@@ -130,15 +166,10 @@ void createGPSCSVFile(flightLog_t *log)
         gpsCsvFile = fopen(gpsCsvFilename, "wb");
 
         if (gpsCsvFile) {
-            // Print GPS fieldname header
-            fprintf(gpsCsvFile, "time");
+            fprintf(gpsCsvFile, "time, ");
 
-            for (int i = 0; i < log->gpsFieldCount; i++) {
-                fprintf(gpsCsvFile, ", %s", log->gpsFieldNames[i]);
+            outputGPSFieldNamesHeader(log, gpsCsvFile);
 
-                if (gpsFieldTypes[i] == GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100)
-                    fprintf(gpsCsvFile, " (%s)", UNIT_NAME[options.unitGPSSpeed]);
-            }
             fprintf(gpsCsvFile, "\n");
         }
     }
@@ -170,70 +201,6 @@ double convertMetersPerSecondToUnit(double meterspersec, Unit unit)
     }
 }
 
-void outputGPSFrame(flightLog_t *log, int32_t *frame)
-{
-    int i;
-    int32_t degrees;
-    uint32_t fracDegrees;
-    uint32_t gpsFrameTime;
-
-    // If we're not logging every loop iteration, we include a timestamp field in the GPS frame:
-    if (log->gpsFieldIndexes.time != -1) {
-        gpsFrameTime = frame[log->gpsFieldIndexes.time];
-    } else {
-        // Otherwise this GPS frame was recorded at the same time as the main stream frame we read before the GPS frame:
-        gpsFrameTime = lastFrameTime;
-    }
-
-    // We need at least lat/lon/altitude from the log to write a useful GPX track
-    if (log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_altitude != -1) {
-        gpxWriterAddPoint(gpx, lastFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
-    }
-
-    createGPSCSVFile(log);
-
-    if (gpsCsvFile) {
-        fprintf(gpsCsvFile, "%u", gpsFrameTime);
-
-        for (i = 0; i < log->gpsFieldCount; i++) {
-            //We've already printed the time:
-            if (i == log->gpsFieldIndexes.time)
-                continue;
-
-            fprintf(gpsCsvFile, ", ");
-
-            switch (gpsFieldTypes[i]) {
-                case GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000:
-                    degrees = frame[i] / 10000000;
-                    fracDegrees = abs(frame[i]) % 10000000;
-
-                    fprintf(gpsCsvFile, "%d.%07u", degrees, fracDegrees);
-                break;
-                case GPS_FIELD_TYPE_DEGREES_TIMES_10:
-                    fprintf(gpsCsvFile, "%d.%01u", frame[i] / 10, abs(frame[i]) % 10);
-                break;
-                case GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100:
-                    if (options.unitGPSSpeed == UNIT_RAW) {
-                        fprintf(gpsCsvFile, "%d", frame[i]);
-                    } else if (options.unitGPSSpeed == UNIT_METERS_PER_SECOND) {
-                        fprintf(gpsCsvFile, "%d.%02u", frame[i] / 100, abs(frame[i]) % 100);
-                    } else {
-                        fprintf(gpsCsvFile, "%.2f", convertMetersPerSecondToUnit(frame[i] / 100.0, options.unitGPSSpeed));
-                    }
-                break;
-                case GPS_FIELD_TYPE_METERS:
-                    fprintf(gpsCsvFile, "%d", frame[i]);
-                break;
-                case GPS_FIELD_TYPE_INTEGER:
-                default:
-                    fprintf(gpsCsvFile, "%d", frame[i]);
-            }
-
-        }
-        fprintf(gpsCsvFile, "\n");
-    }
-}
-
 static void updateIMU(flightLog_t *log, int32_t *frame, uint32_t currentTime, attitude_t *result)
 {
     int16_t gyroData[3];
@@ -254,12 +221,216 @@ static void updateIMU(flightLog_t *log, int32_t *frame, uint32_t currentTime, at
         }
     }
 
-    updateEstimatedAttitude(gyroData, accSmooth, hasMag ? magADC : NULL, currentTime, log->acc_1G, log->gyroScale, result);
+    updateEstimatedAttitude(gyroData, accSmooth, hasMag && !options.imuIgnoreMag ? magADC : NULL, currentTime, log->acc_1G, log->gyroScale, result);
+}
+
+/**
+ * Print the GPS fields from the given GPS frame as comma-separated values (the GPS frame time is not printed).
+ */
+void outputGPSFields(flightLog_t *log, FILE *file, int32_t *frame)
+{
+    int i;
+    int32_t degrees;
+    uint32_t fracDegrees;
+    bool needComma = false;
+
+    for (i = 0; i < log->gpsFieldCount; i++) {
+        //We've already printed the time:
+        if (i == log->gpsFieldIndexes.time)
+            continue;
+
+        if (needComma)
+            fprintf(file, ", ");
+        else
+            needComma = true;
+
+        switch (gpsFieldTypes[i]) {
+            case GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000:
+                degrees = frame[i] / 10000000;
+                fracDegrees = abs(frame[i]) % 10000000;
+
+                fprintf(file, "%d.%07u", degrees, fracDegrees);
+            break;
+            case GPS_FIELD_TYPE_DEGREES_TIMES_10:
+                fprintf(file, "%d.%01u", frame[i] / 10, abs(frame[i]) % 10);
+            break;
+            case GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100:
+                if (options.unitGPSSpeed == UNIT_RAW) {
+                    fprintf(file, "%d", frame[i]);
+                } else if (options.unitGPSSpeed == UNIT_METERS_PER_SECOND) {
+                    fprintf(file, "%d.%02u", frame[i] / 100, abs(frame[i]) % 100);
+                } else {
+                    fprintf(file, "%.2f", convertMetersPerSecondToUnit(frame[i] / 100.0, options.unitGPSSpeed));
+                }
+            break;
+            case GPS_FIELD_TYPE_METERS:
+                fprintf(file, "%d", frame[i]);
+            break;
+            case GPS_FIELD_TYPE_INTEGER:
+            default:
+                fprintf(file, "%d", frame[i]);
+        }
+    }
+}
+
+void outputGPSFrame(flightLog_t *log, int32_t *frame)
+{
+    uint32_t gpsFrameTime;
+
+    // If we're not logging every loop iteration, we include a timestamp field in the GPS frame:
+    if (log->gpsFieldIndexes.time != -1) {
+        gpsFrameTime = frame[log->gpsFieldIndexes.time];
+    } else {
+        // Otherwise this GPS frame was recorded at the same time as the main stream frame we read before the GPS frame:
+        gpsFrameTime = lastFrameTime;
+    }
+
+    // We need at least lat/lon/altitude from the log to write a useful GPX track
+    if (log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_altitude != -1) {
+        gpxWriterAddPoint(gpx, lastFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
+    }
+
+    createGPSCSVFile(log);
+
+    if (gpsCsvFile) {
+        fprintf(gpsCsvFile, "%u, ", gpsFrameTime);
+
+        outputGPSFields(log, gpsCsvFile, frame);
+
+        fprintf(gpsCsvFile, "\n");
+    }
+}
+
+/**
+ * Print out the fields from the main log stream in comma separated format.
+ *
+ * Provide (uint32_t) -1 for the frameTime in order to mark the frame time as unknown.
+ */
+void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
+{
+    int i;
+    bool needComma = false;
+
+    for (i = 0; i < log->mainFieldCount; i++) {
+        if (needComma) {
+            fprintf(csvFile, ", ");
+        } else {
+            needComma = true;
+        }
+
+        if (i == FLIGHT_LOG_FIELD_INDEX_TIME) {
+            // Use the time the caller provided instead of the time in the frame
+            if (frameTime == (uint32_t) -1)
+                fprintf(csvFile, "X");
+            else
+                fprintf(csvFile, "%u", frameTime);
+        } else {
+            if (log->mainFieldSigned[i] || options.raw)
+                fprintf(csvFile, "%3d", frame[i]);
+            else
+                fprintf(csvFile, "%3u", (uint32_t) frame[i]);
+        }
+    }
+
+    if (options.simulateIMU) {
+        fprintf(csvFile, ", %.2f, %.2f, %.2f", attitude.roll * 180 / M_PI, attitude.pitch * 180 / M_PI, attitude.heading * 180 / M_PI);
+    }
+}
+
+void outputMergeFrame(flightLog_t *log)
+{
+    outputMainFrameFields(log, bufferedFrameTime, bufferedMainFrame);
+    fprintf(csvFile, ", ");
+    outputGPSFields(log, csvFile, bufferedGPSFrame);
+    fprintf(csvFile, "\n");
+
+    haveBufferedMainFrame = false;
+}
+
+/**
+ * This is called when outputting the log in GPS merge mode. When we parse a main frame, we don't know if a GPS frame
+ * exists at the same frame time yet, so we we buffer up the main frame data to print later until we know for sure.
+ *
+ * We also keep a copy of the GPS frame data so we can print it out multiple times if multiple main frames arrive
+ * between GPS updates.
+ */
+void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
+{
+    uint32_t gpsFrameTime;
+
+    (void) frameOffset;
+    (void) frameSize;
+
+    if (frameType == 'G') {
+        if (frameValid) {
+            if (log->gpsFieldIndexes.time == -1 || (uint32_t) frame[log->gpsFieldIndexes.time] == lastFrameTime) {
+                //This GPS frame was logged in the same iteration as the main frame that preceded it
+                gpsFrameTime = lastFrameTime;
+            } else {
+                gpsFrameTime = frame[log->gpsFieldIndexes.time];
+
+                /*
+                 * This GPS frame happened some time after the main frame that preceded it, so print out that main
+                 * frame with its older timestamp first if we didn't print it already.
+                 */
+                if (haveBufferedMainFrame) {
+                    outputMergeFrame(log);
+                }
+            }
+
+            /*
+             * Copy this GPS data for later since we may need to duplicate it if there is another main frame before
+             * we get another GPS update.
+             */
+            memcpy(bufferedGPSFrame, frame, sizeof(*bufferedGPSFrame) * fieldCount);
+            bufferedFrameTime = gpsFrameTime;
+
+            outputMergeFrame(log);
+
+            // We need at least lat/lon/altitude from the log to write a useful GPX track
+            if (log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_altitude != -1) {
+                gpxWriterAddPoint(gpx, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
+            }
+        }
+    } else if (frameType == 'P' || frameType == 'I') {
+        if (frameValid || (frame && options.raw)) {
+            if (haveBufferedMainFrame) {
+                outputMergeFrame(log);
+            }
+
+            if (frameValid) {
+                lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
+            }
+
+            if (options.simulateIMU) {
+                updateIMU(log, frame, lastFrameTime, &attitude);
+            }
+
+            /*
+             * Store this frame to print out later since we don't know if a GPS frame follows it yet.
+             */
+            memcpy(bufferedMainFrame, frame, sizeof(*bufferedMainFrame) * fieldCount);
+
+            if (frameValid) {
+                bufferedFrameTime = lastFrameTime;
+            } else {
+                bufferedFrameTime = -1;
+            }
+
+            haveBufferedMainFrame = true;
+        }
+    }
 }
 
 void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
     int i;
+
+    if (options.mergeGPS && log->gpsFieldCount > 0) {
+        //Use the alternate frame processing routine which merges main stream data and GPS data together
+        onFrameReadyMerge(log, frameValid, frame, frameType, fieldCount, frameOffset, frameSize);
+        return;
+    }
 
     if (frameType == 'G') {
         if (frameValid) {
@@ -284,8 +455,6 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
             }
 
             if (options.simulateIMU) {
-                attitude_t attitude;
-
                 updateIMU(log, frame, lastFrameTime, &attitude);
 
                 fprintf(csvFile, ", %.2f, %.2f, %.2f", attitude.roll * 180 / M_PI, attitude.pitch * 180 / M_PI, attitude.heading * 180 / M_PI);
@@ -357,6 +526,12 @@ void writeMainCSVHeader(flightLog_t *log)
 
     if (options.simulateIMU) {
         fprintf(csvFile, ", roll, pitch, heading");
+    }
+
+    if (options.mergeGPS && log->gpsFieldCount > 0) {
+        fprintf(csvFile, ", ");
+
+        outputGPSFieldNamesHeader(log, csvFile);
     }
 
     fprintf(csvFile, "\n");
@@ -565,7 +740,19 @@ int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
         imuInit();
     }
 
+    if (options.mergeGPS) {
+        haveBufferedMainFrame = false;
+        bufferedFrameTime = (uint32_t) -1;
+        memset(bufferedGPSFrame, 0, sizeof(bufferedGPSFrame));
+        memset(bufferedMainFrame, 0, sizeof(bufferedMainFrame));
+    }
+
     int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, onEvent, options.raw);
+
+    if (options.mergeGPS && haveBufferedMainFrame) {
+        // Print out last log entry that wasn't already printed
+        outputMergeFrame(log);
+    }
 
     if (success)
         printStats(log, logIndex, options.raw, options.limits);
@@ -627,6 +814,7 @@ void printUsage(const char *argv0)
         "   --limits                 Print the limits and range of each field\n"
         "   --stdout                 Write log to stdout instead of to a file\n"
         "   --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)\n"
+        "   --merge-gps              Merge GPS data into the main CSV log file instead of writing it separately\n"
         "   --simulate-imu           Compute tilt/roll/heading fields from gyro/accel/mag data\n"
         "   --imu-ignore-mag         Ignore magnetometer data when computing heading\n"
         "   --declination <val>      Set magnetic declination in degrees.minutes format (e.g. -12.58 for New York)\n"
@@ -681,6 +869,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"debug", no_argument, &options.debug, 1},
             {"limits", no_argument, &options.limits, 1},
             {"stdout", no_argument, &options.toStdout, 1},
+            {"merge-gps", no_argument, &options.mergeGPS, 1},
             {"simulate-imu", no_argument, &options.simulateIMU, 1},
             {"imu-ignore-mag", no_argument, &options.imuIgnoreMag, 1},
             {"declination", required_argument, 0, SETTING_DECLINATION},
@@ -692,6 +881,8 @@ void parseCommandlineOptions(int argc, char **argv)
         };
 
         int option_index = 0;
+
+        opterr = 0;
 
         c = getopt_long (argc, argv, "", long_options, &option_index);
 
@@ -716,6 +907,21 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_DECLINATION_DECIMAL:
                 imuSetMagneticDeclination(atof(optarg));
+            break;
+            case '\0':
+                //Longopt which has set a flag
+            break;
+            case ':':
+                fprintf(stderr, "%s: option '%s' requires an argument\n", argv[0], argv[optind-1]);
+                exit(-1);
+            break;
+            default:
+                if (optopt == 0)
+                    fprintf(stderr, "%s: option '%s' is invalid\n", argv[0], argv[optind-1]);
+                else
+                    fprintf(stderr, "%s: option '-%c' is invalid\n", argv[0], optopt);
+
+                exit(-1);
             break;
         }
     }
