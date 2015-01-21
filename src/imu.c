@@ -10,6 +10,7 @@
 
 #include "imu.h"
 
+// Convert degrees to radians
 #define RAD    (M_PI / 180.0f)
 
 enum {
@@ -30,12 +31,16 @@ typedef enum {
 //Settings that would normally be set by the user in MW config:
 static const uint16_t gyro_cmpf_factor = 600;
 static const float accz_lpf_cutoff = 5.0f;
-static const float magneticDeclination = 0.0f;
 static const uint16_t gyro_cmpfm_factor = 250;
+static float magneticDeclination = 0.0f;
 
 //IMU fields:
 static float fc_acc;
 static float invGyroComplimentaryFilter_M_Factor;
+
+static t_fp_vector EstM;
+static t_fp_vector EstN;
+static uint32_t previousTime;
 
 /**
  * Call before any other routines in order to set up IMU constants and such.
@@ -44,6 +49,25 @@ void imuInit(void)
 {
     fc_acc = (float) (0.5f / (M_PI * accz_lpf_cutoff)); // calculate RC time constant used in the accZ lpf
     invGyroComplimentaryFilter_M_Factor = (1.0f / (gyro_cmpfm_factor + 1.0f));
+
+    EstM.V.X = 1.0f;
+    EstM.V.Y = 0.0f;
+    EstM.V.Z = 0.0f;
+
+    EstN.V.X = 1.0f;
+    EstN.V.Y = 0.0f;
+    EstN.V.Z = 0.0f;
+
+    previousTime = 0;
+}
+
+/**
+ * Set the magnetic declination in decimal degrees.
+ */
+void imuSetMagneticDeclination(float declination)
+{
+    //Convert to radians now so we don't have to later on
+    magneticDeclination = declination * RAD;
 }
 
 // **************************************************
@@ -142,7 +166,7 @@ static float calculateHeading(t_fp_vector *vec, float angleradRoll, float angler
     float sinePitch = sinf(angleradPitch);
     float Xh = vec->A[X] * cosinePitch + vec->A[Y] * sineRoll * sinePitch + vec->A[Z] * sinePitch * cosineRoll;
     float Yh = vec->A[Y] * cosineRoll - vec->A[Z] * sineRoll;
-    float hd = (float) (atan2f(Yh, Xh) + magneticDeclination / 10.0f * RAD);
+    float hd = (float) (atan2f(Yh, Xh) + magneticDeclination);
 
     if (hd < 0)
         hd += (float) (2 * M_PI);
@@ -153,9 +177,6 @@ static float calculateHeading(t_fp_vector *vec, float angleradRoll, float angler
 void updateEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], int16_t magADC[3], uint32_t currentTime, uint16_t acc_1G, float gyroScale, attitude_t *attitude)
 {
     int32_t accMag = 0;
-    static t_fp_vector EstM;
-    static t_fp_vector EstN = { .A = { 1.0f, 0.0f, 0.0f } };
-    static uint32_t previousTime = 0;
     uint32_t deltaTime;
     float scale, deltaGyroAngle[3];
 
@@ -179,8 +200,8 @@ void updateEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], int16_t 
     rotateVector(&EstG.V, deltaGyroAngle);
 
     // Apply complimentary filter (Gyro drift correction)
-    // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
-    // To do that, we just skip filter, as EstV already rotated by Gyro
+    // If accel magnitude >1.15G or <0.85G and  ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
+    // To do that, we just skip filter, as Est V already rotated by Gyro
     if (72 < (uint16_t)accMag && (uint16_t)accMag < 133) {
         for (int axis = 0; axis < 3; axis++)
             EstG.A[axis] = (EstG.A[axis] * (float)gyro_cmpf_factor + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;

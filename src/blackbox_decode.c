@@ -6,6 +6,10 @@
 #include <errno.h>
 #include <fcntl.h>
 
+//For msvcrt to define M_PI:
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #ifdef WIN32
     #include <io.h>
 #endif
@@ -24,6 +28,7 @@
 #include "platform.h"
 #include "tools.h"
 #include "gpxwriter.h"
+#include "imu.h"
 
 typedef enum Unit {
     UNIT_RAW = 0,
@@ -42,6 +47,7 @@ static const char* const UNIT_NAME[] = {
 typedef struct decodeOptions_t {
     int help, raw, limits, debug, toStdout;
     int logNumber;
+    int simulateIMU, imuIgnoreMag;
     const char *outputPrefix;
     Unit unitGPSSpeed;
 } decodeOptions_t;
@@ -49,7 +55,9 @@ typedef struct decodeOptions_t {
 decodeOptions_t options = {
     .help = 0, .raw = 0, .limits = 0, .debug = 0, .toStdout = 0,
     .logNumber = -1,
-    .outputPrefix = 0,
+    .simulateIMU = false, .imuIgnoreMag = 0,
+
+    .outputPrefix = NULL,
 
     .unitGPSSpeed = UNIT_METERS_PER_SECOND
 };
@@ -226,6 +234,29 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
     }
 }
 
+static void updateIMU(flightLog_t *log, int32_t *frame, uint32_t currentTime, attitude_t *result)
+{
+    int16_t gyroData[3];
+    int16_t accSmooth[3];
+    int16_t magADC[3];
+    bool hasMag = log->mainFieldIndexes.magADC[0] > -1;
+
+    int i;
+
+    for (i = 0; i < 3; i++) {
+        gyroData[i] = (int16_t) frame[log->mainFieldIndexes.gyroData[i]];
+        accSmooth[i] = (int16_t) frame[log->mainFieldIndexes.accSmooth[i]];
+    }
+
+    if (hasMag && !options.imuIgnoreMag) {
+        for (i = 0; i < 3; i++) {
+            magADC[i] = (int16_t) frame[log->mainFieldIndexes.magADC[i]];
+        }
+    }
+
+    updateEstimatedAttitude(gyroData, accSmooth, hasMag ? magADC : NULL, currentTime, log->acc_1G, log->gyroScale, result);
+}
+
 void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
     int i;
@@ -250,6 +281,14 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
                     else
                         fprintf(csvFile, ", %3u", (uint32_t) frame[i]);
                 }
+            }
+
+            if (options.simulateIMU) {
+                attitude_t attitude;
+
+                updateIMU(log, frame, lastFrameTime, &attitude);
+
+                fprintf(csvFile, ", %.2f, %.2f, %.2f", attitude.roll * 180 / M_PI, attitude.pitch * 180 / M_PI, attitude.heading * 180 / M_PI);
             }
 
             if (options.debug) {
@@ -315,6 +354,11 @@ void writeMainCSVHeader(flightLog_t *log)
 
         fprintf(csvFile, "%s", log->mainFieldNames[i]);
     }
+
+    if (options.simulateIMU) {
+        fprintf(csvFile, ", roll, pitch, heading");
+    }
+
     fprintf(csvFile, "\n");
 }
 
@@ -322,6 +366,8 @@ void onMetadataReady(flightLog_t *log)
 {
     if (log->mainFieldCount == 0) {
         fprintf(stderr, "No fields found in log, is it missing its header?\n");
+    } else if (options.simulateIMU && (log->mainFieldIndexes.accSmooth[0] == -1 || log->mainFieldIndexes.gyroData[0] == -1)){
+        fprintf(stderr, "Can't simulate the IMU because accelerometer or gyroscope data is missing\n");
     } else {
         writeMainCSVHeader(log);
         identifyGPSFields(log);
@@ -515,6 +561,10 @@ int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
         free(gpxFilename);
     }
 
+    if (options.simulateIMU) {
+        imuInit();
+    }
+
     int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, onEvent, options.raw);
 
     if (success)
@@ -572,13 +622,17 @@ void printUsage(const char *argv0)
         "Usage:\n"
         "     %s [options] <input logs>\n\n"
         "Options:\n"
-        "   --help                  This page\n"
-        "   --index <num>           Choose the log from the file that should be decoded (or omit to decode all)\n"
-        "   --limits                Print the limits and range of each field\n"
-        "   --stdout                Write log to stdout instead of to a file\n"
-        "   --unit-gps-speed <unit> GPS speed unit (mps|kph|mph), default is mps (meters per second)\n"
-        "   --debug                 Show extra debugging information\n"
-        "   --raw                   Don't apply predictions to fields (show raw field deltas)\n"
+        "   --help                   This page\n"
+        "   --index <num>            Choose the log from the file that should be decoded (or omit to decode all)\n"
+        "   --limits                 Print the limits and range of each field\n"
+        "   --stdout                 Write log to stdout instead of to a file\n"
+        "   --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)\n"
+        "   --simulate-imu           Compute tilt/roll/heading fields from gyro/accel/mag data\n"
+        "   --imu-ignore-mag         Ignore magnetometer data when computing heading\n"
+        "   --declination <val>      Set magnetic declination in degrees.minutes format (e.g. -12.58 for New York)\n"
+        "   --declination-dec <val>  Set magnetic declination in decimal degrees (e.g. -12.97 for New York)\n"
+        "   --debug                  Show extra debugging information\n"
+        "   --raw                    Don't apply predictions to fields (show raw field deltas)\n"
         "\n", argv0
     );
 }
@@ -597,6 +651,16 @@ bool parseUnit(const char *text, Unit *unit)
     return true;
 }
 
+double parseDegreesMinutes(const char *s)
+{
+    int combined = round(atof(s) * 100);
+
+    int degrees = combined / 100;
+    int minutes = combined % 100;
+
+    return degrees + (double) minutes / 60;
+}
+
 void parseCommandlineOptions(int argc, char **argv)
 {
     int c;
@@ -605,6 +669,8 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_PREFIX = 1,
         SETTING_INDEX,
         SETTING_UNIT_GPS_SPEED,
+        SETTING_DECLINATION,
+        SETTING_DECLINATION_DECIMAL
     };
 
     while (1)
@@ -615,6 +681,10 @@ void parseCommandlineOptions(int argc, char **argv)
             {"debug", no_argument, &options.debug, 1},
             {"limits", no_argument, &options.limits, 1},
             {"stdout", no_argument, &options.toStdout, 1},
+            {"simulate-imu", no_argument, &options.simulateIMU, 1},
+            {"imu-ignore-mag", no_argument, &options.imuIgnoreMag, 1},
+            {"declination", required_argument, 0, SETTING_DECLINATION},
+            {"declination-dec", required_argument, 0, SETTING_DECLINATION_DECIMAL},
             {"prefix", required_argument, 0, SETTING_PREFIX},
             {"index", required_argument, 0, SETTING_INDEX},
             {"unit-gps-speed", required_argument, 0, SETTING_UNIT_GPS_SPEED},
@@ -640,6 +710,12 @@ void parseCommandlineOptions(int argc, char **argv)
                     fprintf(stderr, "Bad GPS speed unit\n");
                     exit(-1);
                 }
+            break;
+            case SETTING_DECLINATION:
+                imuSetMagneticDeclination(parseDegreesMinutes(optarg));
+            break;
+            case SETTING_DECLINATION_DECIMAL:
+                imuSetMagneticDeclination(atof(optarg));
             break;
         }
     }
