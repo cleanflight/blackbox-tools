@@ -92,9 +92,11 @@ typedef struct mainFieldIndexes_t {
     int servo[FLIGHT_LOG_MAX_SERVOS];
 } mainFieldIndexes_t;
 
-typedef struct flightLog_t {
-    flightLogStatistics_t stats;
-
+/**
+ * Information about the system configuration of the craft being logged (aids in interpretation
+ * of the log data).
+ */
+typedef struct flightLogSysConfig_t {
     int minthrottle, maxthrottle;
     unsigned int rcRate, yawRate;
 
@@ -110,6 +112,12 @@ typedef struct flightLog_t {
     uint16_t vbatref;
 
     FirmwareType firmwareType;
+} flightLogSysConfig_t;
+
+typedef struct flightLog_t {
+    flightLogStatistics_t stats;
+
+    flightLogSysConfig_t sysConfig;
 
     //Information about log sections:
     const char *logBegin[FLIGHT_LOG_MAX_LOGS_IN_FILE + 1];

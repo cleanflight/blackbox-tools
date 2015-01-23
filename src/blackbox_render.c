@@ -468,7 +468,7 @@ void drawCraft(cairo_t *cr, int32_t *frame, int64_t timeElapsedMicros, craft_par
     //Compute prop speed and position
     for (motorIndex = 0; motorIndex < parameters->numMotors; motorIndex++) {
         if (flightLog->mainFieldIndexes.motor[motorIndex] > -1) {
-            double scaled = doubleMax(frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->minthrottle, 0) / (flightLog->maxthrottle - flightLog->minthrottle);
+            double scaled = doubleMax(frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->sysConfig.minthrottle, 0) / (flightLog->sysConfig.maxthrottle - flightLog->sysConfig.minthrottle);
 
             //If motors are armed (above minthrottle), keep them spinning at least a bit
             if (scaled > 0)
@@ -547,7 +547,7 @@ void drawCraft(cairo_t *cr, int32_t *frame, int64_t timeElapsedMicros, craft_par
                  * (as it spins round and round the axis I bet) so be careful to clamp the angle properly.
                  */
                 cairo_arc(cr, 0, 0, parameters->bladeLength, -M_PI_2, -M_PI_2 + M_PI * 2 *
-                    doubleMin(doubleMax((double) (frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->minthrottle) / (flightLog->maxthrottle - flightLog->minthrottle), 0.0), 1.0));
+                    doubleMin(doubleMax((double) (frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->sysConfig.minthrottle) / (flightLog->sysConfig.maxthrottle - flightLog->sysConfig.minthrottle), 0.0), 1.0));
                 cairo_fill(cr);
             }
 
@@ -765,7 +765,7 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
                     fieldValue = frame[flightLog->mainFieldIndexes.gyroData[axisIndex]];
 
                     if (options.gyroUnit == UNIT_DEGREES_PER_SEC) {
-                        fieldValue = (int32_t) round((double)flightLog->gyroScale * 1000000 / (M_PI / 180.0) * fieldValue);
+                        fieldValue = (int32_t) round((double)flightLog->sysConfig.gyroScale * 1000000 / (M_PI / 180.0) * fieldValue);
                     }
                 } else
                     fieldValue = 0;
@@ -899,7 +899,7 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 
     cairo_text_extents(cr, "Acceleration 0.0G", &extent);
 
-    if (flightLog->acc_1G && fieldMeta.hasAccs) {
+    if (flightLog->sysConfig.acc_1G && fieldMeta.hasAccs) {
         for (int axis = 0; axis < 3; axis++)
             accSmooth[axis] = frame[flightLog->mainFieldIndexes.accSmooth[axis]];
 
@@ -908,12 +908,12 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
         attitude.heading = intToFloat(frame[fieldMeta.heading]);
 
         //Need to calculate acc in earth frame in order to subtract the 1G of gravity from the result
-        acceleration = calculateAccelerationInEarthFrame(accSmooth, &attitude, flightLog->acc_1G);
+        acceleration = calculateAccelerationInEarthFrame(accSmooth, &attitude, flightLog->sysConfig.acc_1G);
 
         //Now that G has been subtracted, work out the length of the acceleration vector
-        acceleration.V.X /= flightLog->acc_1G;
-        acceleration.V.Y /= flightLog->acc_1G;
-        acceleration.V.Z /= flightLog->acc_1G;
+        acceleration.V.X /= flightLog->sysConfig.acc_1G;
+        acceleration.V.Y /= flightLog->sysConfig.acc_1G;
+        acceleration.V.Z /= flightLog->sysConfig.acc_1G;
 
         magnitude = sqrt(acceleration.V.X * acceleration.V.X + acceleration.V.Y * acceleration.V.Y + acceleration.V.Z * acceleration.V.Z);
 
@@ -1042,14 +1042,14 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
     decideCraftParameters(&craftParameters, options.imageWidth, options.imageHeight);
 
     //Exaggerate values around the origin and compress values near the edges:
-    pitchStickCurve = expoCurveCreate(0, 0.700, 500 * (flightLog->rcRate ? flightLog->rcRate : 100) / 100, 1.0, 10);
+    pitchStickCurve = expoCurveCreate(0, 0.700, 500 * (flightLog->sysConfig.rcRate ? flightLog->sysConfig.rcRate : 100) / 100, 1.0, 10);
 
-    gyroCurve = expoCurveCreate(0, 0.2, 9.0e-6 / flightLog->gyroScale, 1.0, 10);
+    gyroCurve = expoCurveCreate(0, 0.2, 9.0e-6 / flightLog->sysConfig.gyroScale, 1.0, 10);
     accCurve = expoCurveCreate(0, 0.7, 5000, 1.0, 10);
     pidCurve = expoCurveCreate(0, 0.7, 500, 1.0, 10);
 
-    motorCurve = expoCurveCreate(-(flightLog->maxthrottle + flightLog->minthrottle) / 2, 1.0,
-            (flightLog->maxthrottle - flightLog->minthrottle) / 2, 1.0, 2);
+    motorCurve = expoCurveCreate(-(flightLog->sysConfig.maxthrottle + flightLog->sysConfig.minthrottle) / 2, 1.0,
+            (flightLog->sysConfig.maxthrottle - flightLog->sysConfig.minthrottle) / 2, 1.0, 2);
 
     // Default Servo range is [1020...2000] but we'll just use [1000...2000] for simplicity
     servoCurve = expoCurveCreate(-1500, 1.0, 1000, 1.0, 2);
@@ -1533,7 +1533,7 @@ void computeExtraFields(void) {
 
     imuInit();
 
-    if (fieldMeta.hasGyros && fieldMeta.hasAccs && flightLog->acc_1G) {
+    if (fieldMeta.hasGyros && fieldMeta.hasAccs && flightLog->sysConfig.acc_1G) {
         for (frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
             if (datapointsGetFrameAtIndex(points, frameIndex, &frameTime, frame)) {
                 for (int axis = 0; axis < 3; axis++) {
@@ -1547,7 +1547,7 @@ void computeExtraFields(void) {
                     }
                 }
 
-                updateEstimatedAttitude(gyroData, accSmooth, fieldMeta.hasMagADC ? magADC : 0, (uint32_t) frameTime, flightLog->acc_1G, flightLog->gyroScale, &attitude);
+                updateEstimatedAttitude(gyroData, accSmooth, fieldMeta.hasMagADC ? magADC : 0, (uint32_t) frameTime, flightLog->sysConfig.acc_1G, flightLog->sysConfig.gyroScale, &attitude);
 
                 //Pack those floats into signed ints to store into the datapoints array:
                 datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.roll, floatToInt(attitude.roll));

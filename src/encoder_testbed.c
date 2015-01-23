@@ -922,15 +922,15 @@ void blackboxWriteHeader(flightLog_t *log)
             ARRAY_LENGTH(blackboxMainFields), &blackboxMainFields[0].condition, &blackboxMainFields[1].condition);
 
     blackboxPrintf("H Firmware type:Cleanflight\n");
-    blackboxPrintf("H rcRate:%d\n", log->rcRate);
-    blackboxPrintf("H minthrottle:%d\n", log->minthrottle);
-    blackboxPrintf("H maxthrottle:%d\n", log->maxthrottle);
-    floatConvert.f = log->gyroScale;
+    blackboxPrintf("H rcRate:%d\n", log->sysConfig.rcRate);
+    blackboxPrintf("H minthrottle:%d\n", log->sysConfig.minthrottle);
+    blackboxPrintf("H maxthrottle:%d\n", log->sysConfig.maxthrottle);
+    floatConvert.f = log->sysConfig.gyroScale;
     blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
-    blackboxPrintf("H vbatscale:%u\n", log->vbatscale);
-    blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", log->vbatmincellvoltage, log->vbatwarningcellvoltage, log->vbatmaxcellvoltage);
-    blackboxPrintf("H vbatref:%u\n", log->vbatref);
-    blackboxPrintf("H acc_1G:%u\n", log->acc_1G);
+    blackboxPrintf("H vbatscale:%u\n", log->sysConfig.vbatscale);
+    blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", log->sysConfig.vbatmincellvoltage, log->sysConfig.vbatwarningcellvoltage, log->sysConfig.vbatmaxcellvoltage);
+    blackboxPrintf("H vbatref:%u\n", log->sysConfig.vbatref);
+    blackboxPrintf("H acc_1G:%u\n", log->sysConfig.acc_1G);
 }
 
 void onMetadataReady(flightLog_t *log)
@@ -948,7 +948,7 @@ void onMetadataReady(flightLog_t *log)
         }
     }
 
-    vbatReference = log->vbatref;
+    vbatReference = log->sysConfig.vbatref;
 
     blackboxWriteHeader(log);
 }

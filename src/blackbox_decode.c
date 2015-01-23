@@ -221,7 +221,8 @@ static void updateIMU(flightLog_t *log, int32_t *frame, uint32_t currentTime, at
         }
     }
 
-    updateEstimatedAttitude(gyroData, accSmooth, hasMag && !options.imuIgnoreMag ? magADC : NULL, currentTime, log->acc_1G, log->gyroScale, result);
+    updateEstimatedAttitude(gyroData, accSmooth, hasMag && !options.imuIgnoreMag ? magADC : NULL,
+        currentTime, log->sysConfig.acc_1G, log->sysConfig.gyroScale, result);
 }
 
 /**

@@ -373,40 +373,40 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
         log->private->dataVersion = atoi(fieldValue);
     } else if (strcmp(fieldName, "Firmware type") == 0) {
         if (strcmp(fieldValue, "Cleanflight") == 0)
-            log->firmwareType = FIRMWARE_TYPE_CLEANFLIGHT;
+            log->sysConfig.firmwareType = FIRMWARE_TYPE_CLEANFLIGHT;
         else
-            log->firmwareType = FIRMWARE_TYPE_BASEFLIGHT;
+            log->sysConfig.firmwareType = FIRMWARE_TYPE_BASEFLIGHT;
     } else if (strcmp(fieldName, "minthrottle") == 0) {
-        log->minthrottle = atoi(fieldValue);
+        log->sysConfig.minthrottle = atoi(fieldValue);
     } else if (strcmp(fieldName, "maxthrottle") == 0) {
-        log->maxthrottle = atoi(fieldValue);
+        log->sysConfig.maxthrottle = atoi(fieldValue);
     } else if (strcmp(fieldName, "rcRate") == 0) {
-        log->rcRate = atoi(fieldValue);
+        log->sysConfig.rcRate = atoi(fieldValue);
     } else if (strcmp(fieldName, "vbatscale") == 0) {
-        log->vbatscale = atoi(fieldValue);
+        log->sysConfig.vbatscale = atoi(fieldValue);
     } else if (strcmp(fieldName, "vbatref") == 0) {
-        log->vbatref = atoi(fieldValue);
+        log->sysConfig.vbatref = atoi(fieldValue);
     } else if (strcmp(fieldName, "vbatcellvoltage") == 0) {
         int vbatcellvoltage[3];
         parseCommaSeparatedIntegers(fieldValue, vbatcellvoltage, 3);
 
-        log->vbatmincellvoltage = vbatcellvoltage[0];
-        log->vbatwarningcellvoltage = vbatcellvoltage[1];
-        log->vbatmaxcellvoltage = vbatcellvoltage[2];
+        log->sysConfig.vbatmincellvoltage = vbatcellvoltage[0];
+        log->sysConfig.vbatwarningcellvoltage = vbatcellvoltage[1];
+        log->sysConfig.vbatmaxcellvoltage = vbatcellvoltage[2];
     } else if (strcmp(fieldName, "gyro.scale") == 0) {
         floatConvert.u = strtoul(fieldValue, 0, 16);
 
-        log->gyroScale = floatConvert.f;
+        log->sysConfig.gyroScale = floatConvert.f;
 
         /* Baseflight uses a gyroScale that'll give radians per microsecond as output, whereas Cleanflight produces degrees
          * per second and leaves the conversion to radians per us to the IMU. Let's just convert Cleanflight's scale to
          * match Baseflight so we can use Baseflight's IMU for both: */
 
-        if (log->firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
-            log->gyroScale = (float) (log->gyroScale * (M_PI / 180.0) * 0.000001);
+        if (log->sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
+            log->sysConfig.gyroScale = (float) (log->sysConfig.gyroScale * (M_PI / 180.0) * 0.000001);
         }
     } else if (strcmp(fieldName, "acc_1G") == 0) {
-        log->acc_1G = atoi(fieldValue);
+        log->sysConfig.acc_1G = atoi(fieldValue);
     }
 }
 
@@ -431,7 +431,7 @@ static int32_t applyPrediction(flightLog_t *log, int fieldIndex, int predictor, 
             // No correction to apply
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_MINTHROTTLE:
-            value += log->minthrottle;
+            value += log->sysConfig.minthrottle;
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_1500:
             value += 1500;
@@ -444,7 +444,7 @@ static int32_t applyPrediction(flightLog_t *log, int fieldIndex, int predictor, 
             value += (uint32_t) current[log->mainFieldIndexes.motor[0]];
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_VBATREF:
-            value += log->vbatref;
+            value += log->sysConfig.vbatref;
         break;
         case FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS:
             if (!previous)
@@ -753,7 +753,7 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat)
 {
     // ADC is 12 bit (i.e. max 0xFFF), voltage reference is 3.3V, vbatscale is premultiplied by 100
-    return (vbat * 330 * log->vbatscale) / 0xFFF;
+    return (vbat * 330 * log->sysConfig.vbatscale) / 0xFFF;
 }
 
 int flightLogEstimateNumCells(flightLog_t *log)
@@ -761,10 +761,10 @@ int flightLogEstimateNumCells(flightLog_t *log)
     int i;
     int refVoltage;
 
-    refVoltage = flightLogVbatToMillivolts(log, log->vbatref) / 100;
+    refVoltage = flightLogVbatToMillivolts(log, log->sysConfig.vbatref) / 100;
 
     for (i = 1; i < 8; i++) {
-        if (refVoltage < i * log->vbatmaxcellvoltage)
+        if (refVoltage < i * log->sysConfig.vbatmaxcellvoltage)
             break;
     }
 
@@ -994,6 +994,18 @@ static bool completeGPSFrame(flightLog_t *log, mmapStream_t *stream, char frameT
     return true;
 }
 
+static void resetSysConfigToDefaults(flightLogSysConfig_t *config)
+{
+    config->minthrottle = 1150;
+    config->maxthrottle = 1850;
+
+    config->vbatref = 4095;
+    config->vbatscale = 110;
+    config->vbatmincellvoltage = 33;
+    config->vbatmaxcellvoltage = 43;
+    config->vbatwarningcellvoltage = 35;
+}
+
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw)
 {
     ParserState parserState = PARSER_STATE_HEADER;
@@ -1029,15 +1041,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
     private->mainHistory[1] = NULL;
     private->mainHistory[2] = NULL;
 
-    //Default to MW's defaults
-    log->minthrottle = 1150;
-    log->maxthrottle = 1850;
-
-    log->vbatref = 4095;
-    log->vbatscale = 110;
-    log->vbatmincellvoltage = 33;
-    log->vbatmaxcellvoltage = 43;
-    log->vbatwarningcellvoltage = 35;
+    resetSysConfigToDefaults(&log->sysConfig);
 
     log->frameIntervalI = 32;
     log->frameIntervalPNum = 1;
