@@ -927,7 +927,7 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
     }
 
     if (flightLog->mainFieldIndexes.vbatLatest > -1) {
-        lastVoltage = (lastVoltage * 2 + flightLogVbatToMillivolts(flightLog, frame[flightLog->mainFieldIndexes.vbatLatest]) / (1000.0 * fieldMeta.numCells)) / 3;
+        lastVoltage = (lastVoltage * 2 + flightLogVbatADCToMillivolts(flightLog, frame[flightLog->mainFieldIndexes.vbatLatest]) / (1000.0 * fieldMeta.numCells)) / 3;
 
         snprintf(labelBuf, sizeof(labelBuf), "Batt. cell %.2fV", lastVoltage);
 

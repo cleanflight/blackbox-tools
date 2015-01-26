@@ -18,7 +18,8 @@
 #define FLIGHT_LOG_MAX_SERVOS 8
 
 typedef enum FirmwareType {
-    FIRMWARE_TYPE_BASEFLIGHT = 0,
+    FIRMWARE_TYPE_UNKNOWN = 0,
+    FIRMWARE_TYPE_BASEFLIGHT,
     FIRMWARE_TYPE_CLEANFLIGHT
 } FirmwareType;
 
@@ -81,7 +82,7 @@ typedef struct mainFieldIndexes_t {
 
     int rcCommand[4];
 
-    int vbatLatest;
+    int vbatLatest, amperageLatest;
     int magADC[3];
     int BaroAlt;
 
@@ -108,6 +109,8 @@ typedef struct flightLogSysConfig_t {
     uint8_t vbatmaxcellvoltage;
     uint8_t vbatmincellvoltage;
     uint8_t vbatwarningcellvoltage;
+
+    int16_t currentMeterOffset, currentMeterScale;
 
     uint16_t vbatref;
 
@@ -152,7 +155,9 @@ typedef void (*FlightLogEventReady)(flightLog_t *log, flightLogEvent_t *event);
 flightLog_t* flightLogCreate(int fd);
 
 int flightLogEstimateNumCells(flightLog_t *log);
-unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat);
+
+unsigned int flightLogVbatADCToMillivolts(flightLog_t *log, uint16_t vbatADC);
+unsigned int flightLogAmperageADCToMilliamps(flightLog_t *log, uint16_t amperageADC);
 
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw);
 void flightLogDestroy(flightLog_t *log);

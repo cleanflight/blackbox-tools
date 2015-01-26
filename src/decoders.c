@@ -211,3 +211,17 @@ void streamReadTag8_8SVB(mmapStream_t *stream, int32_t *values, int valueCount)
             values[i] = (header & 0x01) ? streamReadSignedVB(stream) : 0;
     }
 }
+
+float streamReadRawFloat(mmapStream_t *stream)
+{
+    union floatConvert_t {
+        float f;
+        uint8_t bytes[4];
+    } floatConvert;
+
+    for (int i = 0; i < 4; i++) {
+        floatConvert.bytes[i] = streamReadByte(stream);
+    }
+
+    return floatConvert.f;
+}

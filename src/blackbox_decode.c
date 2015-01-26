@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <math.h>
+#include <ctype.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -34,14 +35,22 @@ typedef enum Unit {
     UNIT_RAW = 0,
     UNIT_METERS_PER_SECOND,
     UNIT_KILOMETERS_PER_HOUR,
-    UNIT_MILES_PER_HOUR
+    UNIT_MILES_PER_HOUR,
+    UNIT_MILLIVOLTS,
+    UNIT_MILLIAMPS,
+    UNIT_VOLTS,
+    UNIT_AMPS
 } Unit;
 
 static const char* const UNIT_NAME[] = {
     "raw",
     "m/s",
     "km/h",
-    "mi/h"
+    "mi/h",
+    "mV",
+    "mA",
+    "V",
+    "A"
 };
 
 typedef struct decodeOptions_t {
@@ -50,7 +59,8 @@ typedef struct decodeOptions_t {
     int simulateIMU, imuIgnoreMag;
     int mergeGPS;
     const char *outputPrefix;
-    Unit unitGPSSpeed;
+
+    Unit unitGPSSpeed, unitVbat, unitAmperage;
 } decodeOptions_t;
 
 decodeOptions_t options = {
@@ -61,7 +71,9 @@ decodeOptions_t options = {
 
     .outputPrefix = NULL,
 
-    .unitGPSSpeed = UNIT_METERS_PER_SECOND
+    .unitGPSSpeed = UNIT_METERS_PER_SECOND,
+    .unitVbat = UNIT_VOLTS,
+    .unitAmperage = UNIT_AMPS
 };
 
 //We'll use field names to identify GPS field units so the values can be formatted for display
@@ -81,7 +93,10 @@ static FILE *csvFile = 0, *eventFile = 0, *gpsCsvFile = 0;
 static char *eventFilename = 0, *gpsCsvFilename = 0;
 static gpxWriter_t *gpx = 0;
 
-attitude_t attitude;
+static attitude_t attitude;
+
+static Unit mainFieldUnit[FLIGHT_LOG_MAX_FIELDS];
+static Unit gpsGFieldUnit[FLIGHT_LOG_MAX_FIELDS];
 
 static int32_t bufferedMainFrame[FLIGHT_LOG_MAX_FIELDS];
 static bool haveBufferedMainFrame;
@@ -151,8 +166,8 @@ void outputGPSFieldNamesHeader(flightLog_t *log, FILE *file)
 
         fprintf(file, "%s", log->gpsFieldNames[i]);
 
-        if (gpsFieldTypes[i] == GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100) {
-            fprintf(file, " (%s)", UNIT_NAME[options.unitGPSSpeed]);
+        if (gpsGFieldUnit[i] != UNIT_RAW) {
+            fprintf(file, " (%s)", UNIT_NAME[gpsGFieldUnit[i]]);
         }
     }
 }
@@ -326,10 +341,47 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
             else
                 fprintf(csvFile, "%u", frameTime);
         } else {
-            if (log->mainFieldSigned[i] || options.raw)
-                fprintf(csvFile, "%3d", frame[i]);
-            else
-                fprintf(csvFile, "%3u", (uint32_t) frame[i]);
+            switch (mainFieldUnit[i]) {
+                case UNIT_VOLTS:
+                    if (i != log->mainFieldIndexes.vbatLatest) {
+                        fprintf(stderr, "Bad unit for field %d\n", i);
+                        exit(-1);
+                    }
+
+                    fprintf(csvFile, "%.3f", flightLogVbatADCToMillivolts(log, (uint16_t)frame[i]) / 1000.0);
+                break;
+                case UNIT_AMPS:
+                    if (i != log->mainFieldIndexes.amperageLatest) {
+                        fprintf(stderr, "Bad unit for field %d\n", i);
+                        exit(-1);
+                    }
+
+                    fprintf(csvFile, "%.3f", flightLogAmperageADCToMilliamps(log, (uint16_t)frame[i]) / 1000.0);
+                break;            
+                case UNIT_MILLIVOLTS:
+                    if (i != log->mainFieldIndexes.vbatLatest) {
+                        fprintf(stderr, "Bad unit for field %d\n", i);
+                        exit(-1);
+                    }
+
+                    fprintf(csvFile, "%u", flightLogVbatADCToMillivolts(log, (uint16_t)frame[i]));
+                break;
+                case UNIT_MILLIAMPS:
+                    if (i != log->mainFieldIndexes.amperageLatest) {
+                        fprintf(stderr, "Bad unit for field %d\n", i);
+                        exit(-1);
+                    }
+
+                    fprintf(csvFile, "%u", flightLogAmperageADCToMilliamps(log, (uint16_t)frame[i]));
+                break;
+                default:
+                case UNIT_RAW:
+                    if (log->mainFieldSigned[i] || options.raw)
+                        fprintf(csvFile, "%3d", frame[i]);
+                    else
+                        fprintf(csvFile, "%3u", (uint32_t) frame[i]);
+                break;
+            }
         }
     }
 
@@ -425,8 +477,6 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_
 
 void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
-    int i;
-
     if (options.mergeGPS && log->gpsFieldCount > 0) {
         //Use the alternate frame processing routine which merges main stream data and GPS data together
         onFrameReadyMerge(log, frameValid, frame, frameType, fieldCount, frameOffset, frameSize);
@@ -441,25 +491,11 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
         if (frameValid || (frame && options.raw)) {
             lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
 
-            for (i = 0; i < fieldCount; i++) {
-                if (i == 0) {
-                    if (frameValid)
-                        fprintf(csvFile, "%u", (uint32_t) frame[i]);
-                    else
-                        fprintf(csvFile, "X");
-                } else {
-                    if (log->mainFieldSigned[i] || options.raw)
-                        fprintf(csvFile, ", %3d", frame[i]);
-                    else
-                        fprintf(csvFile, ", %3u", (uint32_t) frame[i]);
-                }
-            }
-
             if (options.simulateIMU) {
                 updateIMU(log, frame, lastFrameTime, &attitude);
-
-                fprintf(csvFile, ", %.2f, %.2f, %.2f", attitude.roll * 180 / M_PI, attitude.pitch * 180 / M_PI, attitude.heading * 180 / M_PI);
             }
+
+            outputMainFrameFields(log, frameValid ? (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME] : (uint32_t) -1, frame);
 
             if (options.debug) {
                 fprintf(csvFile, ", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
@@ -487,9 +523,7 @@ void resetGPSFieldIdents()
 }
 
 /**
- * Check which GPS fields are present and log the indexes of well-known fields in `gps{G|H}FieldIndexes`.
- *
- * Sets the units/display format we should use for each GPS field in `gpsFieldTypes`.
+ * Sets the units/display format we should use for each GPS field into the global `gpsFieldTypes`.
  */
 void identifyGPSFields(flightLog_t *log)
 {
@@ -514,6 +548,28 @@ void identifyGPSFields(flightLog_t *log)
     }
 }
 
+/**
+ * After reading in what fields are present, this routine is called in order to apply the user's
+ * commandline choices for field units to the global "mainFieldUnit" and "gpsGFieldUnit" arrays.
+ */
+void applyFieldUnits(flightLog_t *log)
+{
+    memset(mainFieldUnit, 0, sizeof(mainFieldUnit));
+    memset(gpsGFieldUnit, 0, sizeof(gpsGFieldUnit));
+
+    if (log->mainFieldIndexes.vbatLatest > -1) {
+        mainFieldUnit[log->mainFieldIndexes.vbatLatest] = options.unitVbat;
+    }
+    
+    if (log->mainFieldIndexes.amperageLatest > -1) {
+        mainFieldUnit[log->mainFieldIndexes.amperageLatest] = options.unitAmperage;
+    }
+
+    if (log->gpsFieldIndexes.GPS_speed > -1) {
+        mainFieldUnit[log->gpsFieldIndexes.GPS_speed] = options.unitGPSSpeed;
+    }
+}
+
 void writeMainCSVHeader(flightLog_t *log)
 {
     int i;
@@ -523,6 +579,10 @@ void writeMainCSVHeader(flightLog_t *log)
             fprintf(csvFile, ", ");
 
         fprintf(csvFile, "%s", log->mainFieldNames[i]);
+
+        if (mainFieldUnit[i] != UNIT_RAW) {
+            fprintf(csvFile, " (%s)", UNIT_NAME[mainFieldUnit[i]]);
+        }
     }
 
     if (options.simulateIMU) {
@@ -542,12 +602,16 @@ void onMetadataReady(flightLog_t *log)
 {
     if (log->mainFieldCount == 0) {
         fprintf(stderr, "No fields found in log, is it missing its header?\n");
+        return;
     } else if (options.simulateIMU && (log->mainFieldIndexes.accSmooth[0] == -1 || log->mainFieldIndexes.gyroData[0] == -1)){
         fprintf(stderr, "Can't simulate the IMU because accelerometer or gyroscope data is missing\n");
-    } else {
-        writeMainCSVHeader(log);
-        identifyGPSFields(log);
+        options.simulateIMU = false;
     }
+
+    identifyGPSFields(log);
+    applyFieldUnits(log);
+
+    writeMainCSVHeader(log);
 }
 
 void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
@@ -815,6 +879,8 @@ void printUsage(const char *argv0)
         "   --limits                 Print the limits and range of each field\n"
         "   --stdout                 Write log to stdout instead of to a file\n"
         "   --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)\n"
+        "   --unit-amperage <unit>   Current meter unit (raw|mA|A), default is A (amps)\n"
+        "   --unit-vbat <unit>       Vbat unit (raw|mV|V), default is V (volts)\n"
         "   --merge-gps              Merge GPS data into the main CSV log file instead of writing it separately\n"
         "   --simulate-imu           Compute tilt/roll/heading fields from gyro/accel/mag data\n"
         "   --imu-ignore-mag         Ignore magnetometer data when computing heading\n"
@@ -826,16 +892,45 @@ void printUsage(const char *argv0)
     );
 }
 
+/**
+ * Case-insentive string equality test.
+ */
+bool striequals(const char *first, const char *second)
+{
+    while (1) {
+        if (tolower(*first) != tolower(*second)) {
+            return false;
+        }
+        if (*first == '\0') {
+            return true;
+        }
+
+        first++;
+        second++;
+    }
+}
+
 bool parseUnit(const char *text, Unit *unit)
 {
-    if (strcmp(text, "kph") == 0 || strcmp(text, "kmph") == 0  || strcmp(text, "km/h") == 0 || strcmp(text, "km/hr") == 0) {
+    if (striequals(text, "kph") || striequals(text, "kmph")  || striequals(text, "km/h") || striequals(text, "km/hr")) {
         *unit = UNIT_KILOMETERS_PER_HOUR;
-    } else if (strcmp(text, "mps") == 0 || strcmp(text, "m/s") == 0) {
+    } else if (striequals(text, "mps") || striequals(text, "m/s")) {
         *unit = UNIT_METERS_PER_SECOND;
-    } else if (strcmp(text, "mph") == 0 || strcmp(text, "mi/h") == 0 || strcmp(text, "mi/hr") == 0) {
+    } else if (striequals(text, "mph") || striequals(text, "mi/h") || striequals(text, "mi/hr")) {
         *unit = UNIT_MILES_PER_HOUR;
-    } else
+    } else if (striequals(text, "mv")) {
+        *unit = UNIT_MILLIVOLTS;
+    } else if (striequals(text, "ma")) {
+        *unit = UNIT_MILLIAMPS;
+    } else if (striequals(text, "v")) {
+        *unit = UNIT_VOLTS;
+    } else if (striequals(text, "a")) {
+        *unit = UNIT_AMPS;
+    } else if (striequals(text, "raw")) {
+        *unit = UNIT_RAW;
+    } else {
         return false;
+    }
 
     return true;
 }
@@ -857,9 +952,11 @@ void parseCommandlineOptions(int argc, char **argv)
     enum {
         SETTING_PREFIX = 1,
         SETTING_INDEX,
-        SETTING_UNIT_GPS_SPEED,
         SETTING_DECLINATION,
-        SETTING_DECLINATION_DECIMAL
+        SETTING_DECLINATION_DECIMAL,
+        SETTING_UNIT_GPS_SPEED,
+        SETTING_UNIT_VBAT,
+        SETTING_UNIT_AMPERAGE
     };
 
     while (1)
@@ -878,6 +975,8 @@ void parseCommandlineOptions(int argc, char **argv)
             {"prefix", required_argument, 0, SETTING_PREFIX},
             {"index", required_argument, 0, SETTING_INDEX},
             {"unit-gps-speed", required_argument, 0, SETTING_UNIT_GPS_SPEED},
+            {"unit-vbat", required_argument, 0, SETTING_UNIT_VBAT},
+            {"unit-amperage", required_argument, 0, SETTING_UNIT_AMPERAGE},
             {0, 0, 0, 0}
         };
 
@@ -900,6 +999,18 @@ void parseCommandlineOptions(int argc, char **argv)
             case SETTING_UNIT_GPS_SPEED:
                 if (!parseUnit(optarg, &options.unitGPSSpeed)) {
                     fprintf(stderr, "Bad GPS speed unit\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_UNIT_VBAT:
+                if (!parseUnit(optarg, &options.unitVbat)) {
+                    fprintf(stderr, "Bad VBAT unit\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_UNIT_AMPERAGE:
+                if (!parseUnit(optarg, &options.unitAmperage)) {
+                    fprintf(stderr, "Bad Amperage unit\n");
                     exit(-1);
                 }
             break;

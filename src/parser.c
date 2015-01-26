@@ -229,6 +229,8 @@ static void identifyMainFields(flightLog_t *log)
             log->mainFieldIndexes.servo[servoIndex] = fieldIndex;
         } else if (strcmp(fieldName, "vbatLatest") == 0) {
             log->mainFieldIndexes.vbatLatest = fieldIndex;
+        } else if (strcmp(fieldName, "amperageLatest") == 0) {
+            log->mainFieldIndexes.amperageLatest = fieldIndex;
         } else if (strcmp(fieldName, "BaroAlt") == 0) {
             log->mainFieldIndexes.BaroAlt = fieldIndex;
         } else if (strcmp(fieldName, "loopIteration") == 0) {
@@ -389,10 +391,13 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
     } else if (strcmp(fieldName, "vbatcellvoltage") == 0) {
         int vbatcellvoltage[3];
         parseCommaSeparatedIntegers(fieldValue, vbatcellvoltage, 3);
+    } else if (strcmp(fieldName, "currentMeter") == 0) {
+        int currentMeterParams[2];
 
-        log->sysConfig.vbatmincellvoltage = vbatcellvoltage[0];
-        log->sysConfig.vbatwarningcellvoltage = vbatcellvoltage[1];
-        log->sysConfig.vbatmaxcellvoltage = vbatcellvoltage[2];
+        parseCommaSeparatedIntegers(fieldValue, currentMeterParams, 2);
+
+        log->sysConfig.currentMeterOffset = currentMeterParams[0];
+        log->sysConfig.currentMeterScale = currentMeterParams[1];
     } else if (strcmp(fieldName, "gyro.scale") == 0) {
         floatConvert.u = strtoul(fieldValue, 0, 16);
 
@@ -750,10 +755,22 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
     }
 }
 
-unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat)
+#define ADCVREF 33L
+
+unsigned int flightLogVbatADCToMillivolts(flightLog_t *log, uint16_t vbatADC)
 {
     // ADC is 12 bit (i.e. max 0xFFF), voltage reference is 3.3V, vbatscale is premultiplied by 100
-    return (vbat * 330 * log->sysConfig.vbatscale) / 0xFFF;
+    return (vbatADC * ADCVREF * 10 * log->sysConfig.vbatscale) / 0xFFF;
+}
+
+unsigned int flightLogAmperageADCToMilliamps(flightLog_t *log, uint16_t amperageADC)
+{
+    int32_t millivolts;
+
+    millivolts = ((uint32_t)amperageADC * ADCVREF * 100) / 4095;
+    millivolts -= log->sysConfig.currentMeterOffset;
+
+    return ((int64_t) millivolts * 10000) / (int32_t)log->sysConfig.currentMeterScale;
 }
 
 int flightLogEstimateNumCells(flightLog_t *log)
@@ -761,7 +778,7 @@ int flightLogEstimateNumCells(flightLog_t *log)
     int i;
     int refVoltage;
 
-    refVoltage = flightLogVbatToMillivolts(log, log->sysConfig.vbatref) / 100;
+    refVoltage = flightLogVbatADCToMillivolts(log, log->sysConfig.vbatref) / 100;
 
     for (i = 1; i < 8; i++) {
         if (refVoltage < i * log->sysConfig.vbatmaxcellvoltage)
@@ -1004,6 +1021,18 @@ static void resetSysConfigToDefaults(flightLogSysConfig_t *config)
     config->vbatmincellvoltage = 33;
     config->vbatmaxcellvoltage = 43;
     config->vbatwarningcellvoltage = 35;
+
+    config->currentMeterOffset = 0;
+    config->currentMeterScale = 400;
+
+    config->rcRate = 90;
+    config->yawRate = 0;
+
+    // Default these to silly numbers, because if we don't know the hardware we can't even begin to guess:
+    config->acc_1G = 1;
+    config->gyroScale = 1;
+
+    config->firmwareType = FIRMWARE_TYPE_UNKNOWN;
 }
 
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw)
