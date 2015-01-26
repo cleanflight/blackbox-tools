@@ -126,23 +126,31 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
 
     switch (event->event) {
         case FLIGHT_LOG_EVENT_SYNC_BEEP:
-            fprintf(eventFile, "%u: Sync beep\n", event->data.syncBeep.time);
+            fprintf(eventFile, "{name:\"Sync beep\", time:%u}\n", event->data.syncBeep.time);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START:
-            fprintf(eventFile, "%u: Autotune cycle start,%d,%d,%u,%u,%u\n", lastFrameTime,
-                event->data.autotuneCycleStart.phase, event->data.autotuneCycleStart.cycle,
-                event->data.autotuneCycleStart.p, event->data.autotuneCycleStart.i, event->data.autotuneCycleStart.d);
+            fprintf(eventFile, "{name:\"Autotune cycle start\", time:%u, data:{phase:%d,cycle:%d,p:%u,i:%u,d:%u,rising:%d}}\n", lastFrameTime,
+                event->data.autotuneCycleStart.phase, event->data.autotuneCycleStart.cycle & 0x7F /* Top bit used for "rising: */,
+                event->data.autotuneCycleStart.p, event->data.autotuneCycleStart.i, event->data.autotuneCycleStart.d,
+                event->data.autotuneCycleStart.cycle >> 7);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
-            fprintf(eventFile, "%u: Autotune cycle result,%u,%u,%u,%u\n", lastFrameTime,
-                event->data.autotuneCycleResult.overshot,
+            fprintf(eventFile, "{name:\"Autotune cycle result\", time:%u, data:{overshot:%s,timedout:%s,p:%u,i:%u,d:%u}}\n", lastFrameTime,
+                event->data.autotuneCycleResult.flags & FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_OVERSHOT ? "true" : "false",
+                event->data.autotuneCycleResult.flags & FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_TIMEDOUT ? "true" : "false",
                 event->data.autotuneCycleResult.p, event->data.autotuneCycleResult.i, event->data.autotuneCycleResult.d);
         break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS:
+            fprintf(eventFile, "{name:\"Autotune cycle targets\", time:%u, data:{currentAngle:%.1f,targetAngle:%d,targetAngleAtPeak:%d,firstPeakAngle:%.1f,secondPeakAngle:%.1f}}\n", lastFrameTime,
+                event->data.autotuneTargets.currentAngle / 10.0,
+                event->data.autotuneTargets.targetAngle, event->data.autotuneTargets.targetAngleAtPeak,
+                event->data.autotuneTargets.firstPeakAngle / 10.0, event->data.autotuneTargets.secondPeakAngle / 10.0);
+        break;
         case FLIGHT_LOG_EVENT_LOG_END:
-            fprintf(eventFile, "%u: Log clean end\n", lastFrameTime);
+            fprintf(eventFile, "{name:\"Log clean end\", time:%u}\n", lastFrameTime);
         break;
         default:
-            fprintf(eventFile, "%u: Unknown event %u\n", lastFrameTime, event->event);
+            fprintf(eventFile, "{name:\"Unknown event\", time:%u, data:{eventID:%d}}\n", lastFrameTime, event->event);
         break;
     }
 }

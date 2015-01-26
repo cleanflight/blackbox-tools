@@ -225,3 +225,8 @@ float streamReadRawFloat(mmapStream_t *stream)
 
     return floatConvert.f;
 }
+
+int16_t streamReadS16(mmapStream_t *stream)
+{
+    return streamReadByte(stream) | (streamReadByte(stream) << 8);
+}

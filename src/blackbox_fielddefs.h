@@ -15,6 +15,7 @@ typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_MAG,
     FLIGHT_LOG_FIELD_CONDITION_BARO,
     FLIGHT_LOG_FIELD_CONDITION_VBAT,
+    FLIGHT_LOG_FIELD_CONDITION_AMPERAGE,
 
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1,
@@ -87,6 +88,7 @@ typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
     FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START = 10,
     FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT = 11,
+    FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS = 12,
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;
 
@@ -100,21 +102,31 @@ typedef struct flightLogEvent_autotuneCycleStart_t {
     uint8_t p;
     uint8_t i;
     uint8_t d;
+    uint8_t rising;
 } flightLogEvent_autotuneCycleStart_t;
 
+#define FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_OVERSHOT 1
+#define FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_TIMEDOUT 2
+
 typedef struct flightLogEvent_autotuneCycleResult_t {
-    uint8_t overshot;
+    uint8_t flags;
     uint8_t p;
     uint8_t i;
     uint8_t d;
 } flightLogEvent_autotuneCycleResult_t;
+
+typedef struct flightLogEvent_autotuneTargets_t {
+    int16_t currentAngle; // in decidegrees
+    int8_t targetAngle, targetAngleAtPeak; // in degrees
+    int16_t firstPeakAngle, secondPeakAngle; // in decidegrees
+} flightLogEvent_autotuneTargets_t;
 
 typedef union flightLogEventData_t
 {
     flightLogEvent_syncBeep_t syncBeep;
     flightLogEvent_autotuneCycleStart_t autotuneCycleStart;
     flightLogEvent_autotuneCycleResult_t autotuneCycleResult;
-
+    flightLogEvent_autotuneTargets_t autotuneTargets;
 } flightLogEventData_t;
 
 typedef struct flightLogEvent_t

@@ -701,10 +701,17 @@ static void parseEventFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
             data->autotuneCycleStart.d = streamReadByte(stream);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
-            data->autotuneCycleResult.overshot = streamReadByte(stream);
+            data->autotuneCycleResult.flags = streamReadByte(stream);
             data->autotuneCycleResult.p = streamReadByte(stream);
             data->autotuneCycleResult.i = streamReadByte(stream);
             data->autotuneCycleResult.d = streamReadByte(stream);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS:
+            data->autotuneTargets.currentAngle = streamReadS16(stream);
+            data->autotuneTargets.targetAngle = (int8_t) streamReadByte(stream);
+            data->autotuneTargets.targetAngleAtPeak = (int8_t)  streamReadByte(stream);
+            data->autotuneTargets.firstPeakAngle = streamReadS16(stream);
+            data->autotuneTargets.secondPeakAngle = streamReadS16(stream);
         break;
         case FLIGHT_LOG_EVENT_LOG_END:
             streamRead(stream, endMessage, END_OF_LOG_MESSAGE_LEN);
