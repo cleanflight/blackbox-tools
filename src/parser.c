@@ -777,7 +777,7 @@ unsigned int flightLogAmperageADCToMilliamps(flightLog_t *log, uint16_t amperage
     millivolts = ((uint32_t)amperageADC * ADCVREF * 100) / 4095;
     millivolts -= log->sysConfig.currentMeterOffset;
 
-    return ((int64_t) millivolts * 10000) / (int32_t)log->sysConfig.currentMeterScale;
+    return ((int64_t) millivolts * 10000) / log->sysConfig.currentMeterScale;
 }
 
 int flightLogEstimateNumCells(flightLog_t *log)

@@ -160,8 +160,10 @@ typedef struct fieldIdentifications_t {
 
     int numCells;
 
+    // Indexes of fields we compute from the data:
     int roll, pitch, heading;
     int axisPIDSum[3];
+    int cumulativeCurrent;
 } fieldIdentifications_t;
 
 color_t lineColors[] = {
@@ -257,7 +259,7 @@ void updateFieldMetadata()
 
     fieldMeta.numMotors = 0;
     fieldMeta.numServos = 0;
-    
+
     fieldMeta.hasGyros = flightLog->mainFieldIndexes.gyroData[0] > -1;
     fieldMeta.hasAccs = flightLog->mainFieldIndexes.accSmooth[0] > -1;
     fieldMeta.hasMagADC = flightLog->mainFieldIndexes.magADC[0] > -1;
@@ -887,8 +889,7 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
     attitude_t attitude;
     t_fp_vector acceleration;
     double magnitude;
-    static double lastAccel = 0;
-    static double lastVoltage = 0;
+    static double lastAccel = 0, lastVoltage = 0, lastCurrent = 0;
     static int lastAlt = 0;
     cairo_text_extents_t extent;
 
@@ -935,13 +936,21 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
         cairo_show_text(cr, labelBuf);
     }
 
-
     if (flightLog->mainFieldIndexes.BaroAlt > -1) {
         lastAlt = (lastAlt * 2 + frame[flightLog->mainFieldIndexes.BaroAlt]) / 3;
 
         snprintf(labelBuf, sizeof(labelBuf), "Altitude %.1fm", lastAlt / 100.0);
 
         cairo_move_to(cr, 8, options.imageHeight - 8 - (extent.height + 8) * 2);
+        cairo_show_text(cr, labelBuf);
+    }
+
+    if (flightLog->mainFieldIndexes.amperageLatest > -1) {
+        lastCurrent = (lastCurrent * 2 + flightLogAmperageADCToMilliamps(flightLog, frame[flightLog->mainFieldIndexes.amperageLatest]) / 1000.0) / 3;
+
+        snprintf(labelBuf, sizeof(labelBuf), "Current %.2fA, %dmAh total", lastCurrent, frame[fieldMeta.cumulativeCurrent]);
+
+        cairo_move_to(cr, 8, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, labelBuf);
     }
 }
@@ -1526,16 +1535,18 @@ static void applySmoothing() {
 
 void computeExtraFields(void) {
     int16_t accSmooth[3], gyroData[3], magADC[3];
-    int64_t frameTime;
+    int64_t frameTime, lastFrameTime = 0;
     int32_t frameIndex;
     int32_t frame[FLIGHT_LOG_MAX_FIELDS];
+    double cumulativeCurrent = 0.0; // in milliamp-hours
     attitude_t attitude;
+    bool calculateAttitude = fieldMeta.hasGyros && fieldMeta.hasAccs && flightLog->sysConfig.acc_1G;
 
     imuInit();
 
-    if (fieldMeta.hasGyros && fieldMeta.hasAccs && flightLog->sysConfig.acc_1G) {
-        for (frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
-            if (datapointsGetFrameAtIndex(points, frameIndex, &frameTime, frame)) {
+    for (frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
+        if (datapointsGetFrameAtIndex(points, frameIndex, &frameTime, frame)) {
+            if (calculateAttitude) {
                 for (int axis = 0; axis < 3; axis++) {
                     accSmooth[axis] = frame[flightLog->mainFieldIndexes.accSmooth[axis]];
                     gyroData[axis] = frame[flightLog->mainFieldIndexes.gyroData[axis]];
@@ -1554,18 +1565,25 @@ void computeExtraFields(void) {
                 datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.pitch, floatToInt(attitude.pitch));
                 datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.heading, floatToInt(attitude.heading));
             }
-        }
-    }
 
-    if (fieldMeta.hasPIDs) {
-        for (frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
-            if (datapointsGetFrameAtIndex(points, frameIndex, &frameTime, frame)) {
+            if (fieldMeta.hasPIDs) {
                 for (int axis = 0; axis < 3; axis++) {
                     int32_t pidSum = frame[flightLog->mainFieldIndexes.pid[PID_P][axis]] + frame[flightLog->mainFieldIndexes.pid[PID_I][axis]] + frame[flightLog->mainFieldIndexes.pid[PID_D][axis]];
 
                     datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.axisPIDSum[axis], pidSum);
                 }
             }
+
+            if (lastFrameTime != 0 && flightLog->mainFieldIndexes.amperageLatest != -1) {
+                /*
+                 * Multiply the current measurement against the time since the last loop to get the number of milliamp-hours
+                 * consumed (assume that the current usage was constant over that interval)
+                 */
+                cumulativeCurrent += (frameTime - lastFrameTime) / 1000000.0 / 60 / 60 * flightLogAmperageADCToMilliamps(flightLog, frame[flightLog->mainFieldIndexes.amperageLatest]);
+
+                datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.cumulativeCurrent, round(cumulativeCurrent));
+            }
+            lastFrameTime = frameTime;
         }
     }
 }
@@ -1677,6 +1695,12 @@ int main(int argc, char **argv)
     fieldMeta.axisPIDSum[1] = newFieldIndex++;
     fieldMeta.axisPIDSum[2] = newFieldIndex++;
 
+    if (flightLog->mainFieldIndexes.amperageLatest > -1) {
+        fieldMeta.cumulativeCurrent = newFieldIndex++;
+    } else {
+        fieldMeta.cumulativeCurrent = -1;
+    }
+
     combinedFieldCount = newFieldIndex;
 
     // Create a copy of the array of field names so we can add our custom fields to it
@@ -1693,6 +1717,10 @@ int main(int argc, char **argv)
     fieldNames[fieldMeta.axisPIDSum[0]] = strdup("axisPID[0]");
     fieldNames[fieldMeta.axisPIDSum[1]] = strdup("axisPID[1]");
     fieldNames[fieldMeta.axisPIDSum[2]] = strdup("axisPID[2]");
+
+    if (fieldMeta.cumulativeCurrent > -1) {
+        fieldNames[fieldMeta.cumulativeCurrent] = strdup("cumulativeCurrent");
+    }
 
     // Create the pre-allocated array of frames that we'll decode into
     points = datapointsCreate(combinedFieldCount, fieldNames, (int) (flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_ITERATION].max + 1));
