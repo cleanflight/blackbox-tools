@@ -96,7 +96,7 @@ void streamRead(mmapStream_t *stream, void *buf, int len)
 {
     char *buffer = (char*) buf;
 
-    if (len >= stream->end - stream->pos) {
+    if (len > stream->end - stream->pos) {
         len = stream->end - stream->pos;
         stream->eof = true;
     }
