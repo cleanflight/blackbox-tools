@@ -38,7 +38,13 @@ Options:
    --index <num>            Choose the log from the file that should be decoded (or omit to decode all)
    --limits                 Print the limits and range of each field
    --stdout                 Write log to stdout instead of to a file
+   --unit-amperage <unit>   Current meter unit (raw|mA|A), default is A (amps)
+   --unit-frame-time <unit> Frame timestamp unit (us|s), default is us (microseconds)
+   --unit-height <unit>     Height unit (m|cm|ft), default is cm (centimeters)
+   --unit-rotation <unit>   Rate of rotation unit (raw|deg/s|rad/s), default is deg/s (degrees per second)
+   --unit-acceleration <u>  Acceleration unit (raw|g|m/s2), default is g (9.8m/s/s)
    --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)
+   --unit-vbat <unit>       Vbat unit (raw|mV|V), default is V (volts)
    --merge-gps              Merge GPS data into the main CSV log file instead of writing it separately
    --simulate-imu           Compute tilt/roll/heading fields from gyro/accel/mag data
    --imu-ignore-mag         Ignore magnetometer data when computing heading
