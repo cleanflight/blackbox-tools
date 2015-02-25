@@ -795,6 +795,17 @@ int flightLogEstimateNumCells(flightLog_t *log)
     return i;
 }
 
+double flightlogAccelerationRawToGs(flightLog_t *log, int32_t accRaw)
+{
+    return (double)accRaw / log->sysConfig.acc_1G;
+}
+
+double flightlogGyroToRadiansPerSecond(flightLog_t *log, int32_t gyroRaw)
+{
+    // gyroScale is set to give radians per microsecond, so multiply by 1,000,000 out to get the per-second value
+    return (double)log->sysConfig.gyroScale * 1000000 * gyroRaw;
+}
+
 flightLog_t * flightLogCreate(int fd)
 {
     const char *logSearchStart;

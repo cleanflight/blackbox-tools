@@ -60,6 +60,7 @@
     <ClCompile Include="..\..\src\platform.c" />
     <ClCompile Include="..\..\src\stream.c" />
     <ClCompile Include="..\..\src\tools.c" />
+    <ClCompile Include="..\..\src\units.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\lib\getopt_mb_uni\getopt.h" />
@@ -69,6 +70,7 @@
     <ClInclude Include="..\..\src\platform.h" />
     <ClInclude Include="..\..\src\stream.h" />
     <ClInclude Include="..\..\src\tools.h" />
+    <ClInclude Include="..\..\src\units.h" />
     <ClInclude Include="..\src\parser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

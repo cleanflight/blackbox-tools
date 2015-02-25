@@ -767,7 +767,7 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
                     fieldValue = frame[flightLog->mainFieldIndexes.gyroData[axisIndex]];
 
                     if (options.gyroUnit == UNIT_DEGREES_PER_SEC) {
-                        fieldValue = (int32_t) round((double)flightLog->sysConfig.gyroScale * 1000000 / (M_PI / 180.0) * fieldValue);
+                        fieldValue = (int32_t) round(flightlogGyroToRadiansPerSecond(flightLog, fieldValue) * (180 / M_PI));
                     }
                 } else
                     fieldValue = 0;

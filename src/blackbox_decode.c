@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <math.h>
-#include <ctype.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -30,28 +29,7 @@
 #include "tools.h"
 #include "gpxwriter.h"
 #include "imu.h"
-
-typedef enum Unit {
-    UNIT_RAW = 0,
-    UNIT_METERS_PER_SECOND,
-    UNIT_KILOMETERS_PER_HOUR,
-    UNIT_MILES_PER_HOUR,
-    UNIT_MILLIVOLTS,
-    UNIT_MILLIAMPS,
-    UNIT_VOLTS,
-    UNIT_AMPS
-} Unit;
-
-static const char* const UNIT_NAME[] = {
-    "raw",
-    "m/s",
-    "km/h",
-    "mi/h",
-    "mV",
-    "mA",
-    "V",
-    "A"
-};
+#include "units.h"
 
 typedef struct decodeOptions_t {
     int help, raw, limits, debug, toStdout;
@@ -60,7 +38,7 @@ typedef struct decodeOptions_t {
     int mergeGPS;
     const char *outputPrefix;
 
-    Unit unitGPSSpeed, unitVbat, unitAmperage;
+    Unit unitGPSSpeed, unitFrameTime, unitVbat, unitAmperage, unitHeight, unitAcceleration, unitRotation;
 } decodeOptions_t;
 
 decodeOptions_t options = {
@@ -72,8 +50,12 @@ decodeOptions_t options = {
     .outputPrefix = NULL,
 
     .unitGPSSpeed = UNIT_METERS_PER_SECOND,
+    .unitFrameTime = UNIT_MICROSECONDS,
     .unitVbat = UNIT_VOLTS,
-    .unitAmperage = UNIT_AMPS
+    .unitAmperage = UNIT_AMPS,
+    .unitHeight = UNIT_CENTIMETERS,
+    .unitAcceleration = UNIT_RAW,
+    .unitRotation = UNIT_RAW
 };
 
 //We'll use field names to identify GPS field units so the values can be formatted for display
@@ -198,32 +180,6 @@ void createGPSCSVFile(flightLog_t *log)
     }
 }
 
-double convertMetersPerSecondToUnit(double meterspersec, Unit unit)
-{
-    static const double MILES_PER_METER = 0.00062137;
-
-    switch (unit) {
-        case UNIT_KILOMETERS_PER_HOUR:
-            return meterspersec * 60 * 60 / 1000;
-        break;
-
-        case UNIT_MILES_PER_HOUR:
-            return meterspersec * MILES_PER_METER * 60 * 60;
-        break;
-
-        case UNIT_METERS_PER_SECOND:
-            return meterspersec;
-
-        case UNIT_RAW:
-            fprintf(stderr, "Attempted to convert speed to raw units but this data is already cooked\n");
-            exit(-1);
-        break;
-        default:
-            fprintf(stderr, "Bad speed unit in conversion\n");
-            exit(-1);
-    }
-}
-
 static void updateIMU(flightLog_t *log, int32_t *frame, uint32_t currentTime, attitude_t *result)
 {
     int16_t gyroData[3];
@@ -325,6 +281,112 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
     }
 }
 
+static bool printfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int32_t fieldValue, Unit unit)
+{
+    /* Convert the fieldValue to the given unit based on the original unit of the field (that we decide on by looking
+     * for a well-known field that corresponds to the given fieldIndex.)
+     */
+    switch (unit) {
+        case UNIT_VOLTS:
+            if (fieldIndex == log->mainFieldIndexes.vbatLatest) {
+                fprintf(file, "%.3f", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue) / 1000.0);
+                return true;
+            }
+        break;
+        case UNIT_MILLIVOLTS:
+            if (fieldIndex == log->mainFieldIndexes.vbatLatest) {
+                fprintf(file, "%u", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue));
+                return true;
+            }
+        break;
+        case UNIT_AMPS:
+            if (fieldIndex == log->mainFieldIndexes.amperageLatest) {
+                fprintf(file, "%.3f", flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue) / 1000.0);
+                return true;
+            }
+        break;
+        case UNIT_MILLIAMPS:
+            if (fieldIndex == log->mainFieldIndexes.amperageLatest) {
+                fprintf(file, "%u", flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue));
+                return true;
+            }
+        break;
+        case UNIT_CENTIMETERS:
+            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
+                fprintf(file, "%d", fieldValue);
+                return true;
+            }
+        break;
+        case UNIT_METERS:
+            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
+                fprintf(file, "%.2f", (double) fieldValue / 100);
+                return true;
+            }
+        break;
+        case UNIT_FEET:
+            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
+                fprintf(file, "%.2f", (double) fieldValue / 100 * FEET_PER_METER);
+                return true;
+            }
+        break;
+        case UNIT_DEGREES_PER_SECOND:
+            if (fieldIndex >= log->mainFieldIndexes.gyroData[0] && fieldIndex <= log->mainFieldIndexes.gyroData[2]) {
+                fprintf(file, "%.2f", flightlogGyroToRadiansPerSecond(log, fieldValue) * (180 / M_PI));
+                return true;
+            }
+        break;
+        case UNIT_RADIANS_PER_SECOND:
+            if (fieldIndex >= log->mainFieldIndexes.gyroData[0] && fieldIndex <= log->mainFieldIndexes.gyroData[2]) {
+                fprintf(file, "%.2f", flightlogGyroToRadiansPerSecond(log, fieldValue));
+                return true;
+            }
+        break;
+        case UNIT_METERS_PER_SECOND_SQUARED:
+            if (fieldIndex >= log->mainFieldIndexes.accSmooth[0] && fieldIndex <= log->mainFieldIndexes.accSmooth[2]) {
+                fprintf(file, "%.2f", flightlogAccelerationRawToGs(log, fieldValue) * ACCELERATION_DUE_TO_GRAVITY);
+                return true;
+            }
+        break;
+        case UNIT_GS:
+            if (fieldIndex >= log->mainFieldIndexes.accSmooth[0] && fieldIndex <= log->mainFieldIndexes.accSmooth[2]) {
+                fprintf(file, "%.2f", flightlogAccelerationRawToGs(log, fieldValue));
+                return true;
+            }
+        break;
+        case UNIT_MICROSECONDS:
+            if (fieldIndex == log->mainFieldIndexes.time) {
+                fprintf(file, "%u", (uint32_t) fieldValue);
+                return true;
+            }
+        break;
+        case UNIT_MILLISECONDS:
+            if (fieldIndex == log->mainFieldIndexes.time) {
+                fprintf(file, "%.3f", ((uint32_t) fieldValue) / 1000.0);
+                return true;
+            }
+        break;
+        case UNIT_SECONDS:
+            if (fieldIndex == log->mainFieldIndexes.time) {
+                fprintf(file, "%.6f", ((uint32_t) fieldValue) / 1000000.0);
+                return true;
+            }
+        break;
+        case UNIT_RAW:
+            if (log->mainFieldSigned[fieldIndex] || options.raw) {
+                fprintf(file, "%3d", fieldValue);
+            } else {
+                fprintf(file, "%3u", (uint32_t) fieldValue);
+            }
+            return true;
+        break;
+        default:
+        break;
+    }
+
+    // Unit could not be handled
+    return false;
+}
+
 /**
  * Print out the fields from the main log stream in comma separated format.
  *
@@ -346,49 +408,16 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
             // Use the time the caller provided instead of the time in the frame
             if (frameTime == (uint32_t) -1)
                 fprintf(csvFile, "X");
-            else
-                fprintf(csvFile, "%u", frameTime);
+            else {
+                if (!printfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
+                    fprintf(stderr, "Bad unit for field %d\n", i);
+                    exit(-1);
+                }
+            }
         } else {
-            switch (mainFieldUnit[i]) {
-                case UNIT_VOLTS:
-                    if (i != log->mainFieldIndexes.vbatLatest) {
-                        fprintf(stderr, "Bad unit for field %d\n", i);
-                        exit(-1);
-                    }
-
-                    fprintf(csvFile, "%.3f", flightLogVbatADCToMillivolts(log, (uint16_t)frame[i]) / 1000.0);
-                break;
-                case UNIT_AMPS:
-                    if (i != log->mainFieldIndexes.amperageLatest) {
-                        fprintf(stderr, "Bad unit for field %d\n", i);
-                        exit(-1);
-                    }
-
-                    fprintf(csvFile, "%.3f", flightLogAmperageADCToMilliamps(log, (uint16_t)frame[i]) / 1000.0);
-                break;            
-                case UNIT_MILLIVOLTS:
-                    if (i != log->mainFieldIndexes.vbatLatest) {
-                        fprintf(stderr, "Bad unit for field %d\n", i);
-                        exit(-1);
-                    }
-
-                    fprintf(csvFile, "%u", flightLogVbatADCToMillivolts(log, (uint16_t)frame[i]));
-                break;
-                case UNIT_MILLIAMPS:
-                    if (i != log->mainFieldIndexes.amperageLatest) {
-                        fprintf(stderr, "Bad unit for field %d\n", i);
-                        exit(-1);
-                    }
-
-                    fprintf(csvFile, "%u", flightLogAmperageADCToMilliamps(log, (uint16_t)frame[i]));
-                break;
-                default:
-                case UNIT_RAW:
-                    if (log->mainFieldSigned[i] || options.raw)
-                        fprintf(csvFile, "%3d", frame[i]);
-                    else
-                        fprintf(csvFile, "%3u", (uint32_t) frame[i]);
-                break;
+            if (!printfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
+                fprintf(stderr, "Bad unit for field %d\n", i);
+                exit(-1);
             }
         }
     }
@@ -526,8 +555,9 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 
 void resetGPSFieldIdents()
 {
-    for (int i = 0; i < FLIGHT_LOG_MAX_FIELDS; i++)
+    for (int i = 0; i < FLIGHT_LOG_MAX_FIELDS; i++) {
         gpsFieldTypes[i] = GPS_FIELD_TYPE_INTEGER;
+    }
 }
 
 /**
@@ -573,9 +603,29 @@ void applyFieldUnits(flightLog_t *log)
         mainFieldUnit[log->mainFieldIndexes.amperageLatest] = options.unitAmperage;
     }
 
-    if (log->gpsFieldIndexes.GPS_speed > -1) {
-        mainFieldUnit[log->gpsFieldIndexes.GPS_speed] = options.unitGPSSpeed;
+    if (log->mainFieldIndexes.BaroAlt > -1) {
+        mainFieldUnit[log->mainFieldIndexes.BaroAlt] = options.unitHeight;
     }
+
+    if (log->mainFieldIndexes.time > -1) {
+        mainFieldUnit[log->mainFieldIndexes.time] = options.unitFrameTime;
+    }
+
+    if (log->gpsFieldIndexes.GPS_speed > -1) {
+        gpsGFieldUnit[log->gpsFieldIndexes.GPS_speed] = options.unitGPSSpeed;
+    }
+
+    for (int i = 0; i < 3; i++) {
+        if (log->mainFieldIndexes.accSmooth[i] > -1) {
+            mainFieldUnit[log->mainFieldIndexes.accSmooth[i]] = options.unitAcceleration;
+        }
+
+        if (log->mainFieldIndexes.gyroData[i] > -1) {
+            mainFieldUnit[log->mainFieldIndexes.gyroData[i]] = options.unitRotation;
+        }
+    }
+
+
 }
 
 void writeMainCSVHeader(flightLog_t *log)
@@ -886,8 +936,12 @@ void printUsage(const char *argv0)
         "   --index <num>            Choose the log from the file that should be decoded (or omit to decode all)\n"
         "   --limits                 Print the limits and range of each field\n"
         "   --stdout                 Write log to stdout instead of to a file\n"
-        "   --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)\n"
         "   --unit-amperage <unit>   Current meter unit (raw|mA|A), default is A (amps)\n"
+        "   --unit-frame-time <unit> Frame timestamp unit (us|s), default is us (microseconds)\n"
+        "   --unit-height <unit>     Height unit (m|cm|ft), default is cm (centimeters)\n"
+        "   --unit-rotation <unit>   Rate of rotation unit (raw|deg/s|rad/s), default is deg/s (degrees per second)\n"
+        "   --unit-acceleration <u>  Acceleration unit (raw|g|m/s2), default is g (9.8m/s/s)\n"
+        "   --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)\n"
         "   --unit-vbat <unit>       Vbat unit (raw|mV|V), default is V (volts)\n"
         "   --merge-gps              Merge GPS data into the main CSV log file instead of writing it separately\n"
         "   --simulate-imu           Compute tilt/roll/heading fields from gyro/accel/mag data\n"
@@ -898,49 +952,6 @@ void printUsage(const char *argv0)
         "   --raw                    Don't apply predictions to fields (show raw field deltas)\n"
         "\n", argv0
     );
-}
-
-/**
- * Case-insentive string equality test.
- */
-bool striequals(const char *first, const char *second)
-{
-    while (1) {
-        if (tolower(*first) != tolower(*second)) {
-            return false;
-        }
-        if (*first == '\0') {
-            return true;
-        }
-
-        first++;
-        second++;
-    }
-}
-
-bool parseUnit(const char *text, Unit *unit)
-{
-    if (striequals(text, "kph") || striequals(text, "kmph")  || striequals(text, "km/h") || striequals(text, "km/hr")) {
-        *unit = UNIT_KILOMETERS_PER_HOUR;
-    } else if (striequals(text, "mps") || striequals(text, "m/s")) {
-        *unit = UNIT_METERS_PER_SECOND;
-    } else if (striequals(text, "mph") || striequals(text, "mi/h") || striequals(text, "mi/hr")) {
-        *unit = UNIT_MILES_PER_HOUR;
-    } else if (striequals(text, "mv")) {
-        *unit = UNIT_MILLIVOLTS;
-    } else if (striequals(text, "ma")) {
-        *unit = UNIT_MILLIAMPS;
-    } else if (striequals(text, "v")) {
-        *unit = UNIT_VOLTS;
-    } else if (striequals(text, "a")) {
-        *unit = UNIT_AMPS;
-    } else if (striequals(text, "raw")) {
-        *unit = UNIT_RAW;
-    } else {
-        return false;
-    }
-
-    return true;
 }
 
 double parseDegreesMinutes(const char *s)
@@ -964,7 +975,11 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_DECLINATION_DECIMAL,
         SETTING_UNIT_GPS_SPEED,
         SETTING_UNIT_VBAT,
-        SETTING_UNIT_AMPERAGE
+        SETTING_UNIT_AMPERAGE,
+        SETTING_UNIT_HEIGHT,
+        SETTING_UNIT_ROTATION,
+        SETTING_UNIT_ACCELERATION,
+        SETTING_UNIT_FRAME_TIME,
     };
 
     while (1)
@@ -985,6 +1000,10 @@ void parseCommandlineOptions(int argc, char **argv)
             {"unit-gps-speed", required_argument, 0, SETTING_UNIT_GPS_SPEED},
             {"unit-vbat", required_argument, 0, SETTING_UNIT_VBAT},
             {"unit-amperage", required_argument, 0, SETTING_UNIT_AMPERAGE},
+            {"unit-height", required_argument, 0, SETTING_UNIT_HEIGHT},
+            {"unit-rotation", required_argument, 0, SETTING_UNIT_ROTATION},
+            {"unit-acceleration", required_argument, 0, SETTING_UNIT_ACCELERATION},
+            {"unit-frame-time", required_argument, 0, SETTING_UNIT_FRAME_TIME},
             {0, 0, 0, 0}
         };
 
@@ -1005,20 +1024,44 @@ void parseCommandlineOptions(int argc, char **argv)
                 options.outputPrefix = optarg;
             break;
             case SETTING_UNIT_GPS_SPEED:
-                if (!parseUnit(optarg, &options.unitGPSSpeed)) {
+                if (!unitFromName(optarg, &options.unitGPSSpeed)) {
                     fprintf(stderr, "Bad GPS speed unit\n");
                     exit(-1);
                 }
             break;
+            case SETTING_UNIT_FRAME_TIME:
+                if (!unitFromName(optarg, &options.unitFrameTime)) {
+                    fprintf(stderr, "Bad frame time unit\n");
+                    exit(-1);
+                }
+            break;
             case SETTING_UNIT_VBAT:
-                if (!parseUnit(optarg, &options.unitVbat)) {
+                if (!unitFromName(optarg, &options.unitVbat)) {
                     fprintf(stderr, "Bad VBAT unit\n");
                     exit(-1);
                 }
             break;
             case SETTING_UNIT_AMPERAGE:
-                if (!parseUnit(optarg, &options.unitAmperage)) {
+                if (!unitFromName(optarg, &options.unitAmperage)) {
                     fprintf(stderr, "Bad Amperage unit\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_UNIT_HEIGHT:
+                if (!unitFromName(optarg, &options.unitHeight)) {
+                    fprintf(stderr, "Bad height unit\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_UNIT_ACCELERATION:
+                if (!unitFromName(optarg, &options.unitAcceleration)) {
+                    fprintf(stderr, "Bad acceleration unit\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_UNIT_ROTATION:
+                if (!unitFromName(optarg, &options.unitRotation)) {
+                    fprintf(stderr, "Bad rotation unit\n");
                     exit(-1);
                 }
             break;

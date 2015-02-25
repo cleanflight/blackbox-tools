@@ -32,7 +32,7 @@ OBJECT_DIR	 = $(ROOT)/obj
 BIN_DIR		 = $(ROOT)/obj
 
 # Source files common to all targets
-COMMON_SRC	 = parser.c tools.c platform.c stream.c decoders.c
+COMMON_SRC	 = parser.c tools.c platform.c stream.c decoders.c units.c
 DECODER_SRC	 = $(COMMON_SRC) blackbox_decode.c gpxwriter.c imu.c
 RENDERER_SRC = $(COMMON_SRC) blackbox_render.c datapoints.c embeddedfont.c expo.c imu.c
 ENCODER_TESTBED_SRC = $(COMMON_SRC) encoder_testbed.c
