@@ -742,7 +742,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
         fprintf(stderr, "Data rate %4uHz %6u bytes/s %10u baud\n",
             (unsigned int) (((int64_t) goodFrames * 1000) / intervalMS),
             (unsigned int) (((int64_t) stats->totalBytes * 1000) / intervalMS),
-            (unsigned int) ((((int64_t) stats->totalBytes * 1000 * 8) / intervalMS + 100 - 1) / 100 * 100)); /* Round baud rate up to nearest 100 */
+            (unsigned int) ((((int64_t) stats->totalBytes * 1000 * (8 + 1 + 1)) / intervalMS + 100 - 1) / 100 * 100)); /* Round baud rate up to nearest 100 */
     } else {
         fprintf(stderr, "Data rate: Unknown, no timing information available.\n");
     }
