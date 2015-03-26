@@ -8,6 +8,14 @@
 
 #include <sys/stat.h>
 
+#ifndef WIN32
+    #define POSIX
+#endif
+
+#ifdef POSIX
+    pthread_attr_t pthreadCreateDetached;
+#endif
+
 #ifdef WIN32
     /*
      * I don't want to have to define my thread routine stdcall on windows and cdecl on POSIX, so
@@ -42,7 +50,7 @@ void thread_create(thread_t *thread, threadRoutine_t threadFunc, void *data)
 
     *thread = CreateThread(NULL, 0, win32ThreadFuncUnwrap, wrap, 0, NULL);
 #else
-    pthread_create(thread, NULL, threadFunc, data);
+    pthread_create(thread, &pthreadCreateDetached, threadFunc, data);
 #endif
 }
 
@@ -156,4 +164,15 @@ void munmap_file(fileMapping_t *mapping)
             munmap((void*)mapping->data, mapping->size);
         #endif
     }
+}
+
+/**
+ * Call before any other routines in this unit.
+ */
+void platform_init()
+{
+#ifdef POSIX
+    pthread_attr_init(&pthreadCreateDetached);
+    pthread_attr_setdetachstate(&pthreadCreateDetached, PTHREAD_CREATE_DETACHED);
+#endif
 }

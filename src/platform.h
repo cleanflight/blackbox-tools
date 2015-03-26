@@ -64,4 +64,6 @@ void semaphore_signal(semaphore_t *sem);
 
 bool directory_create(const char *name);
 
+void platform_init();
+
 #endif

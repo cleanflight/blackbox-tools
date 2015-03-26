@@ -1096,6 +1096,8 @@ int main(int argc, char **argv)
     int fd;
     int logIndex;
 
+    platform_init();
+
     parseCommandlineOptions(argc, argv);
 
     if (options.help || argc == 1) {

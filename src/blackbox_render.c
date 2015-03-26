@@ -967,6 +967,8 @@ void* pngRenderThread(void *arg)
     //Release our slot in the rendering pool, we're done
     semaphore_signal(&pngRenderingSem);
 
+    free(task);
+
     return 0;
 }
 
@@ -1625,6 +1627,8 @@ int main(int argc, char **argv)
     char **fieldNames;
     uint32_t frameStart, frameEnd;
     int fd;
+
+    platform_init();
 
     parseCommandlineOptions(argc, argv);
 
