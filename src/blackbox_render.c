@@ -984,7 +984,6 @@ void saveSurfaceAsync(cairo_surface_t *surface, int logIndex, int outputFrameInd
         pngRenderingSemCreated = true;
     }
 
-    thread_t thread;
     pngRenderingTask_t *task = (pngRenderingTask_t*) malloc(sizeof(*task));
 
     task->surface = surface;
@@ -994,7 +993,7 @@ void saveSurfaceAsync(cairo_surface_t *surface, int logIndex, int outputFrameInd
     // Reserve a slot in the rendering pool...
     semaphore_wait(&pngRenderingSem);
 
-    thread_create(&thread, pngRenderThread, task);
+    thread_create_detached(pngRenderThread, task);
 }
 
 void waitForFramesToSave()

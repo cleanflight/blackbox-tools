@@ -52,7 +52,7 @@ typedef struct fileMapping_t {
 
 typedef void*(*threadRoutine_t)(void *data);
 
-void thread_create(thread_t *thread, threadRoutine_t threadFunc, void *data);
+void thread_create_detached(threadRoutine_t threadFunc, void *data);
 
 bool mmap_file(fileMapping_t *mapping, int fd);
 void munmap_file(fileMapping_t *mapping);

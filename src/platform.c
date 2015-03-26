@@ -40,17 +40,22 @@
     }
 #endif
 
-void thread_create(thread_t *thread, threadRoutine_t threadFunc, void *data)
+void thread_create_detached(threadRoutine_t threadFunc, void *data)
 {
+    thread_t thread;
+
 #if defined(WIN32)
     win32ThreadFuncWrapper_t *wrap = malloc(sizeof(*wrap));
 
     wrap->threadFunc = threadFunc;
     wrap->data = data;
 
-    *thread = CreateThread(NULL, 0, win32ThreadFuncUnwrap, wrap, 0, NULL);
+    thread = CreateThread(NULL, 0, win32ThreadFuncUnwrap, wrap, 0, NULL);
+
+    // Detach from thread immediately
+    CloseHandle(thread);
 #else
-    pthread_create(thread, &pthreadCreateDetached, threadFunc, data);
+    pthread_create(&thread, &pthreadCreateDetached, threadFunc, data);
 #endif
 }
 
