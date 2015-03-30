@@ -29,14 +29,19 @@
 #include "tools.h"
 #include "gpxwriter.h"
 #include "imu.h"
+#include "battery.h"
 #include "units.h"
 
 typedef struct decodeOptions_t {
     int help, raw, limits, debug, toStdout;
     int logNumber;
     int simulateIMU, imuIgnoreMag;
+    int simulateCurrentMeter;
     int mergeGPS;
     const char *outputPrefix;
+
+    bool overrideSimCurrentMeterOffset, overrideSimCurrentMeterScale;
+    int16_t simCurrentMeterOffset, simCurrentMeterScale;
 
     Unit unitGPSSpeed, unitFrameTime, unitVbat, unitAmperage, unitHeight, unitAcceleration, unitRotation;
 } decodeOptions_t;
@@ -45,7 +50,13 @@ decodeOptions_t options = {
     .help = 0, .raw = 0, .limits = 0, .debug = 0, .toStdout = 0,
     .logNumber = -1,
     .simulateIMU = false, .imuIgnoreMag = 0,
+    .simulateCurrentMeter = false,
     .mergeGPS = 0,
+
+    .overrideSimCurrentMeterOffset = false,
+    .overrideSimCurrentMeterScale = false,
+
+    .simCurrentMeterOffset = 0, .simCurrentMeterScale = 0,
 
     .outputPrefix = NULL,
 
@@ -75,6 +86,9 @@ static FILE *csvFile = 0, *eventFile = 0, *gpsCsvFile = 0;
 static char *eventFilename = 0, *gpsCsvFilename = 0;
 static gpxWriter_t *gpx = 0;
 
+// Computed states:
+static currentMeterState_t currentMeterMeasured;
+static currentMeterState_t currentMeterVirtual;
 static attitude_t attitude;
 
 static Unit mainFieldUnit[FLIGHT_LOG_MAX_FIELDS];
@@ -180,28 +194,53 @@ void createGPSCSVFile(flightLog_t *log)
     }
 }
 
-static void updateIMU(flightLog_t *log, int32_t *frame, uint32_t currentTime, attitude_t *result)
+static void updateSimulations(flightLog_t *log, int32_t *frame, uint32_t currentTime)
 {
     int16_t gyroData[3];
     int16_t accSmooth[3];
     int16_t magADC[3];
+
     bool hasMag = log->mainFieldIndexes.magADC[0] > -1;
+    bool hasThrottle = log->mainFieldIndexes.rcCommand[3] != -1;
+    bool hasAmperageADC = log->mainFieldIndexes.amperageLatest != -1;
 
     int i;
 
-    for (i = 0; i < 3; i++) {
-        gyroData[i] = (int16_t) frame[log->mainFieldIndexes.gyroData[i]];
-        accSmooth[i] = (int16_t) frame[log->mainFieldIndexes.accSmooth[i]];
-    }
-
-    if (hasMag && !options.imuIgnoreMag) {
+    if (options.simulateIMU) {
         for (i = 0; i < 3; i++) {
-            magADC[i] = (int16_t) frame[log->mainFieldIndexes.magADC[i]];
+            gyroData[i] = (int16_t) frame[log->mainFieldIndexes.gyroData[i]];
+            accSmooth[i] = (int16_t) frame[log->mainFieldIndexes.accSmooth[i]];
         }
+
+        if (hasMag && !options.imuIgnoreMag) {
+            for (i = 0; i < 3; i++) {
+                magADC[i] = (int16_t) frame[log->mainFieldIndexes.magADC[i]];
+            }
+        }
+
+        updateEstimatedAttitude(gyroData, accSmooth, hasMag && !options.imuIgnoreMag ? magADC : NULL,
+            currentTime, log->sysConfig.acc_1G, log->sysConfig.gyroScale, &attitude);
     }
 
-    updateEstimatedAttitude(gyroData, accSmooth, hasMag && !options.imuIgnoreMag ? magADC : NULL,
-        currentTime, log->sysConfig.acc_1G, log->sysConfig.gyroScale, result);
+    if (hasAmperageADC) {
+        currentMeterUpdateMeasured(
+            &currentMeterMeasured,
+            flightLogAmperageADCToMilliamps(log, frame[log->mainFieldIndexes.amperageLatest]),
+            currentTime
+        );
+    }
+
+    if (options.simulateCurrentMeter && hasThrottle) {
+        int16_t throttle = frame[log->mainFieldIndexes.rcCommand[3]];
+
+        currentMeterUpdateVirtual(
+            &currentMeterVirtual,
+            options.overrideSimCurrentMeterOffset ? options.simCurrentMeterOffset : log->sysConfig.currentMeterOffset,
+            options.overrideSimCurrentMeterScale ? options.simCurrentMeterScale : log->sysConfig.currentMeterScale,
+            throttle,
+            currentTime
+        );
+    }
 }
 
 /**
@@ -281,7 +320,23 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
     }
 }
 
-static bool printfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int32_t fieldValue, Unit unit)
+static void fprintfMilliampsInUnit(FILE *file, int32_t milliamps, Unit unit)
+{
+    switch (unit) {
+        case UNIT_AMPS:
+            fprintf(file, "%.3f", milliamps / 1000.0);
+        break;
+        case UNIT_MILLIAMPS:
+            fprintf(file, "%d", milliamps);
+        break;
+        default:
+            fprintf(stderr, "Bad amperage unit %d\n", (int) unit);
+            exit(-1);
+        break;
+    }
+}
+
+static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int32_t fieldValue, Unit unit)
 {
     /* Convert the fieldValue to the given unit based on the original unit of the field (that we decide on by looking
      * for a well-known field that corresponds to the given fieldIndex.)
@@ -300,14 +355,9 @@ static bool printfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, 
             }
         break;
         case UNIT_AMPS:
-            if (fieldIndex == log->mainFieldIndexes.amperageLatest) {
-                fprintf(file, "%.3f", flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue) / 1000.0);
-                return true;
-            }
-        break;
         case UNIT_MILLIAMPS:
             if (fieldIndex == log->mainFieldIndexes.amperageLatest) {
-                fprintf(file, "%u", flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue));
+                fprintfMilliampsInUnit(file, flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue), unit);
                 return true;
             }
         break;
@@ -409,13 +459,13 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
             if (frameTime == (uint32_t) -1)
                 fprintf(csvFile, "X");
             else {
-                if (!printfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
+                if (!fprintfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
                     fprintf(stderr, "Bad unit for field %d\n", i);
                     exit(-1);
                 }
             }
         } else {
-            if (!printfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
+            if (!fprintfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
                 fprintf(stderr, "Bad unit for field %d\n", i);
                 exit(-1);
             }
@@ -424,6 +474,19 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
 
     if (options.simulateIMU) {
         fprintf(csvFile, ", %.2f, %.2f, %.2f", attitude.roll * 180 / M_PI, attitude.pitch * 180 / M_PI, attitude.heading * 180 / M_PI);
+    }
+
+    if (log->mainFieldIndexes.amperageLatest != -1) {
+        // Integrate the ADC's current measurements to get cumulative energy usage
+        fprintf(csvFile, ", %d", (int) round(currentMeterMeasured.energyMilliampHours));
+    }
+
+    if (options.simulateCurrentMeter) {
+        fprintf(csvFile, ", ");
+
+        fprintfMilliampsInUnit(csvFile, currentMeterVirtual.currentMilliamps, options.unitAmperage);
+
+        fprintf(csvFile, ", %d", (int) round(currentMeterVirtual.energyMilliampHours));
     }
 }
 
@@ -492,9 +555,7 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_
                 lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
             }
 
-            if (options.simulateIMU) {
-                updateIMU(log, frame, lastFrameTime, &attitude);
-            }
+            updateSimulations(log, frame, lastFrameTime);
 
             /*
              * Store this frame to print out later since we don't know if a GPS frame follows it yet.
@@ -528,9 +589,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
         if (frameValid || (frame && options.raw)) {
             lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
 
-            if (options.simulateIMU) {
-                updateIMU(log, frame, lastFrameTime, &attitude);
-            }
+            updateSimulations(log, frame, lastFrameTime);
 
             outputMainFrameFields(log, frameValid ? (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME] : (uint32_t) -1, frame);
 
@@ -645,6 +704,14 @@ void writeMainCSVHeader(flightLog_t *log)
 
     if (options.simulateIMU) {
         fprintf(csvFile, ", roll, pitch, heading");
+    }
+
+    if (log->mainFieldIndexes.amperageLatest != -1) {
+        fprintf(csvFile, ", energyCumulative (mAh)");
+    }
+
+    if (options.simulateCurrentMeter) {
+        fprintf(csvFile, ", currentVirtual (%s), energyCumulativeVirtual (mAh)", UNIT_NAME[options.unitAmperage]);
     }
 
     if (options.mergeGPS && log->gpsFieldCount > 0) {
@@ -944,6 +1011,9 @@ void printUsage(const char *argv0)
         "   --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)\n"
         "   --unit-vbat <unit>       Vbat unit (raw|mV|V), default is V (volts)\n"
         "   --merge-gps              Merge GPS data into the main CSV log file instead of writing it separately\n"
+        "   --simulate-current-meter Simulate a virtual current meter using throttle data\n"
+        "   --sim-current-meter-scale   Override the FC's settings for the current meter simulation\n"
+        "   --sim-current-meter-offset  Override the FC's settings for the current meter simulation\n"
         "   --simulate-imu           Compute tilt/roll/heading fields from gyro/accel/mag data\n"
         "   --imu-ignore-mag         Ignore magnetometer data when computing heading\n"
         "   --declination <val>      Set magnetic declination in degrees.minutes format (e.g. -12.58 for New York)\n"
@@ -971,6 +1041,8 @@ void parseCommandlineOptions(int argc, char **argv)
     enum {
         SETTING_PREFIX = 1,
         SETTING_INDEX,
+        SETTING_CURRENT_METER_OFFSET,
+        SETTING_CURRENT_METER_SCALE,
         SETTING_DECLINATION,
         SETTING_DECLINATION_DECIMAL,
         SETTING_UNIT_GPS_SPEED,
@@ -992,7 +1064,10 @@ void parseCommandlineOptions(int argc, char **argv)
             {"stdout", no_argument, &options.toStdout, 1},
             {"merge-gps", no_argument, &options.mergeGPS, 1},
             {"simulate-imu", no_argument, &options.simulateIMU, 1},
+            {"simulate-current-meter", no_argument, &options.simulateCurrentMeter, 1},
             {"imu-ignore-mag", no_argument, &options.imuIgnoreMag, 1},
+            {"sim-current-meter-scale", required_argument, 0, SETTING_CURRENT_METER_SCALE},
+            {"sim-current-meter-offset", required_argument, 0, SETTING_CURRENT_METER_OFFSET},
             {"declination", required_argument, 0, SETTING_DECLINATION},
             {"declination-dec", required_argument, 0, SETTING_DECLINATION_DECIMAL},
             {"prefix", required_argument, 0, SETTING_PREFIX},
@@ -1070,6 +1145,14 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_DECLINATION_DECIMAL:
                 imuSetMagneticDeclination(atof(optarg));
+            break;
+            case SETTING_CURRENT_METER_SCALE:
+                options.overrideSimCurrentMeterScale = true;
+                options.simCurrentMeterScale = atoi(optarg);
+            break;
+            case SETTING_CURRENT_METER_OFFSET:
+                options.overrideSimCurrentMeterOffset = true;
+                options.simCurrentMeterOffset = atoi(optarg);
             break;
             case '\0':
                 //Longopt which has set a flag

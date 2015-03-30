@@ -41,11 +41,14 @@ Options:
    --unit-amperage <unit>   Current meter unit (raw|mA|A), default is A (amps)
    --unit-frame-time <unit> Frame timestamp unit (us|s), default is us (microseconds)
    --unit-height <unit>     Height unit (m|cm|ft), default is cm (centimeters)
-   --unit-rotation <unit>   Rate of rotation unit (raw|deg/s|rad/s), default is deg/s (degrees per second)
-   --unit-acceleration <u>  Acceleration unit (raw|g|m/s2), default is g (9.8m/s/s)
+   --unit-rotation <unit>   Rate of rotation unit (raw|deg/s|rad/s), default is raw
+   --unit-acceleration <u>  Acceleration unit (raw|g|m/s2), default is raw
    --unit-gps-speed <unit>  GPS speed unit (mps|kph|mph), default is mps (meters per second)
    --unit-vbat <unit>       Vbat unit (raw|mV|V), default is V (volts)
    --merge-gps              Merge GPS data into the main CSV log file instead of writing it separately
+   --simulate-current-meter Simulate a virtual current meter using throttle data
+   --sim-current-meter-scale   Override the FC's settings for the current meter simulation
+   --sim-current-meter-offset  Override the FC's settings for the current meter simulation
    --simulate-imu           Compute tilt/roll/heading fields from gyro/accel/mag data
    --imu-ignore-mag         Ignore magnetometer data when computing heading
    --declination <val>      Set magnetic declination in degrees.minutes format (e.g. -12.58 for New York)
@@ -130,6 +133,10 @@ output folder for the "render to:" setting. Then click the "add job to render qu
 "start render" button on the right to begin rendering the output.
 
 ## Building tools
+If you just want to download some prebuilt versions of these tools, head to the "releases" tab on the GitHub
+page. However, if you want to build your own binaries, or you're on Linux where we haven't provided binaries, please
+read on.
+
 The `blackbox_decode` tool for turning binary flight logs into CSV doesn't depend on any libraries, so can be built by
 running `make obj/blackbox_decode`. You can add the resulting `obj/blackbox_decode` program to your system path to
 make it easier to run.
