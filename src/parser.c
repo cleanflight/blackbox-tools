@@ -713,6 +713,11 @@ static void parseEventFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
             data->autotuneTargets.firstPeakAngle = streamReadS16(stream);
             data->autotuneTargets.secondPeakAngle = streamReadS16(stream);
         break;
+        case FLIGHT_LOG_EVENT_GTUNE_CYCLE_RESULT:
+            data->gtuneCycleResult.axis = streamReadByte(stream);
+            data->gtuneCycleResult.gyroAVG = streamReadSignedVB(stream);
+            data->gtuneCycleResult.newP = streamReadS16(stream);
+        break;
         case FLIGHT_LOG_EVENT_LOG_END:
             streamRead(stream, endMessage, END_OF_LOG_MESSAGE_LEN);
 

@@ -142,6 +142,12 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
                 event->data.autotuneTargets.targetAngle, event->data.autotuneTargets.targetAngleAtPeak,
                 event->data.autotuneTargets.firstPeakAngle / 10.0, event->data.autotuneTargets.secondPeakAngle / 10.0);
         break;
+        case FLIGHT_LOG_EVENT_GTUNE_CYCLE_RESULT:
+            fprintf(eventFile, "{\"name\":\"Gtune result\", \"time\":%u, \"data\":{\"axis\":%d,\"gyroAVG\":%d,\"newP\":%d}}\n", lastFrameTime,
+                event->data.gtuneCycleResult.axis,
+                event->data.gtuneCycleResult.gyroAVG,
+                event->data.gtuneCycleResult.newP);
+            break;
         case FLIGHT_LOG_EVENT_LOG_END:
             fprintf(eventFile, "{\"name\":\"Log clean end\", \"time\":%u}\n", lastFrameTime);
         break;
