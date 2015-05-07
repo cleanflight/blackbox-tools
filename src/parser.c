@@ -519,7 +519,7 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
         uint32_t value;
         uint32_t values[8];
 
-        if (log->private->frameDefs[frameType].predictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
+        if (predictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
             frame[i] = skippedFrames + 1;
 
             if (previous)
@@ -527,7 +527,7 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
 
             i++;
         } else {
-            switch (private->frameDefs[frameType].encoding[i]) {
+            switch (encoding[i]) {
                 case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
                     value = (uint32_t) streamReadSignedVB(stream);
                 break;
