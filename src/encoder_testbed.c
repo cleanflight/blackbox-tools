@@ -701,8 +701,8 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 
         // We sometimes don't write every axisD[], so check if it is actually available
         for (x = 0; x < XYZ_AXIS_COUNT; x++)
-            if (strncmp(log->mainFieldNames[src], "axisD[", strlen("axisD[")) == 0
-                && log->mainFieldNames[src][strlen("axisD[")] == x + '0') {
+            if (strncmp(log->frameDefs['I'].fieldName[src], "axisD[", strlen("axisD[")) == 0
+                && log->frameDefs['I'].fieldName[src][strlen("axisD[")] == x + '0') {
             blackboxCurrent->axisPID_D[x] = frame[src++];
         } else
             blackboxCurrent->axisPID_D[x] = 0;
@@ -710,14 +710,14 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
         for (x = 0; x < 4; x++)
             blackboxCurrent->rcCommand[x] = frame[src++];
 
-        if (strcmp(log->mainFieldNames[src], "vbatLatest") == 0)
+        if (strcmp(log->frameDefs['I'].fieldName[src], "vbatLatest") == 0)
             blackboxCurrent->vbatLatest = frame[src++];
 
-        if (strncmp(log->mainFieldNames[src], "magADC[", strlen("magADC[")) == 0)
+        if (strncmp(log->frameDefs['I'].fieldName[src], "magADC[", strlen("magADC[")) == 0)
             for (x = 0; x < XYZ_AXIS_COUNT; x++)
                 blackboxCurrent->magADC[x] = frame[src++];
 
-        if (strcmp(log->mainFieldNames[src], "BaroAlt") == 0)
+        if (strcmp(log->frameDefs['I'].fieldName[src], "BaroAlt") == 0)
             blackboxCurrent->BaroAlt = frame[src++];
 
         for (x = 0; x < XYZ_AXIS_COUNT; x++)
@@ -939,9 +939,9 @@ void onMetadataReady(flightLog_t *log)
 
     numberMotor = 0;
 
-    for (i = 0; i < log->mainFieldCount; i++) {
-        if (strncmp(log->mainFieldNames[i], "motor[", strlen("motor[")) == 0) {
-            int motorIndex = atoi(log->mainFieldNames[i] + strlen("motor["));
+    for (i = 0; i < log->frameDefs['I'].fieldCount; i++) {
+        if (strncmp(log->frameDefs['I'].fieldName[i], "motor[", strlen("motor[")) == 0) {
+            int motorIndex = atoi(log->frameDefs['I'].fieldName[i] + strlen("motor["));
 
             if (motorIndex + 1 > numberMotor)
                 numberMotor = motorIndex + 1;

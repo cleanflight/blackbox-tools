@@ -129,4 +129,5 @@ mmapStream_t* streamCreate(int fd)
 void streamDestroy(mmapStream_t *stream)
 {
     munmap_file(&stream->mapping);
+    free(stream);
 }

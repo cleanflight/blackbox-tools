@@ -1688,7 +1688,7 @@ int main(int argc, char **argv)
     flightLogParse(flightLog, selectedLogIndex, NULL, NULL, NULL, false);
 
     // Assign field indexes to the fields we'll add
-    int newFieldIndex = flightLog->mainFieldCount, combinedFieldCount;
+    int newFieldIndex = flightLog->frameDefs['I'].fieldCount, combinedFieldCount;
 
     fieldMeta.roll = newFieldIndex++;
     fieldMeta.pitch = newFieldIndex++;
@@ -1709,8 +1709,8 @@ int main(int argc, char **argv)
     // Create a copy of the array of field names so we can add our custom fields to it
     fieldNames = malloc(sizeof(*fieldNames) * combinedFieldCount);
 
-    for (int i = 0; i < flightLog->mainFieldCount; i++) {
-        fieldNames[i] = strdup(flightLog->mainFieldNames[i]);
+    for (int i = 0; i < flightLog->frameDefs['I'].fieldCount; i++) {
+        fieldNames[i] = strdup(flightLog->frameDefs['I'].fieldName[i]);
     }
 
     // And add our synthetic field names

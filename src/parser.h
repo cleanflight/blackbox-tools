@@ -74,6 +74,11 @@ typedef struct gpsHFieldIndexes_t {
     int GPS_home[2];
 } gpsHFieldIndexes_t;
 
+typedef struct slowFieldIndexes_t {
+    int flightModeFlags;
+    int stateFlags;
+} slowFieldIndexes_t;
+
 typedef struct mainFieldIndexes_t {
     int loopIteration;
     int time;
@@ -117,8 +122,23 @@ typedef struct flightLogSysConfig_t {
     FirmwareType firmwareType;
 } flightLogSysConfig_t;
 
+typedef struct flightLogFrameDef_t {
+    char *namesLine; // The parser owns this memory to store the field names for this frame type (as a single string)
+
+    int fieldCount;
+
+    char *fieldName[FLIGHT_LOG_MAX_FIELDS];
+    
+    int fieldSigned[FLIGHT_LOG_MAX_FIELDS];
+    int predictor[FLIGHT_LOG_MAX_FIELDS];
+    int encoding[FLIGHT_LOG_MAX_FIELDS];
+} flightLogFrameDef_t;
+
 typedef struct flightLog_t {
     flightLogStatistics_t stats;
+
+    //Information about fields which we need to decode them properly
+    flightLogFrameDef_t frameDefs[256];
 
     flightLogSysConfig_t sysConfig;
 
@@ -129,21 +149,10 @@ typedef struct flightLog_t {
     unsigned int frameIntervalI;
     unsigned int frameIntervalPNum, frameIntervalPDenom;
 
-    int mainFieldSigned[FLIGHT_LOG_MAX_FIELDS];
-    int gpsFieldSigned[FLIGHT_LOG_MAX_FIELDS];
-
-    int mainFieldCount;
-    char *mainFieldNames[FLIGHT_LOG_MAX_FIELDS];
-
-    int gpsHomeFieldCount;
-    char *gpsHomeFieldNames[FLIGHT_LOG_MAX_FIELDS];
-
-    int gpsFieldCount;
-    char *gpsFieldNames[FLIGHT_LOG_MAX_FIELDS];
-
+    mainFieldIndexes_t mainFieldIndexes;
     gpsGFieldIndexes_t gpsFieldIndexes;
     gpsHFieldIndexes_t gpsHomeFieldIndexes;
-    mainFieldIndexes_t mainFieldIndexes;
+    slowFieldIndexes_t slowFieldIndexes;
 
     struct flightLogPrivate_t *private;
 } flightLog_t;

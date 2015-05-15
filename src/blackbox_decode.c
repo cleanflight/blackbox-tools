@@ -164,7 +164,7 @@ void outputGPSFieldNamesHeader(flightLog_t *log, FILE *file)
 {
     bool needComma = false;
 
-    for (int i = 0; i < log->gpsFieldCount; i++) {
+    for (int i = 0; i < log->frameDefs['G'].fieldCount; i++) {
         if (i == log->gpsFieldIndexes.time)
             continue;
 
@@ -174,7 +174,7 @@ void outputGPSFieldNamesHeader(flightLog_t *log, FILE *file)
             needComma = true;
         }
 
-        fprintf(file, "%s", log->gpsFieldNames[i]);
+        fprintf(file, "%s", log->frameDefs['G'].fieldName[i]);
 
         if (gpsGFieldUnit[i] != UNIT_RAW) {
             fprintf(file, " (%s)", UNIT_NAME[gpsGFieldUnit[i]]);
@@ -259,7 +259,7 @@ void outputGPSFields(flightLog_t *log, FILE *file, int32_t *frame)
     uint32_t fracDegrees;
     bool needComma = false;
 
-    for (i = 0; i < log->gpsFieldCount; i++) {
+    for (i = 0; i < log->frameDefs['G'].fieldCount; i++) {
         //We've already printed the time:
         if (i == log->gpsFieldIndexes.time)
             continue;
@@ -428,7 +428,7 @@ static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex,
             }
         break;
         case UNIT_RAW:
-            if (log->mainFieldSigned[fieldIndex] || options.raw) {
+            if (log->frameDefs['I'].fieldSigned[fieldIndex] || options.raw) {
                 fprintf(file, "%3d", fieldValue);
             } else {
                 fprintf(file, "%3u", (uint32_t) fieldValue);
@@ -453,7 +453,7 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
     int i;
     bool needComma = false;
 
-    for (i = 0; i < log->mainFieldCount; i++) {
+    for (i = 0; i < log->frameDefs['I'].fieldCount; i++) {
         if (needComma) {
             fprintf(csvFile, ", ");
         } else {
@@ -581,7 +581,7 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_
 
 void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
-    if (options.mergeGPS && log->gpsFieldCount > 0) {
+    if (options.mergeGPS && log->frameDefs['G'].fieldCount > 0) {
         //Use the alternate frame processing routine which merges main stream data and GPS data together
         onFrameReadyMerge(log, frameValid, frame, frameType, fieldCount, frameOffset, frameSize);
         return;
@@ -632,8 +632,8 @@ void identifyGPSFields(flightLog_t *log)
 {
     int i;
 
-    for (i = 0; i < log->gpsFieldCount; i++) {
-        const char *fieldName = log->gpsFieldNames[i];
+    for (i = 0; i < log->frameDefs['G'].fieldCount; i++) {
+        const char *fieldName = log->frameDefs['G'].fieldName[i];
 
         if (strcmp(fieldName, "GPS_coord[0]") == 0) {
             gpsFieldTypes[i] = GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000;
@@ -697,11 +697,11 @@ void writeMainCSVHeader(flightLog_t *log)
 {
     int i;
 
-    for (i = 0; i < log->mainFieldCount; i++) {
+    for (i = 0; i < log->frameDefs['I'].fieldCount; i++) {
         if (i > 0)
             fprintf(csvFile, ", ");
 
-        fprintf(csvFile, "%s", log->mainFieldNames[i]);
+        fprintf(csvFile, "%s", log->frameDefs['I'].fieldName[i]);
 
         if (mainFieldUnit[i] != UNIT_RAW) {
             fprintf(csvFile, " (%s)", UNIT_NAME[mainFieldUnit[i]]);
@@ -720,7 +720,7 @@ void writeMainCSVHeader(flightLog_t *log)
         fprintf(csvFile, ", currentVirtual (%s), energyCumulativeVirtual (mAh)", UNIT_NAME[options.unitAmperage]);
     }
 
-    if (options.mergeGPS && log->gpsFieldCount > 0) {
+    if (options.mergeGPS && log->frameDefs['G'].fieldCount > 0) {
         fprintf(csvFile, ", ");
 
         outputGPSFieldNamesHeader(log, csvFile);
@@ -731,7 +731,7 @@ void writeMainCSVHeader(flightLog_t *log)
 
 void onMetadataReady(flightLog_t *log)
 {
-    if (log->mainFieldCount == 0) {
+    if (log->frameDefs['I'].fieldCount == 0) {
         fprintf(stderr, "No fields found in log, is it missing its header?\n");
         return;
     } else if (options.simulateIMU && (log->mainFieldIndexes.accSmooth[0] == -1 || log->mainFieldIndexes.gyroData[0] == -1)){
@@ -759,7 +759,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
     uint32_t startTimeMS, startTimeSecs, startTimeMins;
     uint32_t endTimeMS, endTimeSecs, endTimeMins;
 
-    uint8_t frameTypes[] = {'I', 'P', 'H', 'G', 'E'};
+    uint8_t frameTypes[] = {'I', 'P', 'H', 'G', 'E', 'S'};
 
     int i;
 
@@ -846,9 +846,9 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
         fprintf(stderr, "\n\n    Field name          Min          Max        Range\n");
         fprintf(stderr,     "-----------------------------------------------------\n");
 
-        for (i = 0; i < log->mainFieldCount; i++) {
+        for (i = 0; i < log->frameDefs['I'].fieldCount; i++) {
             fprintf(stderr, "%14s %12" PRId64 " %12" PRId64 " %12" PRId64 "\n",
-                log->mainFieldNames[i],
+                log->frameDefs['I'].fieldName[i],
                 stats->field[i].min,
                 stats->field[i].max,
                 stats->field[i].max - stats->field[i].min
