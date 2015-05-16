@@ -1249,7 +1249,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
                          * This way we can find the start of the next frame after the corrupt frame if the corrupt frame
                          * was truncated.
                          */
-                        private->stream->pos = frameStart;
+                        private->stream->pos = frameStart + 1;
                         lastFrameType = NULL;
                         prematureEof = false;
                         private->stream->eof = false;
@@ -1261,7 +1261,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
                     goto done;
 
                 frameType = getFrameType((uint8_t) command);
-                frameStart = private->stream->pos;
+                frameStart = private->stream->pos - 1;
 
                 if (frameType) {
                     frameType->parse(log, private->stream, raw);
