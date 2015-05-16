@@ -94,12 +94,139 @@ static attitude_t attitude;
 static Unit mainFieldUnit[FLIGHT_LOG_MAX_FIELDS];
 static Unit gpsGFieldUnit[FLIGHT_LOG_MAX_FIELDS];
 
+static int32_t bufferedSlowFrame[FLIGHT_LOG_MAX_FIELDS];
 static int32_t bufferedMainFrame[FLIGHT_LOG_MAX_FIELDS];
 static bool haveBufferedMainFrame;
 
 static uint32_t bufferedFrameTime;
 
 static int32_t bufferedGPSFrame[FLIGHT_LOG_MAX_FIELDS];
+
+static void fprintfMilliampsInUnit(FILE *file, int32_t milliamps, Unit unit)
+{
+    switch (unit) {
+        case UNIT_AMPS:
+            fprintf(file, "%.3f", milliamps / 1000.0);
+        break;
+        case UNIT_MILLIAMPS:
+            fprintf(file, "%d", milliamps);
+        break;
+        default:
+            fprintf(stderr, "Bad amperage unit %d\n", (int) unit);
+            exit(-1);
+        break;
+    }
+}
+
+static void fprintfMicrosecondsInUnit(FILE *file, uint32_t microseconds, Unit unit)
+{
+    switch (unit) {
+        case UNIT_MICROSECONDS:
+            fprintf(file, "%u", microseconds);
+        break;
+        case UNIT_MILLISECONDS:
+            fprintf(file, "%.3f", microseconds / 1000.0);
+        break;
+        case UNIT_SECONDS:
+            fprintf(file, "%.6f", microseconds / 1000000.0);
+        break;
+        default:
+            fprintf(stderr, "Bad time unit %d\n", (int) unit);
+            exit(-1);
+        break;
+    }
+}
+
+static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int32_t fieldValue, Unit unit)
+{
+    /* Convert the fieldValue to the given unit based on the original unit of the field (that we decide on by looking
+     * for a well-known field that corresponds to the given fieldIndex.)
+     */
+    switch (unit) {
+        case UNIT_VOLTS:
+            if (fieldIndex == log->mainFieldIndexes.vbatLatest) {
+                fprintf(file, "%.3f", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue) / 1000.0);
+                return true;
+            }
+        break;
+        case UNIT_MILLIVOLTS:
+            if (fieldIndex == log->mainFieldIndexes.vbatLatest) {
+                fprintf(file, "%u", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue));
+                return true;
+            }
+        break;
+        case UNIT_AMPS:
+        case UNIT_MILLIAMPS:
+            if (fieldIndex == log->mainFieldIndexes.amperageLatest) {
+                fprintfMilliampsInUnit(file, flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue), unit);
+                return true;
+            }
+        break;
+        case UNIT_CENTIMETERS:
+            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
+                fprintf(file, "%d", fieldValue);
+                return true;
+            }
+        break;
+        case UNIT_METERS:
+            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
+                fprintf(file, "%.2f", (double) fieldValue / 100);
+                return true;
+            }
+        break;
+        case UNIT_FEET:
+            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
+                fprintf(file, "%.2f", (double) fieldValue / 100 * FEET_PER_METER);
+                return true;
+            }
+        break;
+        case UNIT_DEGREES_PER_SECOND:
+            if (fieldIndex >= log->mainFieldIndexes.gyroData[0] && fieldIndex <= log->mainFieldIndexes.gyroData[2]) {
+                fprintf(file, "%.2f", flightlogGyroToRadiansPerSecond(log, fieldValue) * (180 / M_PI));
+                return true;
+            }
+        break;
+        case UNIT_RADIANS_PER_SECOND:
+            if (fieldIndex >= log->mainFieldIndexes.gyroData[0] && fieldIndex <= log->mainFieldIndexes.gyroData[2]) {
+                fprintf(file, "%.2f", flightlogGyroToRadiansPerSecond(log, fieldValue));
+                return true;
+            }
+        break;
+        case UNIT_METERS_PER_SECOND_SQUARED:
+            if (fieldIndex >= log->mainFieldIndexes.accSmooth[0] && fieldIndex <= log->mainFieldIndexes.accSmooth[2]) {
+                fprintf(file, "%.2f", flightlogAccelerationRawToGs(log, fieldValue) * ACCELERATION_DUE_TO_GRAVITY);
+                return true;
+            }
+        break;
+        case UNIT_GS:
+            if (fieldIndex >= log->mainFieldIndexes.accSmooth[0] && fieldIndex <= log->mainFieldIndexes.accSmooth[2]) {
+                fprintf(file, "%.2f", flightlogAccelerationRawToGs(log, fieldValue));
+                return true;
+            }
+        break;
+        case UNIT_MICROSECONDS:
+        case UNIT_MILLISECONDS:
+        case UNIT_SECONDS:
+            if (fieldIndex == log->mainFieldIndexes.time) {
+                fprintfMicrosecondsInUnit(file, (uint32_t) fieldValue, unit);
+                return true;
+            }
+        break;
+        case UNIT_RAW:
+            if (log->frameDefs['I'].fieldSigned[fieldIndex] || options.raw) {
+                fprintf(file, "%3d", fieldValue);
+            } else {
+                fprintf(file, "%3u", (uint32_t) fieldValue);
+            }
+            return true;
+        break;
+        default:
+        break;
+    }
+
+    // Unit could not be handled
+    return false;
+}
 
 void onEvent(flightLog_t *log, flightLogEvent_t *event)
 {
@@ -158,14 +285,15 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
 }
 
 /**
- * Print out a comma separated list of GPS field names, minus the time field.
+ * Print out a comma separated list of field names for the given frame (and field units if not raw),
+ * minus the "time" field if `skipTime` is set.
  */
-void outputGPSFieldNamesHeader(flightLog_t *log, FILE *file)
+void outputFieldNamesHeader(FILE *file, flightLogFrameDef_t *frame, Unit *fieldUnit, bool skipTime)
 {
     bool needComma = false;
 
-    for (int i = 0; i < log->frameDefs['G'].fieldCount; i++) {
-        if (i == log->gpsFieldIndexes.time)
+    for (int i = 0; i < frame->fieldCount; i++) {
+        if (skipTime && strcmp(frame->fieldName[i], "time") == 0)
             continue;
 
         if (needComma) {
@@ -174,10 +302,10 @@ void outputGPSFieldNamesHeader(flightLog_t *log, FILE *file)
             needComma = true;
         }
 
-        fprintf(file, "%s", log->frameDefs['G'].fieldName[i]);
+        fprintf(file, "%s", frame->fieldName[i]);
 
-        if (gpsGFieldUnit[i] != UNIT_RAW) {
-            fprintf(file, " (%s)", UNIT_NAME[gpsGFieldUnit[i]]);
+        if (fieldUnit && fieldUnit[i] != UNIT_RAW) {
+            fprintf(file, " (%s)", UNIT_NAME[fieldUnit[i]]);
         }
     }
 }
@@ -191,9 +319,10 @@ void createGPSCSVFile(flightLog_t *log)
         gpsCsvFile = fopen(gpsCsvFilename, "wb");
 
         if (gpsCsvFile) {
-            fprintf(gpsCsvFile, "time, ");
+            // Since the GPS frame itself may or may not include a timestamp field, skip it and print our own:
+            fprintf(gpsCsvFile, "time (%s), ", UNIT_NAME[options.unitFrameTime]);
 
-            outputGPSFieldNamesHeader(log, gpsCsvFile);
+            outputFieldNamesHeader(gpsCsvFile, &log->frameDefs['G'], gpsGFieldUnit, true);
 
             fprintf(gpsCsvFile, "\n");
         }
@@ -318,129 +447,13 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
     createGPSCSVFile(log);
 
     if (gpsCsvFile) {
-        fprintf(gpsCsvFile, "%u, ", gpsFrameTime);
+        fprintfMicrosecondsInUnit(gpsCsvFile, gpsFrameTime, options.unitFrameTime);
+        fprintf(gpsCsvFile, ", ");
 
         outputGPSFields(log, gpsCsvFile, frame);
 
         fprintf(gpsCsvFile, "\n");
     }
-}
-
-static void fprintfMilliampsInUnit(FILE *file, int32_t milliamps, Unit unit)
-{
-    switch (unit) {
-        case UNIT_AMPS:
-            fprintf(file, "%.3f", milliamps / 1000.0);
-        break;
-        case UNIT_MILLIAMPS:
-            fprintf(file, "%d", milliamps);
-        break;
-        default:
-            fprintf(stderr, "Bad amperage unit %d\n", (int) unit);
-            exit(-1);
-        break;
-    }
-}
-
-static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int32_t fieldValue, Unit unit)
-{
-    /* Convert the fieldValue to the given unit based on the original unit of the field (that we decide on by looking
-     * for a well-known field that corresponds to the given fieldIndex.)
-     */
-    switch (unit) {
-        case UNIT_VOLTS:
-            if (fieldIndex == log->mainFieldIndexes.vbatLatest) {
-                fprintf(file, "%.3f", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue) / 1000.0);
-                return true;
-            }
-        break;
-        case UNIT_MILLIVOLTS:
-            if (fieldIndex == log->mainFieldIndexes.vbatLatest) {
-                fprintf(file, "%u", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue));
-                return true;
-            }
-        break;
-        case UNIT_AMPS:
-        case UNIT_MILLIAMPS:
-            if (fieldIndex == log->mainFieldIndexes.amperageLatest) {
-                fprintfMilliampsInUnit(file, flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue), unit);
-                return true;
-            }
-        break;
-        case UNIT_CENTIMETERS:
-            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
-                fprintf(file, "%d", fieldValue);
-                return true;
-            }
-        break;
-        case UNIT_METERS:
-            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
-                fprintf(file, "%.2f", (double) fieldValue / 100);
-                return true;
-            }
-        break;
-        case UNIT_FEET:
-            if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
-                fprintf(file, "%.2f", (double) fieldValue / 100 * FEET_PER_METER);
-                return true;
-            }
-        break;
-        case UNIT_DEGREES_PER_SECOND:
-            if (fieldIndex >= log->mainFieldIndexes.gyroData[0] && fieldIndex <= log->mainFieldIndexes.gyroData[2]) {
-                fprintf(file, "%.2f", flightlogGyroToRadiansPerSecond(log, fieldValue) * (180 / M_PI));
-                return true;
-            }
-        break;
-        case UNIT_RADIANS_PER_SECOND:
-            if (fieldIndex >= log->mainFieldIndexes.gyroData[0] && fieldIndex <= log->mainFieldIndexes.gyroData[2]) {
-                fprintf(file, "%.2f", flightlogGyroToRadiansPerSecond(log, fieldValue));
-                return true;
-            }
-        break;
-        case UNIT_METERS_PER_SECOND_SQUARED:
-            if (fieldIndex >= log->mainFieldIndexes.accSmooth[0] && fieldIndex <= log->mainFieldIndexes.accSmooth[2]) {
-                fprintf(file, "%.2f", flightlogAccelerationRawToGs(log, fieldValue) * ACCELERATION_DUE_TO_GRAVITY);
-                return true;
-            }
-        break;
-        case UNIT_GS:
-            if (fieldIndex >= log->mainFieldIndexes.accSmooth[0] && fieldIndex <= log->mainFieldIndexes.accSmooth[2]) {
-                fprintf(file, "%.2f", flightlogAccelerationRawToGs(log, fieldValue));
-                return true;
-            }
-        break;
-        case UNIT_MICROSECONDS:
-            if (fieldIndex == log->mainFieldIndexes.time) {
-                fprintf(file, "%u", (uint32_t) fieldValue);
-                return true;
-            }
-        break;
-        case UNIT_MILLISECONDS:
-            if (fieldIndex == log->mainFieldIndexes.time) {
-                fprintf(file, "%.3f", ((uint32_t) fieldValue) / 1000.0);
-                return true;
-            }
-        break;
-        case UNIT_SECONDS:
-            if (fieldIndex == log->mainFieldIndexes.time) {
-                fprintf(file, "%.6f", ((uint32_t) fieldValue) / 1000000.0);
-                return true;
-            }
-        break;
-        case UNIT_RAW:
-            if (log->frameDefs['I'].fieldSigned[fieldIndex] || options.raw) {
-                fprintf(file, "%3d", fieldValue);
-            } else {
-                fprintf(file, "%3u", (uint32_t) fieldValue);
-            }
-            return true;
-        break;
-        default:
-        break;
-    }
-
-    // Unit could not be handled
-    return false;
 }
 
 /**
@@ -462,19 +475,15 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
 
         if (i == FLIGHT_LOG_FIELD_INDEX_TIME) {
             // Use the time the caller provided instead of the time in the frame
-            if (frameTime == (uint32_t) -1)
+            if (frameTime == (uint32_t) -1) {
                 fprintf(csvFile, "X");
-            else {
-                if (!fprintfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
-                    fprintf(stderr, "Bad unit for field %d\n", i);
-                    exit(-1);
-                }
-            }
-        } else {
-            if (!fprintfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
+            } else if (!fprintfMainFieldInUnit(log, csvFile, i, frameTime, mainFieldUnit[i])) {
                 fprintf(stderr, "Bad unit for field %d\n", i);
                 exit(-1);
             }
+        } else if (!fprintfMainFieldInUnit(log, csvFile, i, frame[i], mainFieldUnit[i])) {
+            fprintf(stderr, "Bad unit for field %d\n", i);
+            exit(-1);
         }
     }
 
@@ -493,6 +502,13 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
         fprintfMilliampsInUnit(csvFile, currentMeterVirtual.currentMilliamps, options.unitAmperage);
 
         fprintf(csvFile, ", %d", (int) round(currentMeterVirtual.energyMilliampHours));
+    }
+
+    // Do we have a slow frame to print out too?
+    if (log->slowFieldIndexes.flightModeFlags != -1) {
+        for (int j = 0; j < log->frameDefs['S'].fieldCount; j++) {
+            fprintf(csvFile, ", %u", bufferedSlowFrame[j]);
+        }
     }
 }
 
@@ -520,62 +536,75 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_
     (void) frameOffset;
     (void) frameSize;
 
-    if (frameType == 'G') {
-        if (frameValid) {
-            if (log->gpsFieldIndexes.time == -1 || (uint32_t) frame[log->gpsFieldIndexes.time] == lastFrameTime) {
-                //This GPS frame was logged in the same iteration as the main frame that preceded it
-                gpsFrameTime = lastFrameTime;
-            } else {
-                gpsFrameTime = frame[log->gpsFieldIndexes.time];
+    switch (frameType) {
+        case 'G':
+            if (frameValid) {
+                if (log->gpsFieldIndexes.time == -1 || (uint32_t) frame[log->gpsFieldIndexes.time] == lastFrameTime) {
+                    //This GPS frame was logged in the same iteration as the main frame that preceded it
+                    gpsFrameTime = lastFrameTime;
+                } else {
+                    gpsFrameTime = frame[log->gpsFieldIndexes.time];
+
+                    /*
+                     * This GPS frame happened some time after the main frame that preceded it, so print out that main
+                     * frame with its older timestamp first if we didn't print it already.
+                     */
+                    if (haveBufferedMainFrame) {
+                        outputMergeFrame(log);
+                    }
+                }
 
                 /*
-                 * This GPS frame happened some time after the main frame that preceded it, so print out that main
-                 * frame with its older timestamp first if we didn't print it already.
+                 * Copy this GPS data for later since we may need to duplicate it if there is another main frame before
+                 * we get another GPS update.
                  */
+                memcpy(bufferedGPSFrame, frame, sizeof(*bufferedGPSFrame) * fieldCount);
+                bufferedFrameTime = gpsFrameTime;
+
+                outputMergeFrame(log);
+
+                // We need at least lat/lon/altitude from the log to write a useful GPX track
+                if (log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_altitude != -1) {
+                    gpxWriterAddPoint(gpx, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
+                }
+            }
+        break;
+        case 'S':
+            if (frameValid) {
                 if (haveBufferedMainFrame) {
                     outputMergeFrame(log);
                 }
+
+                memcpy(bufferedSlowFrame, frame, sizeof(bufferedSlowFrame));
             }
+        break;
+        case 'P':
+        case 'I':
+            if (frameValid || (frame && options.raw)) {
+                if (haveBufferedMainFrame) {
+                    outputMergeFrame(log);
+                }
 
-            /*
-             * Copy this GPS data for later since we may need to duplicate it if there is another main frame before
-             * we get another GPS update.
-             */
-            memcpy(bufferedGPSFrame, frame, sizeof(*bufferedGPSFrame) * fieldCount);
-            bufferedFrameTime = gpsFrameTime;
+                if (frameValid) {
+                    lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
+                }
 
-            outputMergeFrame(log);
+                updateSimulations(log, frame, lastFrameTime);
 
-            // We need at least lat/lon/altitude from the log to write a useful GPX track
-            if (log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_altitude != -1) {
-                gpxWriterAddPoint(gpx, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
+                /*
+                 * Store this frame to print out later since we don't know if a GPS frame follows it yet.
+                 */
+                memcpy(bufferedMainFrame, frame, sizeof(*bufferedMainFrame) * fieldCount);
+
+                if (frameValid) {
+                    bufferedFrameTime = lastFrameTime;
+                } else {
+                    bufferedFrameTime = -1;
+                }
+
+                haveBufferedMainFrame = true;
             }
-        }
-    } else if (frameType == 'P' || frameType == 'I') {
-        if (frameValid || (frame && options.raw)) {
-            if (haveBufferedMainFrame) {
-                outputMergeFrame(log);
-            }
-
-            if (frameValid) {
-                lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
-            }
-
-            updateSimulations(log, frame, lastFrameTime);
-
-            /*
-             * Store this frame to print out later since we don't know if a GPS frame follows it yet.
-             */
-            memcpy(bufferedMainFrame, frame, sizeof(*bufferedMainFrame) * fieldCount);
-
-            if (frameValid) {
-                bufferedFrameTime = lastFrameTime;
-            } else {
-                bufferedFrameTime = -1;
-            }
-
-            haveBufferedMainFrame = true;
-        }
+        break;
     }
 }
 
@@ -587,34 +616,43 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
         return;
     }
 
-    if (frameType == 'G') {
-        if (frameValid) {
-            outputGPSFrame(log, frame);
-        }
-    } else if (frameType == 'P' || frameType == 'I') {
-        if (frameValid || (frame && options.raw)) {
-            lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
-
-            updateSimulations(log, frame, lastFrameTime);
-
-            outputMainFrameFields(log, frameValid ? (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME] : (uint32_t) -1, frame);
-
-            if (options.debug) {
-                fprintf(csvFile, ", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
-            } else
-                fprintf(csvFile, "\n");
-        } else if (options.debug) {
-            // Print to stdout so that these messages line up with our other output on stdout (stderr isn't synchronised to it)
-            if (frame) {
-                /*
-                 * We'll assume that the frame's iteration count is still fairly sensible (if an earlier frame was corrupt,
-                 * the frame index will be smaller than it should be)
-                 */
-                fprintf(csvFile, "%c Frame unusuable due to prior corruption, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
-            } else {
-                fprintf(csvFile, "Failed to decode %c frame, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
+    switch (frameType) {
+        case 'G':
+            if (frameValid) {
+                outputGPSFrame(log, frame);
             }
-        }
+        break;
+        case 'S':
+            if (frameValid) {
+                memcpy(bufferedSlowFrame, frame, sizeof(bufferedSlowFrame));
+            }
+        break;
+        case 'P':
+        case 'I':
+            if (frameValid || (frame && options.raw)) {
+                lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
+
+                updateSimulations(log, frame, lastFrameTime);
+
+                outputMainFrameFields(log, frameValid ? (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME] : (uint32_t) -1, frame);
+
+                if (options.debug) {
+                    fprintf(csvFile, ", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
+                } else
+                    fprintf(csvFile, "\n");
+            } else if (options.debug) {
+                // Print to stdout so that these messages line up with our other output on stdout (stderr isn't synchronised to it)
+                if (frame) {
+                    /*
+                     * We'll assume that the frame's iteration count is still fairly sensible (if an earlier frame was corrupt,
+                     * the frame index will be smaller than it should be)
+                     */
+                    fprintf(csvFile, "%c Frame unusuable due to prior corruption, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
+                } else {
+                    fprintf(csvFile, "Failed to decode %c frame, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
+                }
+            }
+        break;
     }
 }
 
@@ -720,10 +758,16 @@ void writeMainCSVHeader(flightLog_t *log)
         fprintf(csvFile, ", currentVirtual (%s), energyCumulativeVirtual (mAh)", UNIT_NAME[options.unitAmperage]);
     }
 
+    if (log->frameDefs['S'].fieldCount > 0) {
+        fprintf(csvFile, ", ");
+
+        outputFieldNamesHeader(csvFile, &log->frameDefs['S'], NULL, false);
+    }
+
     if (options.mergeGPS && log->frameDefs['G'].fieldCount > 0) {
         fprintf(csvFile, ", ");
 
-        outputGPSFieldNamesHeader(log, csvFile);
+        outputFieldNamesHeader(csvFile, &log->frameDefs['G'], gpsGFieldUnit, true);
     }
 
     fprintf(csvFile, "\n");
@@ -942,6 +986,8 @@ int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
         memset(bufferedGPSFrame, 0, sizeof(bufferedGPSFrame));
         memset(bufferedMainFrame, 0, sizeof(bufferedMainFrame));
     }
+
+    memset(bufferedSlowFrame, 0, sizeof(bufferedMainFrame));
 
     int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, onEvent, options.raw);
 
