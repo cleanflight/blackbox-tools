@@ -156,8 +156,8 @@ sudo apt-get install make gcc libcairo2-dev
 Build blackbox_render by running `make obj/blackbox_render` (or build both tools by just running `make`).
 
 #### MacOSX
-The easiest way to build is to install the [Xcode development tool][],
-then install an environment like [Homebrew][] or [MacPorts][] onto your system.
+The easiest way to build is to install the [Xcode development tool][], then install an environment like [Homebrew][] 
+or [MacPorts][] onto your system.
 
 From MacPorts, you would do this to get LibCairo:
 
@@ -167,6 +167,22 @@ sudo port install cairo
 ```
 
 Afterwards you can run `make` to build blackbox_render.
+
+If you are using Homebrew instead of MacPorts, run:
+
+```bash
+brew install cairo --without-x11 pkg-config
+```
+
+Afterwards you can run `make` to build blackbox_render.
+
+If you get an error "Package 'xcb-shm', required by 'cairo', not found", your installed version of Cairo depends on
+X11 but your Homebrew X11 libraries are not on your pkgconfig path, so the build process cannot find them. Try this to
+add them to your path:
+
+```bash
+$ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/opt/X11/lib/pkgconfig
+```
 
 [Xcode development tool]: https://itunes.apple.com/us/app/xcode/id497799835
 [Homebrew]: http://brew.sh/
