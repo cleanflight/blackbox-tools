@@ -22,7 +22,8 @@ typedef enum Unit {
     UNIT_FEET,
     UNIT_MICROSECONDS,
     UNIT_MILLISECONDS,
-    UNIT_SECONDS
+    UNIT_SECONDS,
+    UNIT_FLAGS
 } Unit;
 
 // Unit conversion defines:
@@ -48,7 +49,8 @@ static const char* const UNIT_NAME[] = {
     "ft",
     "us",
     "ms",
-    "s"
+    "s",
+    "flags"
 };
 
 double convertMetersPerSecondToUnit(double meterspersec, Unit unit);

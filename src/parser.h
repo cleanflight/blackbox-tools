@@ -169,6 +169,8 @@ unsigned int flightLogVbatADCToMillivolts(flightLog_t *log, uint16_t vbatADC);
 unsigned int flightLogAmperageADCToMilliamps(flightLog_t *log, uint16_t amperageADC);
 double flightlogGyroToRadiansPerSecond(flightLog_t *log, int32_t gyroRaw);
 double flightlogAccelerationRawToGs(flightLog_t *log, int32_t accRaw);
+void flightlogFlightModeToString(uint32_t flightMode, char *dest, int destLen);
+void flightlogFlightStateToString(uint32_t flightState, char *dest, int destLen);
 
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw);
 void flightLogDestroy(flightLog_t *log);

@@ -89,6 +89,8 @@ bool unitFromName(const char *text, Unit *unit)
         *unit = UNIT_SECONDS;
     } else if (striequals(text, "us")) {
         *unit = UNIT_MICROSECONDS;
+    } else if (striequals(text, "flags")) {
+        *unit = UNIT_FLAGS;
     } else {
         return false;
     }

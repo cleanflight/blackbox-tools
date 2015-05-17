@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_ALWAYS = 0,
     FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1,
@@ -83,6 +85,35 @@ typedef enum FlightLogFieldSign {
     FLIGHT_LOG_FIELD_UNSIGNED = 0,
     FLIGHT_LOG_FIELD_SIGNED   = 1
 } FlightLogFieldSign;
+
+typedef enum {
+    ANGLE_MODE      = (1 << 0),
+    HORIZON_MODE    = (1 << 1),
+    MAG_MODE        = (1 << 2),
+    BARO_MODE       = (1 << 3),
+    GPS_HOME_MODE   = (1 << 4),
+    GPS_HOLD_MODE   = (1 << 5),
+    HEADFREE_MODE   = (1 << 6),
+    AUTOTUNE_MODE   = (1 << 7),
+    PASSTHRU_MODE   = (1 << 8),
+    SONAR_MODE      = (1 << 9),
+} flightModeFlags_e;
+
+#define FLIGHT_LOG_FLIGHT_MODE_COUNT 10
+
+extern const char * const FLIGHT_LOG_FLIGHT_MODE_NAME[];
+
+typedef enum {
+    GPS_FIX_HOME   = (1 << 0),
+    GPS_FIX        = (1 << 1),
+    CALIBRATE_MAG  = (1 << 2),
+    SMALL_ANGLE    = (1 << 3),
+    FIXED_WING     = (1 << 4),                   // set when in flying_wing or airplane mode. currently used by althold selection code
+} stateFlags_t;
+
+extern const char * const FLIGHT_LOG_FLIGHT_STATE_NAME[];
+
+#define FLIGHT_LOG_FLIGHT_STATE_COUNT 5
 
 typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,

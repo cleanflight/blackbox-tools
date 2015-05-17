@@ -853,6 +853,58 @@ double flightlogGyroToRadiansPerSecond(flightLog_t *log, int32_t gyroRaw)
     return (double)log->sysConfig.gyroScale * 1000000 * gyroRaw;
 }
 
+static void flightlogDecodeFlagsToString(uint32_t flags, int numFlags, const char * const *flagNames, char *dest, unsigned destLen)
+{
+    bool printedFlag = false;
+    const char NO_FLAGS_MESSAGE[] = "0";
+
+    // The buffer should at least be large enough for us to add the "no flags present" message in!
+    if (destLen < strlen(NO_FLAGS_MESSAGE) + 1) {
+        fprintf(stderr, "Flag buffer too short\n");
+        exit(-1);
+    }
+
+    for (int i = 0; i < numFlags; i++) {
+        if ((flags & (1 << i)) != 0) {
+            const char *flagName = flagNames[i];
+            unsigned flagNameLen = strlen(flagName);
+
+            if (destLen < (printedFlag ? 1 : 0) + flagNameLen + 1 /* Null-terminator */) {
+                // Not enough room in the dest string to fit this flag
+                fprintf(stderr, "Flag buffer too short\n");
+                exit(-1);
+            }
+
+            if (printedFlag) {
+                *dest = '|';
+                dest++;
+                destLen--;
+            } else {
+                printedFlag = true;
+            }
+
+            strcpy(dest, flagName);
+
+            dest += flagNameLen;
+            destLen -= flagNameLen;
+        }
+    }
+
+    if (!printedFlag) {
+        strcpy(dest, NO_FLAGS_MESSAGE);
+    }
+}
+
+void flightlogFlightModeToString(uint32_t flightMode, char *dest, int destLen)
+{
+    flightlogDecodeFlagsToString(flightMode, FLIGHT_LOG_FLIGHT_MODE_COUNT, FLIGHT_LOG_FLIGHT_MODE_NAME, dest, destLen);
+}
+
+void flightlogFlightStateToString(uint32_t flightState, char *dest, int destLen)
+{
+    flightlogDecodeFlagsToString(flightState, FLIGHT_LOG_FLIGHT_STATE_COUNT, FLIGHT_LOG_FLIGHT_STATE_NAME, dest, destLen);
+}
+
 flightLog_t * flightLogCreate(int fd)
 {
     const char *logSearchStart;

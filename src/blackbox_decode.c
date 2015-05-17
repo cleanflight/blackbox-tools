@@ -43,7 +43,7 @@ typedef struct decodeOptions_t {
     bool overrideSimCurrentMeterOffset, overrideSimCurrentMeterScale;
     int16_t simCurrentMeterOffset, simCurrentMeterScale;
 
-    Unit unitGPSSpeed, unitFrameTime, unitVbat, unitAmperage, unitHeight, unitAcceleration, unitRotation;
+    Unit unitGPSSpeed, unitFrameTime, unitVbat, unitAmperage, unitHeight, unitAcceleration, unitRotation, unitFlags;
 } decodeOptions_t;
 
 decodeOptions_t options = {
@@ -66,7 +66,8 @@ decodeOptions_t options = {
     .unitAmperage = UNIT_AMPS,
     .unitHeight = UNIT_CENTIMETERS,
     .unitAcceleration = UNIT_RAW,
-    .unitRotation = UNIT_RAW
+    .unitRotation = UNIT_RAW,
+    .unitFlags = UNIT_FLAGS,
 };
 
 //We'll use field names to identify GPS field units so the values can be formatted for display
@@ -93,6 +94,7 @@ static attitude_t attitude;
 
 static Unit mainFieldUnit[FLIGHT_LOG_MAX_FIELDS];
 static Unit gpsGFieldUnit[FLIGHT_LOG_MAX_FIELDS];
+static Unit slowFieldUnit[FLIGHT_LOG_MAX_FIELDS];
 
 static int32_t bufferedSlowFrame[FLIGHT_LOG_MAX_FIELDS];
 static int32_t bufferedMainFrame[FLIGHT_LOG_MAX_FIELDS];
@@ -507,7 +509,24 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
     // Do we have a slow frame to print out too?
     if (log->slowFieldIndexes.flightModeFlags != -1) {
         for (int j = 0; j < log->frameDefs['S'].fieldCount; j++) {
-            fprintf(csvFile, ", %u", bufferedSlowFrame[j]);
+            if ((j == log->slowFieldIndexes.flightModeFlags || j == log->slowFieldIndexes.stateFlags)
+                    && options.unitFlags == UNIT_FLAGS) {
+                enum {
+                    BUFFER_LEN = 1024
+                };
+                char buffer[BUFFER_LEN];
+
+                if (j == log->slowFieldIndexes.flightModeFlags) {
+                    flightlogFlightModeToString(bufferedSlowFrame[j], buffer, BUFFER_LEN);
+                } else {
+                    flightlogFlightStateToString(bufferedSlowFrame[j], buffer, BUFFER_LEN);
+                }
+
+                fprintf(csvFile, ", %s", buffer);
+            } else {
+                //Print raw
+                fprintf(csvFile, ", %u", bufferedSlowFrame[j]);
+            }
         }
     }
 }
@@ -697,6 +716,7 @@ void applyFieldUnits(flightLog_t *log)
 {
     memset(mainFieldUnit, 0, sizeof(mainFieldUnit));
     memset(gpsGFieldUnit, 0, sizeof(gpsGFieldUnit));
+    memset(slowFieldUnit, 0, sizeof(slowFieldUnit));
 
     if (log->mainFieldIndexes.vbatLatest > -1) {
         mainFieldUnit[log->mainFieldIndexes.vbatLatest] = options.unitVbat;
@@ -728,7 +748,10 @@ void applyFieldUnits(flightLog_t *log)
         }
     }
 
-
+    if (log->slowFieldIndexes.flightModeFlags > -1) {
+        slowFieldUnit[log->slowFieldIndexes.flightModeFlags] = options.unitFlags;
+        slowFieldUnit[log->slowFieldIndexes.stateFlags] = options.unitFlags;
+    }
 }
 
 void writeMainCSVHeader(flightLog_t *log)
@@ -761,7 +784,7 @@ void writeMainCSVHeader(flightLog_t *log)
     if (log->frameDefs['S'].fieldCount > 0) {
         fprintf(csvFile, ", ");
 
-        outputFieldNamesHeader(csvFile, &log->frameDefs['S'], NULL, false);
+        outputFieldNamesHeader(csvFile, &log->frameDefs['S'], slowFieldUnit, false);
     }
 
     if (options.mergeGPS && log->frameDefs['G'].fieldCount > 0) {
@@ -1056,6 +1079,7 @@ void printUsage(const char *argv0)
         "   --limits                 Print the limits and range of each field\n"
         "   --stdout                 Write log to stdout instead of to a file\n"
         "   --unit-amperage <unit>   Current meter unit (raw|mA|A), default is A (amps)\n"
+        "   --unit-flags <unit>      State flags unit (raw|flags), default is flags\n"
         "   --unit-frame-time <unit> Frame timestamp unit (us|s), default is us (microseconds)\n"
         "   --unit-height <unit>     Height unit (m|cm|ft), default is cm (centimeters)\n"
         "   --unit-rotation <unit>   Rate of rotation unit (raw|deg/s|rad/s), default is raw\n"
@@ -1104,6 +1128,7 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_UNIT_ROTATION,
         SETTING_UNIT_ACCELERATION,
         SETTING_UNIT_FRAME_TIME,
+        SETTING_UNIT_FLAGS,
     };
 
     while (1)
@@ -1131,6 +1156,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"unit-rotation", required_argument, 0, SETTING_UNIT_ROTATION},
             {"unit-acceleration", required_argument, 0, SETTING_UNIT_ACCELERATION},
             {"unit-frame-time", required_argument, 0, SETTING_UNIT_FRAME_TIME},
+            {"unit-flags", required_argument, 0, SETTING_UNIT_FLAGS},
             {0, 0, 0, 0}
         };
 
@@ -1189,6 +1215,12 @@ void parseCommandlineOptions(int argc, char **argv)
             case SETTING_UNIT_ROTATION:
                 if (!unitFromName(optarg, &options.unitRotation)) {
                     fprintf(stderr, "Bad rotation unit\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_UNIT_FLAGS:
+                if (!unitFromName(optarg, &options.unitFlags)) {
+                    fprintf(stderr, "Bad flags unit\n");
                     exit(-1);
                 }
             break;
