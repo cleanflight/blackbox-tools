@@ -20,3 +20,10 @@ const char * const FLIGHT_LOG_FLIGHT_STATE_NAME[] = {
     "SMALL_ANGLE",
     "FIXED_WING"
 };
+
+const char * const FLIGHT_LOG_FAILSAFE_PHASE_NAME[] = {
+    "IDLE",
+    "RX_LOSS_DETECTED",
+    "LANDING",
+    "LANDED"
+};

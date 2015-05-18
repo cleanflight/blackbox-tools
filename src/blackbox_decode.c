@@ -460,6 +460,11 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
 
 void outputSlowFrameFields(flightLog_t *log, int32_t *frame)
 {
+    enum {
+        BUFFER_LEN = 1024
+    };
+    char buffer[BUFFER_LEN];
+
     bool needComma = false;
 
     for (int i = 0; i < log->frameDefs['S'].fieldCount; i++) {
@@ -471,16 +476,16 @@ void outputSlowFrameFields(flightLog_t *log, int32_t *frame)
 
         if ((i == log->slowFieldIndexes.flightModeFlags || i == log->slowFieldIndexes.stateFlags)
                 && options.unitFlags == UNIT_FLAGS) {
-            enum {
-                BUFFER_LEN = 1024
-            };
-            char buffer[BUFFER_LEN];
 
             if (i == log->slowFieldIndexes.flightModeFlags) {
                 flightlogFlightModeToString(frame[i], buffer, BUFFER_LEN);
             } else {
                 flightlogFlightStateToString(frame[i], buffer, BUFFER_LEN);
             }
+
+            fprintf(csvFile, "%s", buffer);
+        } else if (i == log->slowFieldIndexes.failsafePhase && options.unitFlags == UNIT_FLAGS) {
+            flightlogFailsafePhaseToString(frame[i], buffer, BUFFER_LEN);
 
             fprintf(csvFile, "%s", buffer);
         } else {
@@ -769,10 +774,17 @@ void applyFieldUnits(flightLog_t *log)
         }
     }
 
+    // Slow frame fields:
     if (log->slowFieldIndexes.flightModeFlags > -1) {
         slowFieldUnit[log->slowFieldIndexes.flightModeFlags] = options.unitFlags;
+    }
+    if (log->slowFieldIndexes.stateFlags > -1) {
         slowFieldUnit[log->slowFieldIndexes.stateFlags] = options.unitFlags;
     }
+    if (log->slowFieldIndexes.failsafePhase > -1) {
+        slowFieldUnit[log->slowFieldIndexes.failsafePhase] = options.unitFlags;
+    }
+
 }
 
 void writeMainCSVHeader(flightLog_t *log)

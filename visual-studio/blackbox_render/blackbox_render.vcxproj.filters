@@ -80,5 +80,8 @@
     <ClCompile Include="..\..\src\stream.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\blackbox_fielddefs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

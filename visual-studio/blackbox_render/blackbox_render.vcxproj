@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\lib\getopt_mb_uni\getopt.c" />
+    <ClCompile Include="..\..\src\blackbox_fielddefs.c" />
     <ClCompile Include="..\..\src\blackbox_render.c" />
     <ClCompile Include="..\..\src\datapoints.c" />
     <ClCompile Include="..\..\src\decoders.c" />

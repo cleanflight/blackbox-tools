@@ -77,6 +77,7 @@ typedef struct gpsHFieldIndexes_t {
 typedef struct slowFieldIndexes_t {
     int flightModeFlags;
     int stateFlags;
+    int failsafePhase;
 } slowFieldIndexes_t;
 
 typedef struct mainFieldIndexes_t {
@@ -171,6 +172,7 @@ double flightlogGyroToRadiansPerSecond(flightLog_t *log, int32_t gyroRaw);
 double flightlogAccelerationRawToGs(flightLog_t *log, int32_t accRaw);
 void flightlogFlightModeToString(uint32_t flightMode, char *dest, int destLen);
 void flightlogFlightStateToString(uint32_t flightState, char *dest, int destLen);
+void flightlogFailsafePhaseToString(uint8_t failsafePhase, char *dest, int destLen);
 
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw);
 void flightLogDestroy(flightLog_t *log);

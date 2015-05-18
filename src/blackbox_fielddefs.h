@@ -115,6 +115,17 @@ extern const char * const FLIGHT_LOG_FLIGHT_STATE_NAME[];
 
 #define FLIGHT_LOG_FLIGHT_STATE_COUNT 5
 
+typedef enum {
+    FAILSAFE_IDLE = 0,
+    FAILSAFE_RX_LOSS_DETECTED,
+    FAILSAFE_LANDING,
+    FAILSAFE_LANDED
+} failsafePhase_e;
+
+extern const char * const FLIGHT_LOG_FAILSAFE_PHASE_NAME[];
+
+#define FLIGHT_LOG_FAILSAFE_PHASE_COUNT 4
+
 typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
     FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START = 10,

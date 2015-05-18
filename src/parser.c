@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include "platform.h"
 #include "parser.h"
@@ -296,6 +297,8 @@ static void identifySlowFields(flightLog_t *log, flightLogFrameDef_t *frameDef)
             log->slowFieldIndexes.flightModeFlags = i;
         } else if (strcmp(fieldName, "stateFlags") == 0) {
             log->slowFieldIndexes.stateFlags = i;
+        } else if (strcmp(fieldName, "failsafePhase") == 0) {
+            log->slowFieldIndexes.failsafePhase = i;
         }
     }
 }
@@ -895,6 +898,25 @@ static void flightlogDecodeFlagsToString(uint32_t flags, int numFlags, const cha
     }
 }
 
+void flightlogDecodeEnumToString(uint32_t value, unsigned numEnums, const char * const *enumNames, char *dest, unsigned destLen)
+{
+    assert(destLen > 1);
+
+    if (value < numEnums) {
+        const char *name = enumNames[value];
+
+        if (strlen(name) < destLen) {
+            strcpy(dest, name);
+        } else {
+            dest[0] = '\0';
+        }
+    } else {
+        // Since we don't have a name for this value, print it as a raw integer instead
+
+        snprintf(dest, destLen, "%u", value);
+    }
+}
+
 void flightlogFlightModeToString(uint32_t flightMode, char *dest, int destLen)
 {
     flightlogDecodeFlagsToString(flightMode, FLIGHT_LOG_FLIGHT_MODE_COUNT, FLIGHT_LOG_FLIGHT_MODE_NAME, dest, destLen);
@@ -903,6 +925,11 @@ void flightlogFlightModeToString(uint32_t flightMode, char *dest, int destLen)
 void flightlogFlightStateToString(uint32_t flightState, char *dest, int destLen)
 {
     flightlogDecodeFlagsToString(flightState, FLIGHT_LOG_FLIGHT_STATE_COUNT, FLIGHT_LOG_FLIGHT_STATE_NAME, dest, destLen);
+}
+
+void flightlogFailsafePhaseToString(uint8_t failsafePhase, char *dest, int destLen)
+{
+    flightlogDecodeEnumToString(failsafePhase, FLIGHT_LOG_FAILSAFE_PHASE_COUNT, FLIGHT_LOG_FAILSAFE_PHASE_NAME, dest, destLen);
 }
 
 flightLog_t * flightLogCreate(int fd)
