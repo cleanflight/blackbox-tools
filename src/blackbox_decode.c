@@ -458,6 +458,38 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
     }
 }
 
+void outputSlowFrameFields(flightLog_t *log, int32_t *frame)
+{
+    bool needComma = false;
+
+    for (int i = 0; i < log->frameDefs['S'].fieldCount; i++) {
+        if (needComma) {
+            fprintf(csvFile, ", ");
+        } else {
+            needComma = true;
+        }
+
+        if ((i == log->slowFieldIndexes.flightModeFlags || i == log->slowFieldIndexes.stateFlags)
+                && options.unitFlags == UNIT_FLAGS) {
+            enum {
+                BUFFER_LEN = 1024
+            };
+            char buffer[BUFFER_LEN];
+
+            if (i == log->slowFieldIndexes.flightModeFlags) {
+                flightlogFlightModeToString(frame[i], buffer, BUFFER_LEN);
+            } else {
+                flightlogFlightStateToString(frame[i], buffer, BUFFER_LEN);
+            }
+
+            fprintf(csvFile, "%s", buffer);
+        } else {
+            //Print raw
+            fprintf(csvFile, "%u", frame[i]);
+        }
+    }
+}
+
 /**
  * Print out the fields from the main log stream in comma separated format.
  *
@@ -508,26 +540,9 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
 
     // Do we have a slow frame to print out too?
     if (log->slowFieldIndexes.flightModeFlags != -1) {
-        for (int j = 0; j < log->frameDefs['S'].fieldCount; j++) {
-            if ((j == log->slowFieldIndexes.flightModeFlags || j == log->slowFieldIndexes.stateFlags)
-                    && options.unitFlags == UNIT_FLAGS) {
-                enum {
-                    BUFFER_LEN = 1024
-                };
-                char buffer[BUFFER_LEN];
+        fprintf(csvFile, ", ");
 
-                if (j == log->slowFieldIndexes.flightModeFlags) {
-                    flightlogFlightModeToString(bufferedSlowFrame[j], buffer, BUFFER_LEN);
-                } else {
-                    flightlogFlightStateToString(bufferedSlowFrame[j], buffer, BUFFER_LEN);
-                }
-
-                fprintf(csvFile, ", %s", buffer);
-            } else {
-                //Print raw
-                fprintf(csvFile, ", %u", bufferedSlowFrame[j]);
-            }
-        }
+        outputSlowFrameFields(log, bufferedSlowFrame);
     }
 }
 
@@ -644,6 +659,12 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
         case 'S':
             if (frameValid) {
                 memcpy(bufferedSlowFrame, frame, sizeof(bufferedSlowFrame));
+
+                if (options.debug) {
+                    fprintf(csvFile, "S frame: ");
+                    outputSlowFrameFields(log, bufferedSlowFrame);
+                    fprintf(csvFile, "\n");
+                }
             }
         break;
         case 'P':
