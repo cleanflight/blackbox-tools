@@ -113,6 +113,7 @@ typedef struct renderOptions_t {
     Unit gyroUnit;
 
     int gapless;
+    int rawAmperage;
 
     PropStyle propStyle;
 
@@ -200,7 +201,8 @@ static const renderOptions_t defaultOptions = {
     .filename = 0,
     .timeStart = 0, .timeEnd = 0,
     .logNumber = 0,
-    .gapless = 0
+    .gapless = 0,
+    .rawAmperage = 1
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -947,8 +949,11 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 
     if (flightLog->mainFieldIndexes.amperageLatest > -1) {
         lastCurrent = (lastCurrent * 2 + flightLogAmperageADCToMilliamps(flightLog, frame[flightLog->mainFieldIndexes.amperageLatest]) / 1000.0) / 3;
-
-        snprintf(labelBuf, sizeof(labelBuf), "Current %.2fA, %dmAh total", lastCurrent, frame[fieldMeta.cumulativeCurrent]);
+        if (options.rawAmperage) {
+          snprintf(labelBuf, sizeof(labelBuf), "Current %d ADC, %.2fA, %dmAh total", frame[flightLog->mainFieldIndexes.amperageLatest], lastCurrent, frame[fieldMeta.cumulativeCurrent]);
+        } else {
+          snprintf(labelBuf, sizeof(labelBuf), "Current %.2fA, %dmAh total", lastCurrent, frame[fieldMeta.cumulativeCurrent]);
+        }
 
         cairo_move_to(cr, 8, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, labelBuf);
@@ -1328,6 +1333,7 @@ void printUsage(const char *argv0)
         "   --unit-gyro <raw|degree>  Unit for the gyro values in the table (default %s)\n"
         "   --prop-style <name>    Style of propeller display (pie/blades, default %s)\n"
         "   --gapless              Fill in gaps in the log with straight lines\n"
+        "   --raw-amperage         Print the current sensor ADC value along with computed amperage\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.pidSmoothing,
             defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing, UNIT_NAME[defaultOptions.gyroUnit],
             PROP_STYLE_NAME[defaultOptions.propStyle]
@@ -1431,6 +1437,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"unit-gyro", required_argument, 0, SETTING_UNIT_GYRO},
             {"prop-style", required_argument, 0, SETTING_PROP_STYLE},
             {"gapless", no_argument, &options.gapless, 1},
+            {"raw-amperage", no_argument, &options.rawAmperage, 1},
             {0, 0, 0, 0}
         };
 
