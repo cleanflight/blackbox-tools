@@ -174,7 +174,7 @@ static float calculateHeading(t_fp_vector *vec, float angleradRoll, float angler
     return hd;
 }
 
-void updateEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], int16_t magADC[3], uint32_t currentTime, uint16_t acc_1G, float gyroScale, attitude_t *attitude)
+void updateEstimatedAttitude(int16_t gyroADC[3], int16_t accSmooth[3], int16_t magADC[3], uint32_t currentTime, uint16_t acc_1G, float gyroScale, attitude_t *attitude)
 {
     int32_t accMag = 0;
     uint32_t deltaTime;
@@ -191,7 +191,7 @@ void updateEstimatedAttitude(int16_t gyroData[3], int16_t accSmooth[3], int16_t 
 
     // Initialization
     for (int axis = 0; axis < 3; axis++) {
-        deltaGyroAngle[axis] = gyroData[axis] * scale;
+        deltaGyroAngle[axis] = gyroADC[axis] * scale;
 
         accMag += (int32_t)accSmooth[axis] * accSmooth[axis];
     }

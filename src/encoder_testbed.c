@@ -113,9 +113,9 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
 #endif
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
-    {"gyroData[0]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"gyroData[1]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"gyroData[2]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC[0]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC[1]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC[2]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"accSmooth[0]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"accSmooth[1]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"accSmooth[2]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -138,7 +138,7 @@ typedef struct blackboxValues_t {
     int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
     int16_t rcCommand[4];
-    int16_t gyroData[3];
+    int16_t gyroADC[3];
     int16_t accSmooth[3];
     int16_t motor[MAX_MOTORS];
     int16_t servo[MAX_SERVOS];
@@ -560,7 +560,7 @@ static void writeIntraframe(void)
 #endif
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxCurrent->gyroData[x]);
+        writeSignedVB(blackboxCurrent->gyroADC[x]);
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxCurrent->accSmooth[x]);
@@ -652,7 +652,7 @@ static void writeInterframe(void)
 
     //Since gyros, accs and motors are noisy, base the prediction on the average of the history:
     for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
+        writeSignedVB(blackboxHistory[0]->gyroADC[x] - (blackboxHistory[1]->gyroADC[x] + blackboxHistory[2]->gyroADC[x]) / 2);
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxHistory[0]->accSmooth[x] - (blackboxHistory[1]->accSmooth[x] + blackboxHistory[2]->accSmooth[x]) / 2);
@@ -721,7 +721,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
             blackboxCurrent->BaroAlt = frame[src++];
 
         for (x = 0; x < XYZ_AXIS_COUNT; x++)
-            blackboxCurrent->gyroData[x] = frame[src++];
+            blackboxCurrent->gyroADC[x] = frame[src++];
 
         for (x = 0; x < XYZ_AXIS_COUNT; x++)
             blackboxCurrent->accSmooth[x] = frame[src++];

@@ -92,7 +92,7 @@ typedef struct mainFieldIndexes_t {
     int magADC[3];
     int BaroAlt;
 
-    int gyroData[3];
+    int gyroADC[3];
     int accSmooth[3];
 
     int motor[FLIGHT_LOG_MAX_MOTORS];

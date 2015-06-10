@@ -260,7 +260,7 @@ void updateFieldMetadata()
     fieldMeta.numMotors = 0;
     fieldMeta.numServos = 0;
 
-    fieldMeta.hasGyros = flightLog->mainFieldIndexes.gyroData[0] > -1;
+    fieldMeta.hasGyros = flightLog->mainFieldIndexes.gyroADC[0] > -1;
     fieldMeta.hasAccs = flightLog->mainFieldIndexes.accSmooth[0] > -1;
     fieldMeta.hasMagADC = flightLog->mainFieldIndexes.magADC[0] > -1;
 
@@ -290,7 +290,7 @@ void updateFieldMetadata()
     }
 
     for (int axisIndex = 0; axisIndex < 3; axisIndex++) {
-        if (flightLog->mainFieldIndexes.gyroData[axisIndex]) {
+        if (flightLog->mainFieldIndexes.gyroADC[axisIndex]) {
             if (options.plotGyros) {
                 if (options.bottomGraphSplitAxes)
                     fieldMeta.gyroColors[axisIndex] = lineColors[(PID_D + 2) % NUM_LINE_COLORS];
@@ -764,7 +764,7 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 
             if (pidType == PID_P - 1) {
                 if (fieldMeta.hasGyros) {
-                    fieldValue = frame[flightLog->mainFieldIndexes.gyroData[axisIndex]];
+                    fieldValue = frame[flightLog->mainFieldIndexes.gyroADC[axisIndex]];
 
                     if (options.gyroUnit == UNIT_DEGREES_PER_SEC) {
                         fieldValue = (int32_t) round(flightlogGyroToRadiansPerSecond(flightLog, fieldValue) * (180 / M_PI));
@@ -1163,7 +1163,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
                         cairo_set_line_width(cr, 3);
 
                         plotLine(cr, fieldMeta.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
-                            flightLog->mainFieldIndexes.gyroData[axis], gyroCurve, (int) (options.imageHeight * 0.15));
+                            flightLog->mainFieldIndexes.gyroADC[axis], gyroCurve, (int) (options.imageHeight * 0.15));
                     }
 
                     const char *axisLabel;
@@ -1209,7 +1209,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
                 for (int axis = 0; axis < 3; axis++) {
                     plotLine(cr, fieldMeta.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
-                            flightLog->mainFieldIndexes.gyroData[axis], gyroCurve, (int) (options.imageHeight * 0.25));
+                            flightLog->mainFieldIndexes.gyroADC[axis], gyroCurve, (int) (options.imageHeight * 0.25));
                 }
 
                 drawAxisLabel(cr, "Gyro");
@@ -1514,7 +1514,7 @@ void parseCommandlineOptions(int argc, char **argv)
 static void applySmoothing() {
     if (options.gyroSmoothing && fieldMeta.hasGyros) {
         for (int axis = 0; axis < 3; axis++)
-            datapointsSmoothField(points, flightLog->mainFieldIndexes.gyroData[axis], options.gyroSmoothing);
+            datapointsSmoothField(points, flightLog->mainFieldIndexes.gyroADC[axis], options.gyroSmoothing);
     }
 
     if (options.pidSmoothing && fieldMeta.hasPIDs) {
@@ -1535,7 +1535,7 @@ static void applySmoothing() {
 }
 
 void computeExtraFields(void) {
-    int16_t accSmooth[3], gyroData[3], magADC[3];
+    int16_t accSmooth[3], gyroADC[3], magADC[3];
     int64_t frameTime, lastFrameTime = 0;
     int32_t frameIndex;
     int32_t frame[FLIGHT_LOG_MAX_FIELDS];
@@ -1550,7 +1550,7 @@ void computeExtraFields(void) {
             if (calculateAttitude) {
                 for (int axis = 0; axis < 3; axis++) {
                     accSmooth[axis] = frame[flightLog->mainFieldIndexes.accSmooth[axis]];
-                    gyroData[axis] = frame[flightLog->mainFieldIndexes.gyroData[axis]];
+                    gyroADC[axis] = frame[flightLog->mainFieldIndexes.gyroADC[axis]];
                 }
 
                 if (fieldMeta.hasMagADC) {
@@ -1559,7 +1559,7 @@ void computeExtraFields(void) {
                     }
                 }
 
-                updateEstimatedAttitude(gyroData, accSmooth, fieldMeta.hasMagADC ? magADC : 0, (uint32_t) frameTime, flightLog->sysConfig.acc_1G, flightLog->sysConfig.gyroScale, &attitude);
+                updateEstimatedAttitude(gyroADC, accSmooth, fieldMeta.hasMagADC ? magADC : 0, (uint32_t) frameTime, flightLog->sysConfig.acc_1G, flightLog->sysConfig.gyroScale, &attitude);
 
                 //Pack those floats into signed ints to store into the datapoints array:
                 datapointsSetFieldAtIndex(points, frameIndex, fieldMeta.roll, floatToInt(attitude.roll));

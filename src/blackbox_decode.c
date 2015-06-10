@@ -183,13 +183,13 @@ static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex,
             }
         break;
         case UNIT_DEGREES_PER_SECOND:
-            if (fieldIndex >= log->mainFieldIndexes.gyroData[0] && fieldIndex <= log->mainFieldIndexes.gyroData[2]) {
+            if (fieldIndex >= log->mainFieldIndexes.gyroADC[0] && fieldIndex <= log->mainFieldIndexes.gyroADC[2]) {
                 fprintf(file, "%.2f", flightlogGyroToRadiansPerSecond(log, fieldValue) * (180 / M_PI));
                 return true;
             }
         break;
         case UNIT_RADIANS_PER_SECOND:
-            if (fieldIndex >= log->mainFieldIndexes.gyroData[0] && fieldIndex <= log->mainFieldIndexes.gyroData[2]) {
+            if (fieldIndex >= log->mainFieldIndexes.gyroADC[0] && fieldIndex <= log->mainFieldIndexes.gyroADC[2]) {
                 fprintf(file, "%.2f", flightlogGyroToRadiansPerSecond(log, fieldValue));
                 return true;
             }
@@ -333,7 +333,7 @@ void createGPSCSVFile(flightLog_t *log)
 
 static void updateSimulations(flightLog_t *log, int32_t *frame, uint32_t currentTime)
 {
-    int16_t gyroData[3];
+    int16_t gyroADC[3];
     int16_t accSmooth[3];
     int16_t magADC[3];
 
@@ -345,7 +345,7 @@ static void updateSimulations(flightLog_t *log, int32_t *frame, uint32_t current
 
     if (options.simulateIMU) {
         for (i = 0; i < 3; i++) {
-            gyroData[i] = (int16_t) frame[log->mainFieldIndexes.gyroData[i]];
+            gyroADC[i] = (int16_t) frame[log->mainFieldIndexes.gyroADC[i]];
             accSmooth[i] = (int16_t) frame[log->mainFieldIndexes.accSmooth[i]];
         }
 
@@ -355,7 +355,7 @@ static void updateSimulations(flightLog_t *log, int32_t *frame, uint32_t current
             }
         }
 
-        updateEstimatedAttitude(gyroData, accSmooth, hasMag && !options.imuIgnoreMag ? magADC : NULL,
+        updateEstimatedAttitude(gyroADC, accSmooth, hasMag && !options.imuIgnoreMag ? magADC : NULL,
             currentTime, log->sysConfig.acc_1G, log->sysConfig.gyroScale, &attitude);
     }
 
@@ -769,8 +769,8 @@ void applyFieldUnits(flightLog_t *log)
             mainFieldUnit[log->mainFieldIndexes.accSmooth[i]] = options.unitAcceleration;
         }
 
-        if (log->mainFieldIndexes.gyroData[i] > -1) {
-            mainFieldUnit[log->mainFieldIndexes.gyroData[i]] = options.unitRotation;
+        if (log->mainFieldIndexes.gyroADC[i] > -1) {
+            mainFieldUnit[log->mainFieldIndexes.gyroADC[i]] = options.unitRotation;
         }
     }
 
@@ -834,7 +834,7 @@ void onMetadataReady(flightLog_t *log)
     if (log->frameDefs['I'].fieldCount == 0) {
         fprintf(stderr, "No fields found in log, is it missing its header?\n");
         return;
-    } else if (options.simulateIMU && (log->mainFieldIndexes.accSmooth[0] == -1 || log->mainFieldIndexes.gyroData[0] == -1)){
+    } else if (options.simulateIMU && (log->mainFieldIndexes.accSmooth[0] == -1 || log->mainFieldIndexes.gyroADC[0] == -1)){
         fprintf(stderr, "Can't simulate the IMU because accelerometer or gyroscope data is missing\n");
         options.simulateIMU = false;
     }

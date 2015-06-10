@@ -207,7 +207,11 @@ static void identifyMainFields(flightLog_t *log, flightLogFrameDef_t *frameDef)
         } else if (startsWith(fieldName, "gyroData[")) {
             int axisIndex = atoi(fieldName + strlen("gyroData["));
 
-            log->mainFieldIndexes.gyroData[axisIndex] = fieldIndex;
+            log->mainFieldIndexes.gyroADC[axisIndex] = fieldIndex;
+        } else if (startsWith(fieldName, "gyroADC[")) {
+            int axisIndex = atoi(fieldName + strlen("gyroADC["));
+
+            log->mainFieldIndexes.gyroADC[axisIndex] = fieldIndex;
         } else if (startsWith(fieldName, "magADC[")) {
             int axisIndex = atoi(fieldName + strlen("magADC["));
 
