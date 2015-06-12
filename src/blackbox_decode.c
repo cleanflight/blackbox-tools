@@ -544,7 +544,7 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
     }
 
     // Do we have a slow frame to print out too?
-    if (log->slowFieldIndexes.flightModeFlags != -1) {
+    if (log->frameDefs['S'].fieldCount > 0) {
         fprintf(csvFile, ", ");
 
         outputSlowFrameFields(log, bufferedSlowFrame);
