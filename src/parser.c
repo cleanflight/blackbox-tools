@@ -731,7 +731,7 @@ static void parseEventFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
 
     char endMessage[END_OF_LOG_MESSAGE_LEN];
     (void) raw;
-
+    uint8_t adjustmentFunction;
     uint8_t eventType = streamReadByte(stream);
 
     flightLogEventData_t *data = &log->private->lastEvent.data;
@@ -765,6 +765,15 @@ static void parseEventFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
             data->gtuneCycleResult.axis = streamReadByte(stream);
             data->gtuneCycleResult.gyroAVG = streamReadSignedVB(stream);
             data->gtuneCycleResult.newP = streamReadS16(stream);
+        break;
+        case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
+             adjustmentFunction = streamReadByte(stream);
+             data->inflightAdjustment.adjustmentFunction = adjustmentFunction;
+             if (adjustmentFunction > 127) {
+                 data->inflightAdjustment.newFloatValue = streamReadRawFloat(stream);
+             } else {
+                 data->inflightAdjustment.newValue = streamReadSignedVB(stream);
+             }
         break;
         case FLIGHT_LOG_EVENT_LOG_END:
             streamRead(stream, endMessage, END_OF_LOG_MESSAGE_LEN);
