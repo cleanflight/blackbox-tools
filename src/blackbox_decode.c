@@ -302,7 +302,7 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
                 event->data.gtuneCycleResult.newP);
         break;
         case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
-            fprintf(eventFile, "{\"name\":\"Inflight adjustment\", \"time\":%u, \"data\":{\"adjustmentFunction\":\"%s\",\"newValue\":", lastFrameTime,
+            fprintf(eventFile, "{\"name\":\"Inflight adjustment\", \"time\":%u, \"data\":{\"adjustmentFunction\":\"%s\",\"value\":", lastFrameTime,
                     INFLIGHT_ADJUSTMENT_FUNCTIONS[event->data.inflightAdjustment.adjustmentFunction & 127]);
             if (event->data.inflightAdjustment.adjustmentFunction > 127) {
                 fprintf(eventFile, "%g", event->data.inflightAdjustment.newFloatValue);
