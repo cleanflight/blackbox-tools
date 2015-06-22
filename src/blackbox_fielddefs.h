@@ -131,6 +131,7 @@ typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START = 10,
     FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT = 11,
     FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS = 12,
+    FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13,
     FLIGHT_LOG_EVENT_GTUNE_CYCLE_RESULT = 20,
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;
@@ -170,6 +171,12 @@ typedef struct flightLogEvent_gtuneCycleResult_t {
     int16_t newP;
 } flightLogEvent_gtuneCycleResult_t;
 
+typedef struct flightLogEvent_inflightAdjustment_t {
+    uint8_t adjustmentFunction;
+    int32_t newValue;
+    float newFloatValue;
+} flightLogEvent_inflightAdjustment_t;
+
 typedef union flightLogEventData_t
 {
     flightLogEvent_syncBeep_t syncBeep;
@@ -177,6 +184,7 @@ typedef union flightLogEventData_t
     flightLogEvent_autotuneCycleResult_t autotuneCycleResult;
     flightLogEvent_autotuneTargets_t autotuneTargets;
     flightLogEvent_gtuneCycleResult_t gtuneCycleResult;
+    flightLogEvent_inflightAdjustment_t inflightAdjustment;
 } flightLogEventData_t;
 
 typedef struct flightLogEvent_t
