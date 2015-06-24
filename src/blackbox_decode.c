@@ -104,6 +104,30 @@ static uint32_t bufferedFrameTime;
 
 static int32_t bufferedGPSFrame[FLIGHT_LOG_MAX_FIELDS];
 
+#define ADJUSTMENT_FUNCTION_COUNT 21
+static char *INFLIGHT_ADJUSTMENT_FUNCTIONS[ADJUSTMENT_FUNCTION_COUNT] = {
+        "NONE",
+        "RC_RATE",
+        "RC_EXPO",
+        "THROTTLE_EXPO",
+        "PITCH_ROLL_RATE",
+        "YAW_RATE",
+        "PITCH_ROLL_P",
+        "PITCH_ROLL_I",
+        "PITCH_ROLL_D",
+        "YAW_P",
+        "YAW_I",
+        "YAW_D",
+        "RATE_PROFILE",
+        "PITCH_RATE",
+        "ROLL_RATE",
+        "PITCH_P",
+        "PITCH_I",
+        "PITCH_D",
+        "ROLL_P",
+        "ROLL_I",
+        "ROLL_D"};
+
 static void fprintfMilliampsInUnit(FILE *file, int32_t milliamps, Unit unit)
 {
     switch (unit) {
@@ -276,7 +300,17 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
                 event->data.gtuneCycleResult.axis,
                 event->data.gtuneCycleResult.gyroAVG,
                 event->data.gtuneCycleResult.newP);
-            break;
+        break;
+        case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
+            fprintf(eventFile, "{\"name\":\"Inflight adjustment\", \"time\":%u, \"data\":{\"adjustmentFunction\":\"%s\",\"value\":", lastFrameTime,
+                    INFLIGHT_ADJUSTMENT_FUNCTIONS[event->data.inflightAdjustment.adjustmentFunction & 127]);
+            if (event->data.inflightAdjustment.adjustmentFunction > 127) {
+                fprintf(eventFile, "%g", event->data.inflightAdjustment.newFloatValue);
+            } else {
+                fprintf(eventFile, "%d", event->data.inflightAdjustment.newValue);
+            }
+            fprintf(eventFile, "}}\n");
+        break;
         case FLIGHT_LOG_EVENT_LOG_END:
             fprintf(eventFile, "{\"name\":\"Log clean end\", \"time\":%u}\n", lastFrameTime);
         break;
