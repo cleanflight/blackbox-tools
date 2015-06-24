@@ -31,6 +31,7 @@
 #include "imu.h"
 #include "battery.h"
 #include "units.h"
+#include "stats.h"
 
 typedef struct decodeOptions_t {
     int help, raw, limits, debug, toStdout;
@@ -81,7 +82,7 @@ typedef enum {
 
 static GPSFieldType gpsFieldTypes[FLIGHT_LOG_MAX_FIELDS];
 
-static uint32_t lastFrameTime = (uint32_t) -1;
+static uint32_t lastFrameTime, lastFrameIteration;
 
 static FILE *csvFile = 0, *eventFile = 0, *gpsCsvFile = 0;
 static char *eventFilename = 0, *gpsCsvFilename = 0;
@@ -100,9 +101,11 @@ static int32_t bufferedSlowFrame[FLIGHT_LOG_MAX_FIELDS];
 static int32_t bufferedMainFrame[FLIGHT_LOG_MAX_FIELDS];
 static bool haveBufferedMainFrame;
 
-static uint32_t bufferedFrameTime;
+static uint32_t bufferedFrameTime, bufferedFrameIteration;
 
 static int32_t bufferedGPSFrame[FLIGHT_LOG_MAX_FIELDS];
+
+static seriesStats_t looptimeStats;
 
 #define ADJUSTMENT_FUNCTION_COUNT 21
 static char *INFLIGHT_ADJUSTMENT_FUNCTIONS[ADJUSTMENT_FUNCTION_COUNT] = {
@@ -595,6 +598,17 @@ void outputMergeFrame(flightLog_t *log)
     haveBufferedMainFrame = false;
 }
 
+void updateFrameStatistics(flightLog_t *log, int32_t *frame)
+{
+    (void) log;
+
+    if (lastFrameIteration != (uint32_t) -1 && (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION] > lastFrameIteration) {
+        uint32_t looptime = (frame[FLIGHT_LOG_FIELD_INDEX_TIME] - lastFrameTime) / (frame[FLIGHT_LOG_FIELD_INDEX_ITERATION] - lastFrameIteration);
+
+        seriesStats_append(&looptimeStats, looptime);
+    }
+}
+
 /**
  * This is called when outputting the log in GPS merge mode. When we parse a main frame, we don't know if a GPS frame
  * exists at the same frame time yet, so we we buffer up the main frame data to print later until we know for sure.
@@ -659,23 +673,28 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_
                 }
 
                 if (frameValid) {
+                    updateFrameStatistics(log, frame);
+
+                    lastFrameIteration = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
                     lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
-                }
 
-                updateSimulations(log, frame, lastFrameTime);
+                    updateSimulations(log, frame, lastFrameTime);
 
-                /*
-                 * Store this frame to print out later since we don't know if a GPS frame follows it yet.
-                 */
-                memcpy(bufferedMainFrame, frame, sizeof(*bufferedMainFrame) * fieldCount);
+                    /*
+                     * Store this frame to print out later since we don't know if a GPS frame follows it yet.
+                     */
+                    memcpy(bufferedMainFrame, frame, sizeof(*bufferedMainFrame) * fieldCount);
 
-                if (frameValid) {
+                    haveBufferedMainFrame = true;
+
+                    bufferedFrameIteration = lastFrameIteration;
                     bufferedFrameTime = lastFrameTime;
                 } else {
+                    haveBufferedMainFrame = false;
+
+                    bufferedFrameIteration = -1;
                     bufferedFrameTime = -1;
                 }
-
-                haveBufferedMainFrame = true;
             }
         break;
     }
@@ -709,9 +728,14 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
         case 'P':
         case 'I':
             if (frameValid || (frame && options.raw)) {
-                lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
+                if (frameValid) {
+                    updateFrameStatistics(log, frame);
 
-                updateSimulations(log, frame, lastFrameTime);
+                    updateSimulations(log, frame, lastFrameTime);
+
+                    lastFrameIteration = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
+                    lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
+                }
 
                 outputMainFrameFields(log, frameValid ? (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME] : (uint32_t) -1, frame);
 
@@ -930,6 +954,11 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 
     fprintf(stderr, "Statistics\n");
 
+    if (seriesStats_getCount(&looptimeStats) > 0) {
+        fprintf(stderr, "Looptime %14d avg %14.1f std dev (%.1f%%)\n", (int) seriesStats_getMean(&looptimeStats),
+            seriesStats_getStandardDeviation(&looptimeStats), seriesStats_getStandardDeviation(&looptimeStats) / seriesStats_getMean(&looptimeStats) * 100);
+    }
+
     for (i = 0; i < (int) sizeof(frameTypes); i++) {
         uint8_t frameType = frameTypes[i];
 
@@ -991,6 +1020,26 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
     }
 
     fprintf(stderr, "\n");
+}
+
+void resetParseState() {
+    if (options.simulateIMU) {
+        imuInit();
+    }
+
+    if (options.mergeGPS) {
+        haveBufferedMainFrame = false;
+        bufferedFrameTime = bufferedFrameIteration = (uint32_t) -1;
+        memset(bufferedGPSFrame, 0, sizeof(bufferedGPSFrame));
+        memset(bufferedMainFrame, 0, sizeof(bufferedMainFrame));
+    }
+
+    memset(bufferedSlowFrame, 0, sizeof(bufferedSlowFrame));
+
+    lastFrameIteration = (uint32_t) -1;
+    lastFrameTime = (uint32_t) -1;
+
+    seriesStats_init(&looptimeStats);
 }
 
 int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
@@ -1066,18 +1115,7 @@ int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
         free(gpxFilename);
     }
 
-    if (options.simulateIMU) {
-        imuInit();
-    }
-
-    if (options.mergeGPS) {
-        haveBufferedMainFrame = false;
-        bufferedFrameTime = (uint32_t) -1;
-        memset(bufferedGPSFrame, 0, sizeof(bufferedGPSFrame));
-        memset(bufferedMainFrame, 0, sizeof(bufferedMainFrame));
-    }
-
-    memset(bufferedSlowFrame, 0, sizeof(bufferedMainFrame));
+    resetParseState();
 
     int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, onEvent, options.raw);
 
