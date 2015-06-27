@@ -1309,7 +1309,8 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
             break;
             case PARSER_STATE_DATA:
                 if (lastFrameType) {
-                    unsigned int lastFrameSize = private->stream->pos - frameStart;
+                    const char *frameEnd = private->stream->pos - 1; //-1 because we've already read 1 byte of the next frame
+                    unsigned int lastFrameSize = frameEnd - frameStart;
 
                     // Is this the beginning of a new frame?
                     frameType = command == EOF ? 0 : getFrameType((uint8_t) command);
@@ -1320,7 +1321,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
                         bool frameAccepted = true;
 
                         if (lastFrameType->complete)
-                            frameAccepted = lastFrameType->complete(log, log->private->stream, lastFrameType->marker, frameStart, private->stream->pos, raw);
+                            frameAccepted = lastFrameType->complete(log, log->private->stream, lastFrameType->marker, frameStart, frameEnd, raw);
 
                         if (frameAccepted) {
                             //Update statistics for this frame type
