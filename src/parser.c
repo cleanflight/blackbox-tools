@@ -230,6 +230,10 @@ static void identifyMainFields(flightLog_t *log, flightLogFrameDef_t *frameDef)
             log->mainFieldIndexes.amperageLatest = fieldIndex;
         } else if (strcmp(fieldName, "BaroAlt") == 0) {
             log->mainFieldIndexes.BaroAlt = fieldIndex;
+        } else if (strcmp(fieldName, "sonarRaw") == 0) {
+            log->mainFieldIndexes.sonarRaw = fieldIndex;
+        } else if (strcmp(fieldName, "rssi") == 0) {
+            log->mainFieldIndexes.rssi = fieldIndex;
         } else if (strcmp(fieldName, "loopIteration") == 0) {
             log->mainFieldIndexes.loopIteration = fieldIndex;
         } else if (strcmp(fieldName, "time") == 0) {
@@ -431,6 +435,10 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
     } else if (strcmp(fieldName, "vbatcellvoltage") == 0) {
         int vbatcellvoltage[3];
         parseCommaSeparatedIntegers(fieldValue, vbatcellvoltage, 3);
+
+        log->sysConfig.vbatmincellvoltage = vbatcellvoltage[0];
+        log->sysConfig.vbatwarningcellvoltage = vbatcellvoltage[1];
+        log->sysConfig.vbatmaxcellvoltage = vbatcellvoltage[2];
     } else if (strcmp(fieldName, "currentMeter") == 0) {
         int currentMeterParams[2];
 

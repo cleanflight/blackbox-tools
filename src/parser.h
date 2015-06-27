@@ -91,6 +91,8 @@ typedef struct mainFieldIndexes_t {
     int vbatLatest, amperageLatest;
     int magADC[3];
     int BaroAlt;
+    int sonarRaw;
+    int rssi;
 
     int gyroADC[3];
     int accSmooth[3];
