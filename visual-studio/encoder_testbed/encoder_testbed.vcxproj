@@ -54,11 +54,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\lib\getopt_mb_uni\getopt.c" />
+    <ClCompile Include="..\..\src\blackbox_fielddefs.c" />
+    <ClCompile Include="..\..\src\decoders.c" />
     <ClCompile Include="..\..\src\encoder_testbed.c" />
+    <ClCompile Include="..\..\src\encoder_testbed_io.c" />
     <ClCompile Include="..\..\src\parser.c" />
+    <ClCompile Include="..\..\src\platform.c" />
+    <ClCompile Include="..\..\src\stream.c" />
+    <ClCompile Include="..\..\src\tools.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\lib\getopt_mb_uni\getopt.h" />
+    <ClInclude Include="..\..\src\encoder_testbed_io.h" />
     <ClInclude Include="..\..\src\parser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -98,6 +98,18 @@ uint32_t floatToUint(float f)
 }
 
 /**
+ * ZigZag encoding maps all values of a signed integer into those of an unsigned integer in such
+ * a way that numbers of small absolute value correspond to small integers in the result.
+ *
+ * (Compared to just casting a signed to an unsigned which creates huge resulting numbers for
+ * small negative integers).
+ */
+uint32_t zigzagEncode(int32_t value)
+{
+    return (uint32_t)((value << 1) ^ (value >> 31));
+}
+
+/**
  * Just like strstr, but for binary strings. Not available on all platforms, so reimplemented here.
  */
 void* memmem(const void *haystack, size_t haystackLen, const void *needle, size_t needleLen)
