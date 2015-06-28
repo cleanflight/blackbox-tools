@@ -15,4 +15,7 @@ int16_t streamReadS16(mmapStream_t *stream);
 
 float streamReadRawFloat(mmapStream_t *stream);
 
+uint32_t streamReadEliasDeltaU32(mmapStream_t *stream);
+int32_t streamReadEliasDeltaS32(mmapStream_t *stream);
+
 #endif

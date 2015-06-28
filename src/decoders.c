@@ -230,3 +230,65 @@ int16_t streamReadS16(mmapStream_t *stream)
 {
     return streamReadByte(stream) | (streamReadByte(stream) << 8);
 }
+
+/**
+ * Read an Elias-Delta encoded 32-bit unsigned integer from the bitstream and return it. If EOF is encountered during reading,
+ * 0 is returned and the stream's EOF flag is set.
+ *
+ * If eof is not reached, the stream's bit pointer is not necessarily aligned on a byte boundary after this routine
+ * returns, so if you want to read a value later you must call streamByteAlign() first.
+ */
+uint32_t streamReadEliasDeltaU32(mmapStream_t *stream)
+{
+    int lengthValBits = 0;
+    uint8_t length;
+    uint32_t lengthLowBits, resultLowBits;
+    uint32_t result;
+
+    while (streamReadBit(stream) == 0) {
+        lengthValBits++;
+    }
+
+    if (stream->eof) {
+        return 0;
+    }
+
+    // Now we know the length of the field used to store the length of the encoded value, so read those length bits
+    lengthLowBits = streamReadBits(stream, lengthValBits);
+
+    if (stream->eof) {
+        return 0;
+    }
+
+    length = ((1 << lengthValBits) | lengthLowBits) - 1;
+
+    // Now we know the length of the encoded value, so read those bits
+    resultLowBits = streamReadBits(stream, length);
+
+    if (stream->eof) {
+        return 0;
+    }
+
+    result = (1 << length) | resultLowBits;
+
+    // The highest value is an escape code that means either MAXINT - 1 or MAXINT depending on the following bit
+    if (result == 0xFFFFFFFF) {
+        int escapeVal = streamReadBit(stream);
+
+        if (escapeVal == 0) {
+            return 0xFFFFFFFF - 1;
+        } else if (escapeVal == 1) {
+            return 0xFFFFFFFF;
+        } else {
+            //EOF
+            return 0;
+        }
+    }
+
+    return result - 1;
+}
+
+int32_t streamReadEliasDeltaS32(mmapStream_t *stream)
+{
+    return zigzagDecode(streamReadEliasDeltaU32(stream));
+}
