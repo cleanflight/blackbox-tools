@@ -77,6 +77,8 @@ typedef enum FlightLogFieldEncoding {
     FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB       = 0, // Signed variable-byte
     FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB     = 1, // Unsigned variable-byte
     FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT       = 3, // Unsigned variable-byte but we negate the value before storing, value is 14 bits
+    FLIGHT_LOG_FIELD_ENCODING_ELIAS_DELTA_U32 = 4,
+    FLIGHT_LOG_FIELD_ENCODING_ELIAS_DELTA_S32 = 5,
     FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB       = 6,
     FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32       = 7,
     FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16       = 8,

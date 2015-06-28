@@ -28,6 +28,7 @@ int32_t signExtend4Bit(uint8_t nibble);
 int32_t signExtend2Bit(uint8_t byte);
 
 uint32_t zigzagEncode(int32_t value);
+int32_t zigzagDecode(uint32_t value);
 
 double doubleAbs(double a);
 double doubleMin(double a, double b);

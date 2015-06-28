@@ -243,7 +243,7 @@ static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex,
         break;
         case UNIT_RAW:
             if (log->frameDefs['I'].fieldSigned[fieldIndex] || options.raw) {
-                fprintf(file, "%3d", fieldValue);
+                fprintf(file, "%3d", (int32_t) fieldValue);
             } else {
                 fprintf(file, "%3u", (uint32_t) fieldValue);
             }
@@ -802,51 +802,58 @@ void identifyGPSFields(flightLog_t *log)
  */
 void applyFieldUnits(flightLog_t *log)
 {
-    memset(mainFieldUnit, 0, sizeof(mainFieldUnit));
-    memset(gpsGFieldUnit, 0, sizeof(gpsGFieldUnit));
-    memset(slowFieldUnit, 0, sizeof(slowFieldUnit));
-
-    if (log->mainFieldIndexes.vbatLatest > -1) {
-        mainFieldUnit[log->mainFieldIndexes.vbatLatest] = options.unitVbat;
-    }
+    if (options.raw) {
+        for (int i = 0; i < FLIGHT_LOG_MAX_FIELDS; i++) {
+            mainFieldUnit[i] = UNIT_RAW;
+            gpsGFieldUnit[i] = UNIT_RAW;
+            slowFieldUnit[i] = UNIT_RAW;
+        }
+    } else {
+        memset(mainFieldUnit, 0, sizeof(mainFieldUnit));
+        memset(gpsGFieldUnit, 0, sizeof(gpsGFieldUnit));
+        memset(slowFieldUnit, 0, sizeof(slowFieldUnit));
     
-    if (log->mainFieldIndexes.amperageLatest > -1) {
-        mainFieldUnit[log->mainFieldIndexes.amperageLatest] = options.unitAmperage;
-    }
-
-    if (log->mainFieldIndexes.BaroAlt > -1) {
-        mainFieldUnit[log->mainFieldIndexes.BaroAlt] = options.unitHeight;
-    }
-
-    if (log->mainFieldIndexes.time > -1) {
-        mainFieldUnit[log->mainFieldIndexes.time] = options.unitFrameTime;
-    }
-
-    if (log->gpsFieldIndexes.GPS_speed > -1) {
-        gpsGFieldUnit[log->gpsFieldIndexes.GPS_speed] = options.unitGPSSpeed;
-    }
-
-    for (int i = 0; i < 3; i++) {
-        if (log->mainFieldIndexes.accSmooth[i] > -1) {
-            mainFieldUnit[log->mainFieldIndexes.accSmooth[i]] = options.unitAcceleration;
+        if (log->mainFieldIndexes.vbatLatest > -1) {
+            mainFieldUnit[log->mainFieldIndexes.vbatLatest] = options.unitVbat;
         }
 
-        if (log->mainFieldIndexes.gyroADC[i] > -1) {
-            mainFieldUnit[log->mainFieldIndexes.gyroADC[i]] = options.unitRotation;
+        if (log->mainFieldIndexes.amperageLatest > -1) {
+            mainFieldUnit[log->mainFieldIndexes.amperageLatest] = options.unitAmperage;
+        }
+
+        if (log->mainFieldIndexes.BaroAlt > -1) {
+            mainFieldUnit[log->mainFieldIndexes.BaroAlt] = options.unitHeight;
+        }
+
+        if (log->mainFieldIndexes.time > -1) {
+            mainFieldUnit[log->mainFieldIndexes.time] = options.unitFrameTime;
+        }
+
+        if (log->gpsFieldIndexes.GPS_speed > -1) {
+            gpsGFieldUnit[log->gpsFieldIndexes.GPS_speed] = options.unitGPSSpeed;
+        }
+
+        for (int i = 0; i < 3; i++) {
+            if (log->mainFieldIndexes.accSmooth[i] > -1) {
+                mainFieldUnit[log->mainFieldIndexes.accSmooth[i]] = options.unitAcceleration;
+            }
+
+            if (log->mainFieldIndexes.gyroADC[i] > -1) {
+                mainFieldUnit[log->mainFieldIndexes.gyroADC[i]] = options.unitRotation;
+            }
+        }
+
+        // Slow frame fields:
+        if (log->slowFieldIndexes.flightModeFlags > -1) {
+            slowFieldUnit[log->slowFieldIndexes.flightModeFlags] = options.unitFlags;
+        }
+        if (log->slowFieldIndexes.stateFlags > -1) {
+            slowFieldUnit[log->slowFieldIndexes.stateFlags] = options.unitFlags;
+        }
+        if (log->slowFieldIndexes.failsafePhase > -1) {
+            slowFieldUnit[log->slowFieldIndexes.failsafePhase] = options.unitFlags;
         }
     }
-
-    // Slow frame fields:
-    if (log->slowFieldIndexes.flightModeFlags > -1) {
-        slowFieldUnit[log->slowFieldIndexes.flightModeFlags] = options.unitFlags;
-    }
-    if (log->slowFieldIndexes.stateFlags > -1) {
-        slowFieldUnit[log->slowFieldIndexes.stateFlags] = options.unitFlags;
-    }
-    if (log->slowFieldIndexes.failsafePhase > -1) {
-        slowFieldUnit[log->slowFieldIndexes.failsafePhase] = options.unitFlags;
-    }
-
 }
 
 void writeMainCSVHeader(flightLog_t *log)

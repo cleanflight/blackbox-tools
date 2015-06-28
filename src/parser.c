@@ -580,15 +580,23 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
         } else {
             switch (encoding[i]) {
                 case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
+                    streamByteAlign(stream);
+
                     value = (uint32_t) streamReadSignedVB(stream);
                 break;
                 case FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB:
+                    streamByteAlign(stream);
+
                     value = streamReadUnsignedVB(stream);
                 break;
                 case FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT:
+                    streamByteAlign(stream);
+
                     value = (uint32_t) -signExtend14Bit(streamReadUnsignedVB(stream));
                 break;
                 case FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16:
+                    streamByteAlign(stream);
+
                     if (log->private->dataVersion < 2)
                         streamReadTag8_4S16_v1(stream, (int32_t*)values);
                     else
@@ -601,6 +609,8 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
                     continue;
                 break;
                 case FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32:
+                    streamByteAlign(stream);
+
                     streamReadTag2_3S32(stream, (int32_t*)values);
 
                     //Apply the predictors for the fields:
@@ -610,6 +620,8 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
                     continue;
                 break;
                 case FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB:
+                    streamByteAlign(stream);
+
                     //How many fields are in this encoded group? Check the subsequent field encodings:
                     for (j = i + 1; j < i + 8 && j < frameDef->fieldCount; j++)
                         if (encoding[j] != FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB)
@@ -624,6 +636,17 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
 
                     continue;
                 break;
+                case FLIGHT_LOG_FIELD_ENCODING_ELIAS_DELTA_U32:
+                    value = streamReadEliasDeltaU32(stream);
+
+                    /*
+                     * Reading this bitvalue may cause the stream's bit pointer to no longer lie on a byte boundary, so be sure to call
+                     * streamByteAlign() if you want to read a byte from the stream later.
+                     */
+                break;
+                case FLIGHT_LOG_FIELD_ENCODING_ELIAS_DELTA_S32:
+                    value = streamReadEliasDeltaS32(stream);
+                break;
                 case FLIGHT_LOG_FIELD_ENCODING_NULL:
                     //Nothing to read
                     value = 0;
@@ -637,6 +660,8 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
             i++;
         }
     }
+
+    streamByteAlign(stream);
 }
 
 /*

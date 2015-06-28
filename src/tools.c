@@ -109,6 +109,11 @@ uint32_t zigzagEncode(int32_t value)
     return (uint32_t)((value << 1) ^ (value >> 31));
 }
 
+int32_t zigzagDecode(uint32_t value)
+{
+    return (value >> 1) ^ -(int32_t) (value & 1);
+}
+
 /**
  * Just like strstr, but for binary strings. Not available on all platforms, so reimplemented here.
  */
