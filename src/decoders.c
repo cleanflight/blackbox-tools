@@ -240,16 +240,21 @@ int16_t streamReadS16(mmapStream_t *stream)
  */
 uint32_t streamReadEliasDeltaU32(mmapStream_t *stream)
 {
+    /* We can only read 32 bits from the bitstream at a time, but this is fine because valid Elias Delta 32-bit values
+     * never require this many bits to be read in one call.
+     */
+    const int MAX_BIT_READ_SIZE = 32;
+
     int lengthValBits = 0;
     uint8_t length;
     uint32_t lengthLowBits, resultLowBits;
     uint32_t result;
 
-    while (streamReadBit(stream) == 0) {
+    while (lengthValBits <= MAX_BIT_READ_SIZE && streamReadBit(stream) == 0) {
         lengthValBits++;
     }
 
-    if (stream->eof) {
+    if (stream->eof || lengthValBits > MAX_BIT_READ_SIZE) {
         return 0;
     }
 
@@ -261,6 +266,11 @@ uint32_t streamReadEliasDeltaU32(mmapStream_t *stream)
     }
 
     length = ((1 << lengthValBits) | lengthLowBits) - 1;
+
+    if (length > MAX_BIT_READ_SIZE) {
+        //Corrupt value
+        return 0;
+    }
 
     // Now we know the length of the encoded value, so read those bits
     resultLowBits = streamReadBits(stream, length);
