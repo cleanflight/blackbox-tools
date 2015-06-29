@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <limits.h>
 
 #include "tools.h"
 
@@ -71,251 +72,110 @@ void blackboxWriteS16(int16_t value)
     blackboxWrite((value >> 8) & 0xFF);
 }
 
-/**
- * Write a 2 bit tag followed by 3 signed fields of 2, 4, 6 or 32 bits
- */
-void blackboxWriteTag2_3S32(int32_t *values) {
-    static const int NUM_FIELDS = 3;
+static uint8_t blackboxBitBuffer = 0;
+static uint8_t blackboxBitBufferCount = 0;
 
-    //Need to be enums rather than const ints if we want to switch on them (due to being C)
-    enum {
-        BITS_2  = 0,
-        BITS_4  = 1,
-        BITS_6  = 2,
-        BITS_32 = 3
-    };
+#define BLACKBOX_BIT_BUFFER_CAPACITY (sizeof(blackboxBitBuffer) * CHAR_BIT)
 
-    enum {
-        BYTES_1  = 0,
-        BYTES_2  = 1,
-        BYTES_3  = 2,
-        BYTES_4  = 3
-    };
+void blackboxWriteBits(uint32_t bits, unsigned int bitCount) {
+    if (bitCount == 0)
+        return; // Nothing to write! (return now to avoid shifting left by 32 on the next line, which is undefined)
 
-    int x;
-    int selector = BITS_2, selector2;
+    // Align the bits to be written to the top of that variable:
+    bits <<= sizeof(bits) * CHAR_BIT - bitCount;
 
-    /*
-     * Find out how many bits the largest value requires to encode, and use it to choose one of the packing schemes
-     * below:
-     *
-     * Selector possibilities
-     *
-     * 2 bits per field  ss11 2233,
-     * 4 bits per field  ss00 1111 2222 3333
-     * 6 bits per field  ss11 1111 0022 2222 0033 3333
-     * 32 bits per field sstt tttt followed by fields of various byte counts
-     */
-    for (x = 0; x < NUM_FIELDS; x++) {
-        //Require more than 6 bits?
-        if (values[x] >= 32 || values[x] < -32) {
-            selector = BITS_32;
-            break;
+    do {
+        uint8_t availableCapacity = BLACKBOX_BIT_BUFFER_CAPACITY - blackboxBitBufferCount;
+        uint8_t numBitsToWrite = bitCount <= availableCapacity ? bitCount : availableCapacity;
+
+        // Align the bits to be written to the correct part of the buffer and insert them
+        blackboxBitBuffer |= bits >> ((sizeof(bits) - sizeof(blackboxBitBuffer)) * CHAR_BIT + blackboxBitBufferCount);
+        blackboxBitBufferCount += numBitsToWrite;
+
+        // Did we fill the buffer? If so write the whole thing out
+        if (blackboxBitBufferCount == BLACKBOX_BIT_BUFFER_CAPACITY) {
+            for (int i = sizeof(blackboxBitBuffer) - 1; i >= 0; i--) {
+                blackboxWrite(blackboxBitBuffer >> (CHAR_BIT * i));
+            }
+            blackboxBitBuffer = 0;
+            blackboxBitBufferCount = 0;
         }
 
-        //Require more than 4 bits?
-        if (values[x] >= 8 || values[x] < -8) {
-             if (selector < BITS_6) {
-                 selector = BITS_6;
-             }
-        } else if (values[x] >= 2 || values[x] < -2) { //Require more than 2 bits?
-            if (selector < BITS_4) {
-                selector = BITS_4;
-            }
+        bitCount -= numBitsToWrite;
+        bits <<= numBitsToWrite;
+    } while (bitCount > 0);
+}
+
+void blackboxFlushBits() {
+    if (sizeof(blackboxBitBuffer) > 1) {
+        // Round up the bits to get the number of occupied bytes
+        int numBytes = (blackboxBitBufferCount + CHAR_BIT - 1) / CHAR_BIT;
+
+        for (int i = 0; i < numBytes; i++) {
+            // Write the top byte
+            blackboxWrite(blackboxBitBuffer >> ((sizeof(blackboxBitBuffer) - 1) * CHAR_BIT));
+
+            // And shift the remaining bits up to fill that space
+            blackboxBitBuffer <<= CHAR_BIT;
         }
-    }
 
-    switch (selector) {
-        case BITS_2:
-            blackboxWrite((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03));
-        break;
-        case BITS_4:
-            blackboxWrite((selector << 6) | (values[0] & 0x0F));
-            blackboxWrite((values[1] << 4) | (values[2] & 0x0F));
-        break;
-        case BITS_6:
-            blackboxWrite((selector << 6) | (values[0] & 0x3F));
-            blackboxWrite((uint8_t)values[1]);
-            blackboxWrite((uint8_t)values[2]);
-        break;
-        case BITS_32:
-            /*
-             * Do another round to compute a selector for each field, assuming that they are at least 8 bits each
-             *
-             * Selector2 field possibilities
-             * 0 - 8 bits
-             * 1 - 16 bits
-             * 2 - 24 bits
-             * 3 - 32 bits
-             */
-            selector2 = 0;
-
-            //Encode in reverse order so the first field is in the low bits:
-            for (x = NUM_FIELDS - 1; x >= 0; x--) {
-                selector2 <<= 2;
-
-                if (values[x] < 128 && values[x] >= -128) {
-                    selector2 |= BYTES_1;
-                } else if (values[x] < 32768 && values[x] >= -32768) {
-                    selector2 |= BYTES_2;
-                } else if (values[x] < 8388608 && values[x] >= -8388608) {
-                    selector2 |= BYTES_3;
-                } else {
-                    selector2 |= BYTES_4;
-                }
-            }
-
-            //Write the selectors
-            blackboxWrite((selector << 6) | selector2);
-
-            //And now the values according to the selectors we picked for them
-            for (x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
-                switch (selector2 & 0x03) {
-                    case BYTES_1:
-                        blackboxWrite(values[x]);
-                    break;
-                    case BYTES_2:
-                        blackboxWrite(values[x]);
-                        blackboxWrite(values[x] >> 8);
-                    break;
-                    case BYTES_3:
-                        blackboxWrite(values[x]);
-                        blackboxWrite(values[x] >> 8);
-                        blackboxWrite(values[x] >> 16);
-                    break;
-                    case BYTES_4:
-                        blackboxWrite(values[x]);
-                        blackboxWrite(values[x] >> 8);
-                        blackboxWrite(values[x] >> 16);
-                        blackboxWrite(values[x] >> 24);
-                    break;
-                }
-            }
-        break;
+        blackboxBitBufferCount = 0;
+    } else {
+        if (blackboxBitBufferCount > 0) {
+            blackboxWrite(blackboxBitBuffer);
+            blackboxBitBuffer = 0;
+            blackboxBitBufferCount = 0;
+        }
     }
 }
 
 /**
- * Write an 8-bit selector followed by four signed fields of size 0, 4, 8 or 16 bits.
+ * How many bits would be required to fit the given integer? `i` must not be zero.
  */
-void blackboxWriteTag8_4S16(int32_t *values) {
-
-    //Need to be enums rather than const ints if we want to switch on them (due to being C)
-    enum {
-        FIELD_ZERO  = 0,
-        FIELD_4BIT  = 1,
-        FIELD_8BIT  = 2,
-        FIELD_16BIT = 3
-    };
-
-    uint8_t selector, buffer;
-    int nibbleIndex;
-    int x;
-
-    selector = 0;
-    //Encode in reverse order so the first field is in the low bits:
-    for (x = 3; x >= 0; x--) {
-        selector <<= 2;
-
-        if (values[x] == 0) {
-            selector |= FIELD_ZERO;
-        } else if (values[x] < 8 && values[x] >= -8) {
-            selector |= FIELD_4BIT;
-        } else if (values[x] < 128 && values[x] >= -128) {
-            selector |= FIELD_8BIT;
-        } else {
-            selector |= FIELD_16BIT;
-        }
-    }
-
-    blackboxWrite(selector);
-
-    nibbleIndex = 0;
-    buffer = 0;
-    for (x = 0; x < 4; x++, selector >>= 2) {
-        switch (selector & 0x03) {
-            case FIELD_ZERO:
-                //No-op
-            break;
-            case FIELD_4BIT:
-                if (nibbleIndex == 0) {
-                    //We fill high-bits first
-                    buffer = values[x] << 4;
-                    nibbleIndex = 1;
-                } else {
-                    blackboxWrite(buffer | (values[x] & 0x0F));
-                    nibbleIndex = 0;
-                }
-            break;
-            case FIELD_8BIT:
-                if (nibbleIndex == 0) {
-                    blackboxWrite(values[x]);
-                } else {
-                    //Write the high bits of the value first (mask to avoid sign extension)
-                    blackboxWrite(buffer | ((values[x] >> 4) & 0x0F));
-                    //Now put the leftover low bits into the top of the next buffer entry
-                    buffer = values[x] << 4;
-                }
-            break;
-            case FIELD_16BIT:
-                if (nibbleIndex == 0) {
-                    //Write high byte first
-                    blackboxWrite(values[x] >> 8);
-                    blackboxWrite(values[x]);
-                } else {
-                    //First write the highest 4 bits
-                    blackboxWrite(buffer | ((values[x] >> 12) & 0x0F));
-                    // Then the middle 8
-                    blackboxWrite(values[x] >> 4);
-                    //Only the smallest 4 bits are still left to write
-                    buffer = values[x] << 4;
-                }
-            break;
-        }
-    }
-    //Anything left over to write?
-    if (nibbleIndex == 1) {
-        blackboxWrite(buffer);
-    }
-}
-
-/**
- * Write `valueCount` fields from `values` to the Blackbox using signed variable byte encoding. A 1-byte header is
- * written first which specifies which fields are non-zero (so this encoding is compact when most fields are zero).
- *
- * valueCount must be 8 or less.
- */
-void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
+static int numBitsToStoreInteger(uint32_t i)
 {
-    uint8_t header;
-    int i;
+    return sizeof(i) * CHAR_BIT - __builtin_clz(i);
+}
 
-    if (valueCount > 0) {
-        //If we're only writing one field then we can skip the header
-        if (valueCount == 1) {
-            blackboxWriteSignedVB(values[0]);
-        } else {
-            //First write a one-byte header that marks which fields are non-zero
-            header = 0;
+void blackboxWriteU32EliasDelta(uint32_t value)
+{
+    unsigned int valueLen, lengthOfValueLen;
 
-            // First field should be in low bits of header
-            for (i = valueCount - 1; i >= 0; i--) {
-                header <<= 1;
-
-                if (values[i] != 0) {
-                    header |= 0x01;
-                }
-            }
-
-            blackboxWrite(header);
-
-            for (i = 0; i < valueCount; i++) {
-                if (values[i] != 0) {
-                    blackboxWriteSignedVB(values[i]);
-                }
-            }
-        }
+    /* We can't encode value=0, so we need to add 1 to the value before encoding
+     *
+     * That would make it impossible to encode MAXINT, so instead use MAXINT-1 as an escape code which can mean
+     * either MAXINT-1 or MAXINT
+     */
+    if (value == 0xFFFFFFFF) {
+        // Write the escape code of MAXINT - 1
+        blackboxWriteU32EliasDelta(0xFFFFFFFF - 1);
+        // Add a one bit after the escape code to mean "MAXINT"
+        blackboxWriteBits(1, 1);
+        return;
     }
+
+    value += 1;
+
+    valueLen = numBitsToStoreInteger(value);
+    lengthOfValueLen = numBitsToStoreInteger(valueLen);
+
+    // Use unary to encode the number of bits we'll need to write the length of the `value`
+    blackboxWriteBits(0, lengthOfValueLen - 1);
+    // Now write the length of the `value`
+    blackboxWriteBits(valueLen, lengthOfValueLen);
+    // Having now encoded the position of the top bit of `value`, write its remaining bits
+    blackboxWriteBits(value, valueLen - 1);
+
+    // Did this end up being an escape code? We must have been trying to write MAXINT - 1
+    if (value == 0xFFFFFFFF) {
+        // Add a zero bit after the escape code to mean "MAXINT - 1"
+        blackboxWriteBits(0, 1);
+    }
+}
+
+void blackboxWriteS32EliasDelta(int32_t value)
+{
+    blackboxWriteU32EliasDelta(zigzagEncode(value));
 }
 
 /**

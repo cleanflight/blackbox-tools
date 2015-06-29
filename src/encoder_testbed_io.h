@@ -43,6 +43,12 @@ void blackboxWriteTag2_3S32(int32_t *values);
 void blackboxWriteTag8_4S16(int32_t *values);
 void blackboxWriteTag8_8SVB(int32_t *values, int valueCount);
 
+void blackboxWriteBits(uint32_t bits, unsigned int bitCount);
+void blackboxFlushBits();
+
+void blackboxWriteU32EliasDelta(uint32_t value);
+void blackboxWriteS32EliasDelta(int32_t value);
+
 blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(uint32_t bytes);
 
 extern uint32_t blackboxWrittenBytes;
