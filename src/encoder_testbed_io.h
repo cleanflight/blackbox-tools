@@ -49,6 +49,9 @@ void blackboxFlushBits();
 void blackboxWriteU32EliasDelta(uint32_t value);
 void blackboxWriteS32EliasDelta(int32_t value);
 
+void blackboxWriteU32EliasGamma(uint32_t value);
+void blackboxWriteS32EliasGamma(int32_t value);
+
 blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(uint32_t bytes);
 
 extern uint32_t blackboxWrittenBytes;

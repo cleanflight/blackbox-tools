@@ -232,11 +232,11 @@ int16_t streamReadS16(mmapStream_t *stream)
 }
 
 /**
- * Read an Elias-Delta encoded 32-bit unsigned integer from the bitstream and return it. If EOF is encountered during reading,
- * 0 is returned and the stream's EOF flag is set.
+ * Read an Elias-Delta encoded 32-bit unsigned integer from the bitstream and return it. If EOF is encountered during
+ * reading, 0 is returned and the stream's EOF flag is set.
  *
  * If eof is not reached, the stream's bit pointer is not necessarily aligned on a byte boundary after this routine
- * returns, so if you want to read a value later you must call streamByteAlign() first.
+ * returns, so if you want to read a byte value later you must call streamByteAlign() first.
  */
 uint32_t streamReadEliasDeltaU32(mmapStream_t *stream)
 {
@@ -301,4 +301,62 @@ uint32_t streamReadEliasDeltaU32(mmapStream_t *stream)
 int32_t streamReadEliasDeltaS32(mmapStream_t *stream)
 {
     return zigzagDecode(streamReadEliasDeltaU32(stream));
+}
+
+
+/**
+ * Read an Elias-Gamma encoded 32-bit unsigned integer from the bitstream and return it. If EOF is encountered during
+ * reading, 0 is returned and the stream's EOF flag is set.
+ *
+ * If eof is not reached, the stream's bit pointer is not necessarily aligned on a byte boundary after this routine
+ * returns, so if you want to read a byte value later you must call streamByteAlign() first.
+ */
+uint32_t streamReadEliasGammaU32(mmapStream_t *stream)
+{
+    /* We can only read 32 bits from the bitstream at a time, but this is fine because valid Elias Gamma 32-bit values
+     * never require this many bits to be read in one call.
+     */
+    const int MAX_BIT_READ_SIZE = 32;
+
+    int valBits = 0;
+    uint32_t valueLowBits;
+    uint32_t result;
+
+    while (valBits <= MAX_BIT_READ_SIZE && streamReadBit(stream) == 0) {
+        valBits++;
+    }
+
+    if (stream->eof || valBits > MAX_BIT_READ_SIZE) {
+        return 0;
+    }
+
+    // We've read the first 1 bit of the encoded value, now read the rest of the bits
+    valueLowBits = streamReadBits(stream, valBits - 1);
+
+    if (stream->eof) {
+        return 0;
+    }
+
+    result = (1 << (valBits - 1)) | valueLowBits;
+
+    // The highest value is an escape code that means either MAXINT - 1 or MAXINT depending on the following bit
+    if (result == 0xFFFFFFFF) {
+        int escapeVal = streamReadBit(stream);
+
+        if (escapeVal == 0) {
+            return 0xFFFFFFFF - 1;
+        } else if (escapeVal == 1) {
+            return 0xFFFFFFFF;
+        } else {
+            //EOF
+            return 0;
+        }
+    }
+
+    return result - 1;
+}
+
+int32_t streamReadEliasGammaS32(mmapStream_t *stream)
+{
+    return zigzagDecode(streamReadEliasGammaU32(stream));
 }
