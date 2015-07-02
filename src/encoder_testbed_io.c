@@ -178,6 +178,46 @@ void blackboxWriteS32EliasDelta(int32_t value)
     blackboxWriteU32EliasDelta(zigzagEncode(value));
 }
 
+void blackboxWriteU32EliasGamma(uint32_t value)
+{
+    unsigned int lengthOfValue;
+
+    /*
+     * We can't encode value=0, so we need to add 1 to the value before encoding
+     *
+     * That would make it impossible to encode MAXINT, so instead use MAXINT-1 as an escape code which can mean
+     * either MAXINT-1 or MAXINT
+     */
+    if (value == 0xFFFFFFFF) {
+        // Write the escape code of MAXINT - 1
+        blackboxWriteU32EliasGamma(0xFFFFFFFF - 1);
+        // Add a one bit after the escape code to mean "MAXINT"
+        blackboxWriteBits(1, 1);
+        return;
+    }
+
+    value += 1;
+
+    lengthOfValue = numBitsToStoreInteger(value);
+
+    // Use unary to encode the number of bits we'll need to write `value`
+    blackboxWriteBits(0, lengthOfValue);
+
+    // Now the bits of value
+    blackboxWriteBits(value, lengthOfValue);
+
+    // Did this end up being an escape code? We must have been trying to write MAXINT - 1
+    if (value == 0xFFFFFFFF) {
+        // Add a zero bit after the escape code to mean "MAXINT - 1"
+        blackboxWriteBits(0, 1);
+    }
+}
+
+void blackboxWriteS32EliasGamma(int32_t value)
+{
+    blackboxWriteU32EliasGamma(zigzagEncode(value));
+}
+
 /**
  * Attempt to guarantee that the given amount of bytes can be written to the Blackbox device without blocking or
  * data loss.

@@ -647,6 +647,12 @@ static void parseFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType
                 case FLIGHT_LOG_FIELD_ENCODING_ELIAS_DELTA_S32:
                     value = streamReadEliasDeltaS32(stream);
                 break;
+                case FLIGHT_LOG_FIELD_ENCODING_ELIAS_GAMMA_U32:
+                    value = streamReadEliasGammaU32(stream);
+                break;
+                case FLIGHT_LOG_FIELD_ENCODING_ELIAS_GAMMA_S32:
+                    value = streamReadEliasGammaS32(stream);
+                break;
                 case FLIGHT_LOG_FIELD_ENCODING_NULL:
                     //Nothing to read
                     value = 0;
