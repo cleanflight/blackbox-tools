@@ -45,7 +45,7 @@
  * and hence we get seaming where they meet.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static void
 draw_quad (cairo_t *cr,

@@ -40,15 +40,17 @@
  * operations.
  */
 
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-xml.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-xml.h"
+
+#include "cairo-clip-private.h"
+#include "cairo-device-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-error-private.h"
+#include "cairo-output-stream-private.h"
+#include "cairo-recording-surface-inline.h"
 
 #define static cairo_warn static
 
@@ -909,7 +911,7 @@ _cairo_xml_surface_fill (void			*abstract_surface,
 }
 
 #if CAIRO_HAS_FT_FONT
-#include "../../cairo-1.14/src/cairo-ft-private.h"
+#include "cairo-ft-private.h"
 static cairo_status_t
 _cairo_xml_emit_type42_font (cairo_xml_t *xml,
 			     cairo_scaled_font_t *scaled_font)

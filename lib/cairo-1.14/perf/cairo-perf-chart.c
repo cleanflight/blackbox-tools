@@ -27,6 +27,8 @@
  *	    Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-perf.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +36,6 @@
 #include <ctype.h>
 #include <math.h>
 #include <assert.h>
-#include "../../cairo-1.14/perf/cairo-perf.h"
 
 struct chart {
     cairo_perf_report_t *reports;

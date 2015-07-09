@@ -36,7 +36,7 @@
 #ifndef TEST_NULL_COMPOSITOR_SURFACE_H
 #define TEST_NULL_COMPOSITOR_SURFACE_H
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 
 CAIRO_BEGIN_DECLS
 

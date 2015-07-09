@@ -24,7 +24,7 @@
  * Author: Uli Schlachter <psychon@znc.in>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static void
 mime_data_destroy_func (void *data)

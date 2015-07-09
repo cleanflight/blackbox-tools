@@ -29,9 +29,11 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+
+#include "cairo-xcb-private.h"
+
 #include <xcb/xcbext.h>
-#include "../../cairo-1.14/src/cairo-xcb-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 void
 _cairo_xcb_connection_render_create_picture (cairo_xcb_connection_t  *connection,

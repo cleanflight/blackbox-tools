@@ -35,10 +35,11 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-boxes-private.h"
-#include "../../cairo-1.14/src/cairo-contour-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-boxes-private.h"
+#include "cairo-contour-private.h"
+#include "cairo-error-private.h"
 
 #define DEBUG_POLYGON 0
 

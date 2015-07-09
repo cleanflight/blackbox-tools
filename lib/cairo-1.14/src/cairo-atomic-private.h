@@ -39,7 +39,7 @@
 #ifndef CAIRO_ATOMIC_PRIVATE_H
 #define CAIRO_ATOMIC_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
+# include "cairo-compiler-private.h"
 
 #if HAVE_CONFIG_H
 #include "config.h"

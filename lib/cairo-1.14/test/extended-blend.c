@@ -27,9 +27,9 @@
  *          Emmanuel Pacaud <emmanuel.pacaud@lapp.in2p3.fr>
  */
 
+#include "cairo-test.h"
 #include <math.h>
 #include <stdio.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define STEPS 16
 #define START_OPERATOR	CAIRO_OPERATOR_MULTIPLY

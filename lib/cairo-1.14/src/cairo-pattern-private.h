@@ -36,11 +36,12 @@
 #ifndef CAIRO_PATTERN_PRIVATE_H
 #define CAIRO_PATTERN_PRIVATE_H
 
+#include "cairo-error-private.h"
+#include "cairo-types-private.h"
+#include "cairo-list-private.h"
+#include "cairo-surface-private.h"
+
 #include <stdio.h> /* FILE* */
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-list-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
 
 CAIRO_BEGIN_DECLS
 

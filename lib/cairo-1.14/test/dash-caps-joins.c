@@ -29,7 +29,7 @@
  *	https://bugs.freedesktop.org/show_bug.cgi?id=4409
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define LINE_WIDTH	10.
 #define SIZE		(5 * LINE_WIDTH)

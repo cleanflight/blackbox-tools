@@ -30,10 +30,10 @@
 #ifndef CAIRO_DRM_RADEON_PRIVATE_H
 #define CAIRO_DRM_RADEON_PRIVATE_H
 
-#include "../../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../../cairo-1.14/src/cairo-freelist-private.h"
-#include "../../../cairo-1.14/src/cairo-types-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
+#include "cairo-compiler-private.h"
+#include "cairo-types-private.h"
+#include "cairo-drm-private.h"
+#include "cairo-freelist-private.h"
 
 #define RADEON_GEM_DOMAIN_CPU		0x1
 #define RADEON_GEM_DOMAIN_GTT		0x2

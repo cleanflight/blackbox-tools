@@ -35,12 +35,13 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-surface-offset-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-compositor-private.h"
+#include "cairo-clip-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-surface-private.h"
+#include "cairo-surface-offset-private.h"
 
 static cairo_int_status_t
 _cairo_shape_mask_compositor_stroke (const cairo_compositor_t *_compositor,

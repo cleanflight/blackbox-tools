@@ -24,7 +24,7 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* Try to replicate the misbehaviour of show_glyphs() versus glyph_path()
  * in the PDF backend reported by Ian Britten.

@@ -36,10 +36,13 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+
+#include "cairo-gl-private.h"
+
+#include "cairo-error-private.h"
+
 #include <X11/Xutil.h>
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-gl-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 /* XXX needs hooking into XCloseDisplay() */
 

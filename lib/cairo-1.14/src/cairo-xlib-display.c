@@ -33,15 +33,15 @@
  *	Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if !CAIRO_HAS_XLIB_XCB_FUNCTIONS
 
-#include "../../cairo-1.14/src/cairo-xlib-private.h"
-#include "../../cairo-1.14/src/cairo-xlib-xrender-private.h"
-#include "../../cairo-1.14/src/cairo-freelist-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
+#include "cairo-xlib-private.h"
+#include "cairo-xlib-xrender-private.h"
+#include "cairo-freelist-private.h"
+#include "cairo-error-private.h"
+#include "cairo-list-inline.h"
 
 #include <X11/Xlibint.h>	/* For XESetCloseDisplay */
 

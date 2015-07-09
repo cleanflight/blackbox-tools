@@ -36,12 +36,13 @@
  *     Rich Walsh <dragtext@e-vertise.com>
  */
 
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-os2-private.h"
-#include "../../cairo-1.14/src/cairo-surface-fallback-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-os2-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-surface-fallback-private.h"
+#include "cairo-image-surface-private.h"
 
 #if CAIRO_HAS_FC_FONT
 #include <fontconfig/fontconfig.h>
@@ -49,7 +50,7 @@
 
 #include <float.h>
 #ifdef BUILD_CAIRO_DLL
-# include "../../cairo-1.14/src/cairo-os2.h"
+# include "cairo-os2.h"
 # ifndef __WATCOMC__
 #  include <emx/startup.h>
 # endif

@@ -23,7 +23,7 @@
  * Author: Jeff Muizelaar <jeff@infidigm.net>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define IMAGE_WIDTH 19
 #define IMAGE_HEIGHT 61

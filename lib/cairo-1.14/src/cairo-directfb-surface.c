@@ -33,6 +33,18 @@
  *    Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+#include "cairo-directfb.h"
+
+#include "cairo-clip-private.h"
+#include "cairo-compositor-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-pattern-private.h"
+#include "cairo-surface-backend-private.h"
+#include "cairo-surface-fallback-private.h"
+
 #include <pixman.h>
 
 #include <directfb.h>
@@ -40,16 +52,6 @@
 #include <direct/debug.h>
 #include <direct/memcpy.h>
 #include <direct/util.h>
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-directfb.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../cairo-1.14/src/cairo-surface-fallback-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 slim_hidden_proto(cairo_directfb_surface_create);
 

@@ -24,7 +24,7 @@
  * Author: Adrian Johnson <ajohnson@redneon.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define IMAGE_WIDTH 80
 #define IMAGE_HEIGHT 80

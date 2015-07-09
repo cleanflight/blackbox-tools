@@ -36,11 +36,13 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
+#include "cairoint.h"
+#include "cairo-private.h"
+
+#include "cairo-compiler-private.h"
+#include "cairo-error-private.h"
+
 #include <assert.h>
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 /**
  * _cairo_error:

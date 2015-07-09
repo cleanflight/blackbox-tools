@@ -33,8 +33,9 @@
  *	Zoxc <zoxc32@gmail.com>
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-gl.h"
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-gl.h>
 
 static const cairo_user_data_key_t gl_closure_key;
 

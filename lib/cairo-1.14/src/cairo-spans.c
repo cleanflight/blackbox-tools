@@ -24,13 +24,13 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+#include "cairoint.h"
+
 #include "cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairo-clip-private.h"
+#include "cairo-error-private.h"
+#include "cairo-fixed-private.h"
+#include "cairo-types-private.h"
 
 static void
 _cairo_nil_destroy (void *abstract)

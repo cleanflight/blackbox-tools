@@ -35,10 +35,11 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-damage-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-compositor-private.h"
+#include "cairo-damage-private.h"
+#include "cairo-error-private.h"
 
 cairo_int_status_t
 _cairo_compositor_paint (const cairo_compositor_t	*compositor,

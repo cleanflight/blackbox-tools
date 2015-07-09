@@ -1,5 +1,5 @@
 /*
- * Copyright � 2008 Jeff Muizelaar
+ * Copyright © 2008 Jeff Muizelaar
  *
  * Permission to use, copy, modify, distribute, and sell this software
  * and its documentation for any purpose is hereby granted without
@@ -22,12 +22,13 @@
  *
  * Contributor(s):
  *	Jeff Muizelaar <jeff@infidigm.net>
- *	Kristian H�gsberg <krh@redhat.com>
+ *	Kristian Høgsberg <krh@redhat.com>
  *	Behdad Esfahbod <behdad@behdad.org>
  */
 
+#include "cairo-test.h"
+
 #include <math.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define BORDER 10
 #define TEXT_SIZE 32

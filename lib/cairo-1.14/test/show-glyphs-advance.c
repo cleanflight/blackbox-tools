@@ -26,7 +26,7 @@
  *         Andrea Canciani <ranma42@gmail.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static cairo_test_status_t
 get_glyph (const cairo_test_context_t *ctx,

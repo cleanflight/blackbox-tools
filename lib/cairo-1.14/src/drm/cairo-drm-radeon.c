@@ -27,14 +27,17 @@
  *
  */
 
+#include "cairoint.h"
+
+#include "cairo-drm-private.h"
+#include "cairo-drm-radeon-private.h"
+#include "cairo-drm-ioctl-private.h"
+
+#include "cairo-error-private.h"
+
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <errno.h>
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-ioctl-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-radeon-private.h"
 
 #define DRM_RADEON_GEM_INFO		0x1c
 #define DRM_RADEON_GEM_CREATE		0x1d

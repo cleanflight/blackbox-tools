@@ -34,12 +34,12 @@
  *	Adrian Johnson <ajohnson@redneon.com>
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if CAIRO_HAS_DEFLATE_STREAM
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
+#include "cairo-error-private.h"
+#include "cairo-output-stream-private.h"
 #include <zlib.h>
 
 #define BUFFER_SIZE 16384

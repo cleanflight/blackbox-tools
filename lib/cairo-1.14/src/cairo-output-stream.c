@@ -34,13 +34,13 @@
  */
 
 #define _BSD_SOURCE /* for snprintf() */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
+#include "cairo-output-stream-private.h"
 
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
+#include "cairo-array-private.h"
+#include "cairo-error-private.h"
+#include "cairo-compiler-private.h"
 
 #include <stdio.h>
 #include <errno.h>

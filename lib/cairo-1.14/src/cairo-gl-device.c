@@ -40,9 +40,10 @@
  *	Alexandros Frantzis <alexandros.frantzis@linaro.org>
  */
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-gl-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-error-private.h"
+#include "cairo-gl-private.h"
 
 #define MAX_MSAA_SAMPLES 4
 

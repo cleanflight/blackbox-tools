@@ -36,11 +36,12 @@
 #ifndef CAIRO_OUTPUT_STREAM_PRIVATE_H
 #define CAIRO_OUTPUT_STREAM_PRIVATE_H
 
+#include "cairo-compiler-private.h"
+#include "cairo-types-private.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
 
 typedef cairo_status_t
 (*cairo_output_stream_write_func_t) (cairo_output_stream_t *output_stream,

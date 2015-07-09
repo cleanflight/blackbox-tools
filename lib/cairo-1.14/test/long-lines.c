@@ -24,7 +24,7 @@
  *	    Emmanuel Pacaud <emmanuel.pacaud@lapp.in2p3.fr>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define LINE_WIDTH	1.
 #define SIZE		10

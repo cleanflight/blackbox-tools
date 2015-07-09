@@ -24,8 +24,8 @@
  * Author: Benjamin Otte <otte@gnome.org>
  */
 
+#include "cairo-test.h"
 #include <pthread.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define N_THREADS 8
 

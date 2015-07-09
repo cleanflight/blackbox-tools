@@ -23,7 +23,7 @@
  *
  * Author: Joonas Pihlaja <jpihlaja@cc.helsinki.fi>
  */
-#include "../../../cairo-1.14/perf/cairo-perf.h"
+#include "cairo-perf.h"
 
 /* Options passed in flags to mosaic_perform(): */
 #define MOSAIC_FILL 1		/* do rasterise */
@@ -42,7 +42,7 @@ struct mosaic_region_iter {
     double const *points;
 };
 
-#include "../../../cairo-1.14/perf/micro/mosaic.h"
+#include "mosaic.h"
 
 static void
 mosaic_region_iter_init (struct mosaic_region_iter *iter, int do_curves)

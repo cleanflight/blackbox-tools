@@ -28,17 +28,19 @@
  *	    Carl Worth <cworth@cworth.org>
  */
 
+#include "cairoint.h"
+
+#include "cairo-array-private.h"
+#include "cairo-error-private.h"
+#include "cairo-freed-pool-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-path-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-surface-snapshot-inline.h"
+
 #include <float.h>
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-freed-pool-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-path-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-inline.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 #define PIXMAN_MAX_INT ((pixman_fixed_1 >> 1) - pixman_fixed_e) /* need to ensure deltas also fit */
 
@@ -3336,7 +3338,7 @@ _cairo_pattern_is_clear (const cairo_pattern_t *abstract_pattern)
     return FALSE;
 }
 
-/**
+/*
  * Will given row of back-translation matrix work with bilinear scale?
  * This is true for scales larger than 1. Also it was judged acceptable
  * for scales larger than .75. And if there is integer translation
@@ -3417,7 +3419,7 @@ _cairo_hypot(double x, double y)
 }
 
 /**
- * _cairo_pattern_sampled_area
+ * _cairo_pattern_sampled_area:
  *
  * Return region of @pattern that will be sampled to fill @extents,
  * based on the transformation and filter.

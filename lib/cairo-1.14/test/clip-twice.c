@@ -23,7 +23,7 @@
  * Author: Kristian Høgsberg <krh@redhat.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH 64
 #define HEIGHT 64

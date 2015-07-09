@@ -23,7 +23,7 @@
  * Author: Soren Sandmann <sandmann@redhat.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define SIZE 100
 

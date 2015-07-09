@@ -1,5 +1,5 @@
 /*
- * Copyright � 2008 Chris Wilson
+ * Copyright © 2008 Chris Wilson
  *
  * Permission to use, copy, modify, distribute, and sell this software
  * and its documentation for any purpose is hereby granted without
@@ -23,7 +23,7 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static void
 draw_symbol (cairo_t *cr)

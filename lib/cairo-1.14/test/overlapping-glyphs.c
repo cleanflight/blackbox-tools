@@ -23,8 +23,9 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-test.h"
+
 #include <assert.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define TEXT_SIZE 12
 #define HEIGHT (TEXT_SIZE + 4)

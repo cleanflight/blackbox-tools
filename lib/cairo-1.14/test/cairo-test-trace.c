@@ -54,12 +54,12 @@
 
 #define _GNU_SOURCE 1	/* getline() */
 
-#include "../../cairo-1.14/test/cairo-test.h"
-#include "../../cairo-1.14/test/buffer-diff.h"
+#include "cairo-test.h"
+#include "buffer-diff.h"
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-getopt.h"
-#include "../../cairo-1.14/util/cairo-script/cairo-script-interpreter.h"
-#include "../../cairo-1.14/util/cairo-missing/cairo-missing.h"
+#include "cairo-boilerplate-getopt.h"
+#include <cairo-script-interpreter.h>
+#include "cairo-missing.h"
 
 #if CAIRO_HAS_SCRIPT_SURFACE
 #include <cairo-script.h>
@@ -89,6 +89,10 @@
 
 #if HAVE_FCFINI
 #include <fontconfig/fontconfig.h>
+#endif
+
+#ifndef MAP_NORESERVE
+#define MAP_NORESERVE 0
 #endif
 
 #define DEBUG 0

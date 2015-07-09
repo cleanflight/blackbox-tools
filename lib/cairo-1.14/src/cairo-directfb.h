@@ -47,7 +47,7 @@
 #ifndef CAIRO_DIRECTFB_H
 #define CAIRO_DIRECTFB_H
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 
 #if  CAIRO_HAS_DIRECTFB_SURFACE
 

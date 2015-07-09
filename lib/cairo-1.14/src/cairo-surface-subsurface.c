@@ -33,14 +33,15 @@
  *      Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-offset-private.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-private.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-clip-inline.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-surface-offset-private.h"
+#include "cairo-surface-snapshot-private.h"
+#include "cairo-surface-subsurface-private.h"
 
 static const cairo_surface_backend_t _cairo_surface_subsurface_backend;
 

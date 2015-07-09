@@ -23,8 +23,9 @@
  * Author: Kristian Høgsberg <krh@redhat.com>
  */
 
+#include "cairo-test.h"
+
 #include <assert.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 static void
 destroy_data1 (void *p)

@@ -36,19 +36,20 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-damage-private.h"
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairo-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-tee-surface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-array-private.h"
+#include "cairo-clip-inline.h"
+#include "cairo-clip-private.h"
+#include "cairo-damage-private.h"
+#include "cairo-device-private.h"
+#include "cairo-error-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-region-private.h"
+#include "cairo-surface-inline.h"
+#include "cairo-tee-surface-private.h"
 
 /**
  * SECTION:cairo-surface
@@ -1222,6 +1223,31 @@ _cairo_mime_data_destroy (void *ptr)
 }
 
 /**
+ * CAIRO_MIME_TYPE_JBIG2:
+ *
+ * Joint Bi-level Image Experts Group image coding standard (ISO/IEC 11544).
+ *
+ * Since: 1.14
+ **/
+
+/**
+ * CAIRO_MIME_TYPE_JBIG2_GLOBAL:
+ *
+ * Joint Bi-level Image Experts Group image coding standard (ISO/IEC 11544) global segment.
+ *
+ * Since: 1.14
+ **/
+
+/**
+ * CAIRO_MIME_TYPE_JBIG2_GLOBAL_ID:
+ *
+ * An unique identifier shared by a JBIG2 global segment and all JBIG2 images
+ * that depend on the global segment.
+ *
+ * Since: 1.14
+ **/
+
+/**
  * CAIRO_MIME_TYPE_JP2:
  *
  * The Joint Photographic Experts Group (JPEG) 2000 image coding standard (ISO/IEC 15444-1).
@@ -1256,7 +1282,8 @@ _cairo_mime_data_destroy (void *ptr)
 /**
  * CAIRO_MIME_TYPE_UNIQUE_ID:
  *
- * Unique identifier for a surface (cairo specific MIME type).
+ * Unique identifier for a surface (cairo specific MIME type). All surfaces with
+ * the same unique identifier will only be embedded once.
  *
  * Since: 1.12
  **/

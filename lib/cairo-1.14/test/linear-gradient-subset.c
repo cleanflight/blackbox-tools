@@ -23,8 +23,8 @@
  * Author: Owen Taylor <otaylor@redhat.com>
  */
 
+#include "cairo-test.h"
 #include "stdio.h"
-#include "../../cairo-1.14/test/cairo-test.h"
 
 /* The test matrix is
  *

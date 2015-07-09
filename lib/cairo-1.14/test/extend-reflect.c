@@ -1,6 +1,6 @@
+#include "cairo-test.h"
 #include <math.h>
 #include <stdio.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 static const char *png_filename = "romedalen.png";
 

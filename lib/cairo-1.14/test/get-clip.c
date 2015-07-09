@@ -23,8 +23,8 @@
  * Author: Robert O'Callahan <rocallahan@novell.com>
  */
 
+#include "cairo-test.h"
 #include <stddef.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 static cairo_bool_t
 check_count (const cairo_test_context_t *ctx,

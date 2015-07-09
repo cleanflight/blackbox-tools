@@ -34,9 +34,10 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-mempool-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-mempool-private.h"
+#include "cairo-list-inline.h"
 
 /* a simple buddy allocator for memory pools
  * XXX fragmentation? use Doug Lea's malloc?

@@ -37,13 +37,13 @@
 #ifndef CAIRO_TYPE3_GLYPH_SURFACE_PRIVATE_H
 #define CAIRO_TYPE3_GLYPH_SURFACE_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if CAIRO_HAS_FONT_SUBSET
 
-#include "../../cairo-1.14/src/cairo-surface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-pdf-operators-private.h"
+#include "cairo-surface-private.h"
+#include "cairo-surface-clipper-private.h"
+#include "cairo-pdf-operators-private.h"
 
 typedef cairo_int_status_t
 (*cairo_type3_glyph_surface_emit_image_t) (cairo_image_surface_t *image,
@@ -65,7 +65,8 @@ cairo_private cairo_surface_t *
 _cairo_type3_glyph_surface_create (cairo_scaled_font_t			 *scaled_font,
 				   cairo_output_stream_t		 *stream,
 				   cairo_type3_glyph_surface_emit_image_t emit_image,
-				   cairo_scaled_font_subsets_t		 *font_subsets);
+				   cairo_scaled_font_subsets_t		 *font_subsets,
+				   cairo_bool_t                           ps_output);
 
 cairo_private void
 _cairo_type3_glyph_surface_set_font_subsets_callback (void				    *abstract_surface,

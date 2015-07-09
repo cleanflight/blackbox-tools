@@ -38,15 +38,17 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+#include "cairo-private.h"
+
+#include "cairo-backend-private.h"
+#include "cairo-error-private.h"
+#include "cairo-path-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-surface-private.h"
+#include "cairo-surface-backend-private.h"
+
 #include <assert.h>
-#include "../../cairo-1.14/src/cairo-backend-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-path-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-private.h"
-#include "../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 /**
  * SECTION:cairo

@@ -28,9 +28,9 @@
 #include "config.h"
 #endif
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
-#include "../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 #include <assert.h>
 #include <string.h>
 

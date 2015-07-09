@@ -37,7 +37,7 @@
 #ifndef _CAIRO_WIN32_H_
 #define _CAIRO_WIN32_H_
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 
 #if CAIRO_HAS_WIN32_SURFACE
 

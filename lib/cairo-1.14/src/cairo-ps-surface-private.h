@@ -41,11 +41,13 @@
 #ifndef CAIRO_PS_SURFACE_PRIVATE_H
 #define CAIRO_PS_SURFACE_PRIVATE_H
 
+#include "cairo-ps.h"
+
+#include "cairo-surface-private.h"
+#include "cairo-surface-clipper-private.h"
+#include "cairo-pdf-operators-private.h"
+
 #include <time.h>
-#include "../../cairo-1.14/src/cairo-pdf-operators-private.h"
-#include "../../cairo-1.14/src/cairo-ps.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
 
 typedef struct cairo_ps_surface {
     cairo_surface_t base;

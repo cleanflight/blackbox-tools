@@ -54,7 +54,7 @@
  * called and tries to free the clip's boxes again.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static cairo_test_status_t
 draw (cairo_t *cr, int width, int height)

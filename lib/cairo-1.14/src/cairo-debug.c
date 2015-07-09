@@ -33,8 +33,8 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-image-surface-private.h"
 
 /**
  * cairo_debug_reset_static_data:

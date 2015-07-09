@@ -30,10 +30,12 @@
  *    Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-fontconfig-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-xcb-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-xcb-private.h"
+#include "cairo-list-inline.h"
+
+#include "cairo-fontconfig-private.h"
 
 static void
 _cairo_xcb_init_screen_font_options (cairo_xcb_screen_t *screen)
@@ -205,6 +207,18 @@ _pattern_cache_entry_destroy (void *closure)
     _cairo_freelist_free (&entry->screen->pattern_cache_entry_freelist, entry);
 }
 
+static int _get_screen_index(cairo_xcb_connection_t *xcb_connection,
+			     xcb_screen_t *xcb_screen)
+{
+    int idx = 0;
+    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(xcb_connection->root);
+    for (; iter.rem; xcb_screen_next(&iter), idx++)
+	if (iter.data->root == xcb_screen->root)
+	    return idx;
+
+    ASSERT_NOT_REACHED;
+}
+
 cairo_xcb_screen_t *
 _cairo_xcb_screen_get (xcb_connection_t *xcb_connection,
 		       xcb_screen_t *xcb_screen)
@@ -212,6 +226,7 @@ _cairo_xcb_screen_get (xcb_connection_t *xcb_connection,
     cairo_xcb_connection_t *connection;
     cairo_xcb_screen_t *screen;
     cairo_status_t status;
+    int screen_idx;
     int i;
 
     connection = _cairo_xcb_connection_get (xcb_connection);
@@ -238,9 +253,12 @@ _cairo_xcb_screen_get (xcb_connection_t *xcb_connection,
     if (unlikely (screen == NULL))
 	goto unlock;
 
+    screen_idx = _get_screen_index(connection, xcb_screen);
+
     screen->connection = connection;
     screen->xcb_screen = xcb_screen;
     screen->has_font_options = FALSE;
+    screen->subpixel_order = connection->subpixel_orders[screen_idx];
 
     _cairo_freelist_init (&screen->pattern_cache_entry_freelist,
 			  sizeof (struct pattern_cache_entry));

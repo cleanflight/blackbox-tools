@@ -29,11 +29,11 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if CAIRO_HAS_XCB_SHM_FUNCTIONS
 
-#include "../../cairo-1.14/src/cairo-xcb-private.h"
+#include "cairo-xcb-private.h"
 
 #include <xcb/xcbext.h>
 #include <xcb/shm.h>

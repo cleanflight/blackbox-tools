@@ -27,7 +27,7 @@
 
 /* Test the basic background used extensively in the test suite. */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define HEIGHT 32
 #define WIDTH 32

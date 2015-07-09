@@ -23,9 +23,10 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-svg.h"
-#include "../../cairo-1.14/test/cairo-test.h"
-#include "../../cairo-1.14/test/surface-source.c"
+#include "cairo-test.h"
+#include <cairo-svg.h>
+
+#include "surface-source.c"
 
 #define BASENAME "svg-surface-source.out"
 

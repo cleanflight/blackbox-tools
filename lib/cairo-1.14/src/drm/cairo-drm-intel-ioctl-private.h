@@ -30,7 +30,7 @@
 #ifndef CAIRO_DRM_INTEL_IOCTL_PRIVATE_H
 #define CAIRO_DRM_INTEL_IOCTL_PRIVATE_H
 
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-command-private.h"
+#include "cairo-drm-intel-command-private.h"
 
 #define I915_PARAM_IRQ_ACTIVE            1
 #define I915_PARAM_ALLOW_BATCHBUFFER     2

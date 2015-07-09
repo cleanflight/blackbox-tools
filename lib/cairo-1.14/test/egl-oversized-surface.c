@@ -29,10 +29,10 @@
  *
  */
 
+#include "cairo-test.h"
+#include <cairo-gl.h>
 #include <assert.h>
 #include <limits.h>
-#include "../../cairo-1.14/src/cairo-gl.h"
-#include "../../cairo-1.14/test/cairo-test.h"
 
 static cairo_test_status_t
 preamble (cairo_test_context_t *test_ctx)

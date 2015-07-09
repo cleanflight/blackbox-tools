@@ -38,23 +38,23 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  *	Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
  */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if !CAIRO_HAS_XLIB_XCB_FUNCTIONS
 
-#include "../../cairo-1.14/src/cairo-xlib-private.h"
-#include "../../cairo-1.14/src/cairo-xlib-surface-private.h"
+#include "cairo-xlib-private.h"
+#include "cairo-xlib-surface-private.h"
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-paginated-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-inline.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../cairo-1.14/src/cairo-surface-offset-private.h"
-#include "../../cairo-1.14/src/cairo-surface-observer-private.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-inline.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-paginated-private.h"
+#include "cairo-pattern-inline.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-surface-backend-private.h"
+#include "cairo-surface-offset-private.h"
+#include "cairo-surface-observer-private.h"
+#include "cairo-surface-snapshot-inline.h"
+#include "cairo-surface-subsurface-inline.h"
 
 #define PIXMAN_MAX_INT ((pixman_fixed_1 >> 1) - pixman_fixed_e) /* need to ensure deltas also fit */
 
@@ -869,11 +869,14 @@ recording_pattern_get_surface (const cairo_pattern_t *pattern)
     cairo_surface_t *surface;
 
     surface = ((const cairo_surface_pattern_t *) pattern)->surface;
+
     if (_cairo_surface_is_paginated (surface))
-	surface = _cairo_paginated_surface_get_recording (surface);
+	return cairo_surface_reference (_cairo_paginated_surface_get_recording (surface));
+
     if (_cairo_surface_is_snapshot (surface))
-	surface = _cairo_surface_snapshot_get_target (surface);
-    return surface;
+	return _cairo_surface_snapshot_get_target (surface);
+
+    return cairo_surface_reference (surface);
 }
 
 static cairo_surface_t *
@@ -885,6 +888,7 @@ record_source (cairo_xlib_surface_t *dst,
 	       int *src_x, int *src_y)
 {
     cairo_xlib_surface_t *src;
+    cairo_surface_t *recording;
     cairo_matrix_t matrix, m;
     cairo_status_t status;
     cairo_rectangle_int_t upload, limit;
@@ -911,9 +915,11 @@ record_source (cairo_xlib_surface_t *dst,
     }
 
     cairo_matrix_init_translate (&matrix, upload.x, upload.y);
-    status = _cairo_recording_surface_replay_with_clip (recording_pattern_get_surface (&pattern->base),
+    recording = recording_pattern_get_surface (&pattern->base),
+    status = _cairo_recording_surface_replay_with_clip (recording,
 							&matrix, &src->base,
 							NULL);
+    cairo_surface_destroy (recording);
     if (unlikely (status)) {
 	cairo_surface_destroy (&src->base);
 	return _cairo_surface_create_in_error (status);

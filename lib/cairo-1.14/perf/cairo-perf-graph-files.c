@@ -25,15 +25,16 @@
  * Authors: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-perf.h"
+#include "cairo-perf-graph.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 
-#include "../../cairo-1.14/perf/cairo-perf.h"
-#include "../../cairo-1.14/perf/cairo-perf-graph.h"
-#include "../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 
 static void
 usage (const char *argv0)

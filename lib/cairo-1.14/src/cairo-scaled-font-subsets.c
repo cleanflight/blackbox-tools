@@ -41,13 +41,13 @@
  */
 
 #define _BSD_SOURCE /* for snprintf(), strdup() */
-#include "../../cairo-1.14/src/cairoint.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
+#include "cairoint.h"
+#include "cairo-error-private.h"
 
 #if CAIRO_HAS_FONT_SUBSET
 
-#include "../../cairo-1.14/src/cairo-scaled-font-subsets-private.h"
-#include "../../cairo-1.14/src/cairo-user-font-private.h"
+#include "cairo-scaled-font-subsets-private.h"
+#include "cairo-user-font-private.h"
 
 #define MAX_GLYPHS_PER_SIMPLE_FONT 256
 #define MAX_GLYPHS_PER_COMPOSITE_FONT 65536

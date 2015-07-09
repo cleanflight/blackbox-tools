@@ -33,23 +33,25 @@
  *      Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-combsort-inline.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-reference-count-private.h"
-#include "../../cairo-1.14/src/cairo-surface-observer-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-observer-private.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-inline.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-surface-observer-private.h"
+#include "cairo-surface-observer-inline.h"
+
+#include "cairo-array-private.h"
+#include "cairo-combsort-inline.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-pattern-private.h"
+#include "cairo-output-stream-private.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-surface-subsurface-inline.h"
+#include "cairo-reference-count-private.h"
 
 #if CAIRO_HAS_SCRIPT_SURFACE
-#include "../../cairo-1.14/src/cairo-script-private.h"
+#include "cairo-script-private.h"
 #endif
 
 static const cairo_surface_backend_t _cairo_surface_observer_backend;
@@ -651,7 +653,7 @@ add_record (cairo_observation_t *log,
 }
 
 static void
-sync (cairo_surface_t *target, int x, int y)
+_cairo_surface_sync (cairo_surface_t *target, int x, int y)
 {
     cairo_rectangle_int_t extents;
 
@@ -749,7 +751,7 @@ _cairo_surface_observer_paint (void *abstract_surface,
     if (unlikely (status))
 	return status;
 
-    sync (surface->target, x, y);
+    _cairo_surface_sync (surface->target, x, y);
     t = _cairo_time_get_delta (t);
 
     add_record_paint (&surface->log, surface->target, op, source, clip, t);
@@ -835,7 +837,7 @@ _cairo_surface_observer_mask (void *abstract_surface,
     if (unlikely (status))
 	return status;
 
-    sync (surface->target, x, y);
+    _cairo_surface_sync (surface->target, x, y);
     t = _cairo_time_get_delta (t);
 
     add_record_mask (&surface->log,
@@ -942,7 +944,7 @@ _cairo_surface_observer_fill (void			*abstract_surface,
     if (unlikely (status))
 	return status;
 
-    sync (surface->target, x, y);
+    _cairo_surface_sync (surface->target, x, y);
     t = _cairo_time_get_delta (t);
 
     add_record_fill (&surface->log,
@@ -1061,7 +1063,7 @@ _cairo_surface_observer_stroke (void				*abstract_surface,
     if (unlikely (status))
 	return status;
 
-    sync (surface->target, x, y);
+    _cairo_surface_sync (surface->target, x, y);
     t = _cairo_time_get_delta (t);
 
     add_record_stroke (&surface->log,
@@ -1181,7 +1183,7 @@ _cairo_surface_observer_glyphs (void			*abstract_surface,
     if (unlikely (status))
 	return status;
 
-    sync (surface->target, x, y);
+    _cairo_surface_sync (surface->target, x, y);
     t = _cairo_time_get_delta (t);
 
     add_record_glyphs (&surface->log,

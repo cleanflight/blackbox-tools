@@ -42,14 +42,15 @@
  * more details on how it works and how to use it.
  */
 
-#include "../../cairo-1.14/src/cairo-analysis-surface-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-paginated-private.h"
-#include "../../cairo-1.14/src/cairo-paginated-surface-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-inline.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-paginated-private.h"
+#include "cairo-paginated-surface-private.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-analysis-surface-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-surface-subsurface-inline.h"
 
 static const cairo_surface_backend_t cairo_paginated_surface_backend;
 

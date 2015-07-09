@@ -36,7 +36,7 @@
 #ifndef CAIRO_PAGINATED_H
 #define CAIRO_PAGINATED_H
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 struct _cairo_paginated_surface_backend {
     /* Optional. Will be called once for each page.

@@ -33,9 +33,9 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-device-private.h"
+#include "cairo-error-private.h"
 
 /**
  * SECTION:cairo-device

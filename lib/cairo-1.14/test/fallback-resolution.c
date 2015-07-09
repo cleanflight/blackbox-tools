@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 
 #if CAIRO_HAS_PDF_SURFACE
 #include <cairo-pdf.h>
@@ -45,8 +45,8 @@
 #include <sys/stat.h>
 #endif
 
-#include "../../cairo-1.14/test/cairo-test.h"
-#include "../../cairo-1.14/test/buffer-diff.h"
+#include "cairo-test.h"
+#include "buffer-diff.h"
 
 /* This test exists to test cairo_surface_set_fallback_resolution
  *

@@ -64,9 +64,9 @@
 #define MF(x)
 #endif
 
-#include "../../cairo-1.14/test/cairo-test-private.h"
+#include "cairo-test-private.h"
 
-#include "../../cairo-1.14/test/buffer-diff.h"
+#include "buffer-diff.h"
 
 #ifdef _MSC_VER
 #include <crtdbg.h>
@@ -81,10 +81,6 @@
 #endif
 #ifndef TRUE
 #define TRUE !FALSE
-#endif
-
-#ifndef ARRAY_LENGTH
-#define ARRAY_LENGTH(__array) ((int) (sizeof (__array) / sizeof (__array[0])))
 #endif
 
 #if ! HAVE_ALARM || ! defined(SIGALRM)

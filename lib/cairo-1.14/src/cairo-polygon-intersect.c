@@ -36,11 +36,11 @@
  */
 
 /* Provide definitions for standalone compilation */
+#include "cairoint.h"
+
 #include "cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-combsort-inline.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-freelist-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairo-freelist-private.h"
+#include "cairo-combsort-inline.h"
 
 typedef cairo_point_t cairo_bo_point32_t;
 

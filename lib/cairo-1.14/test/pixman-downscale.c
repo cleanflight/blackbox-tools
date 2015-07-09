@@ -29,11 +29,12 @@
  * Currently, this exercises several of pixman's scaling filters.
  */
 
+#include "cairo-test.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../../cairo-1.14/src/cairo.h"
-#include "../../cairo-1.14/test/cairo-test.h"
+#include <cairo.h>
 
 static const char png_filename[] = "quad-color.png";
 

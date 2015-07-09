@@ -38,15 +38,17 @@
 /* This surface supports redirecting all its input to multiple surfaces.
  */
 
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-wrapper-private.h"
-#include "../../cairo-1.14/src/cairo-tee.h"
-#include "../../cairo-1.14/src/cairo-tee-surface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-tee.h"
+
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-tee-surface-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-surface-wrapper-private.h"
+#include "cairo-array-private.h"
+#include "cairo-image-surface-inline.h"
 
 typedef struct _cairo_tee_surface {
     cairo_surface_t base;

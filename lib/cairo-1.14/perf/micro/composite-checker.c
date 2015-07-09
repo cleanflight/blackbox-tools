@@ -24,7 +24,7 @@
  * Author: Björn Lindqvist <bjourne@gmail.com>
  */
 
-#include "../../../cairo-1.14/perf/cairo-perf.h"
+#include "cairo-perf.h"
 
 /* This test case measures how much time cairo takes to render the
  * equivalent of the following gdk-pixbuf operation:

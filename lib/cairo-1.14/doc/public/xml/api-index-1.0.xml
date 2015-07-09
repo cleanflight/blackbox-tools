@@ -246,8 +246,8 @@
 <indexentry><primaryie linkends="cairo-user-to-device-distance"><link linkend="cairo-user-to-device-distance">cairo_user_to_device_distance</link>, function in <link linkend="cairo-Transformations">Transformations</link></primaryie></indexentry>
 </indexdiv>
 <indexdiv><title>V</title>
-<indexentry><primaryie linkends="CAIRO-VERSION:CAPS"><link linkend="CAIRO-VERSION:CAPS">CAIRO_VERSION</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 <indexentry><primaryie linkends="cairo-version"><link linkend="cairo-version">cairo_version</link>, function in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
+<indexentry><primaryie linkends="CAIRO-VERSION:CAPS"><link linkend="CAIRO-VERSION:CAPS">CAIRO_VERSION</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 <indexentry><primaryie linkends="CAIRO-VERSION-ENCODE:CAPS"><link linkend="CAIRO-VERSION-ENCODE:CAPS">CAIRO_VERSION_ENCODE</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 <indexentry><primaryie linkends="CAIRO-VERSION-MAJOR:CAPS"><link linkend="CAIRO-VERSION-MAJOR:CAPS">CAIRO_VERSION_MAJOR</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 <indexentry><primaryie linkends="CAIRO-VERSION-MICRO:CAPS"><link linkend="CAIRO-VERSION-MICRO:CAPS">CAIRO_VERSION_MICRO</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>

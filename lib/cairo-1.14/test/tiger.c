@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-#include "../../cairo-1.14/test/tiger.inc"
+#include "cairo-test.h"
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "tiger.inc"
 
 static cairo_test_status_t
 draw (cairo_t *cr, int width, int height)
@@ -37,7 +37,7 @@ draw (cairo_t *cr, int width, int height)
 	cairo_translate (cr, width/2, height/2);
 	cairo_scale (cr, .85, .85);
 
-	for (i = 0; i < sizeof (tiger_commands)/sizeof(tiger_commands[0]);i++) {
+	for (i = 0; i < ARRAY_LENGTH(tiger_commands); i++) {
 		const struct command *cmd = &tiger_commands[i];
 		switch (cmd->type) {
 		case 'm':

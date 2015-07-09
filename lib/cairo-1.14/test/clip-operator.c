@@ -23,9 +23,9 @@
  * Author: Kristian Høgsberg <krh@redhat.com>
  */
 
+#include "cairo-test.h"
 #include <math.h>
 #include <stdio.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define WIDTH 16
 #define HEIGHT 16

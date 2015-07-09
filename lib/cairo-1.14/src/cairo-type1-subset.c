@@ -41,16 +41,16 @@
 
 
 #define _BSD_SOURCE /* for snprintf(), strdup() */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
+#include "cairo-array-private.h"
+#include "cairo-error-private.h"
 
 #if CAIRO_HAS_FONT_SUBSET
 
-#include "../../cairo-1.14/src/cairo-type1-private.h"
-#include "../../cairo-1.14/src/cairo-scaled-font-subsets-private.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
+#include "cairo-type1-private.h"
+#include "cairo-scaled-font-subsets-private.h"
+#include "cairo-output-stream-private.h"
 
 #include <ctype.h>
 

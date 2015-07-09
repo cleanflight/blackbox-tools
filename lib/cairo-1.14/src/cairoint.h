@@ -67,11 +67,11 @@
 #include <limits.h>
 #include <stdio.h>
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 #include <pixman.h>
 
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
+#include "cairo-compiler-private.h"
+#include "cairo-error-private.h"
 
 #if CAIRO_HAS_PDF_SURFACE    || \
     CAIRO_HAS_PS_SURFACE     || \
@@ -229,7 +229,7 @@ be16_to_cpu(uint16_t v)
 static inline uint32_t cairo_const
 cpu_to_be32(uint32_t v)
 {
-    return (cpu_to_be16 (v) << 16) | cpu_to_be16 (v >> 16);
+    return (v >> 24) | ((v >> 8) & 0xff00) | ((v << 8) & 0xff0000) | (v << 24);
 }
 
 static inline uint32_t cairo_const
@@ -240,6 +240,32 @@ be32_to_cpu(uint32_t v)
 
 #endif
 
+/* Unaligned big endian access
+ */
+
+static inline uint16_t get_unaligned_be16 (const unsigned char *p)
+{
+    return p[0] << 8 | p[1];
+}
+
+static inline uint32_t get_unaligned_be32 (const unsigned char *p)
+{
+    return p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3];
+}
+
+static inline void put_unaligned_be16 (uint16_t v, unsigned char *p)
+{
+    p[0] = (v >> 8) & 0xff;
+    p[1] = v & 0xff;
+}
+
+static inline void put_unaligned_be32 (uint32_t v, unsigned char *p)
+{
+    p[0] = (v >> 24) & 0xff;
+    p[1] = (v >> 16) & 0xff;
+    p[2] = (v >> 8)  & 0xff;
+    p[3] = v & 0xff;
+}
 
 /* The glibc versions of ispace() and isdigit() are slow in UTF-8 locales.
  */
@@ -256,11 +282,11 @@ _cairo_isdigit (int c)
     return (c >= '0' && c <= '9');
 }
 
-#include "../../cairo-1.14/src/cairo-types-private.h"
-#include "../../cairo-1.14/src/cairo-cache-private.h"
-#include "../../cairo-1.14/src/cairo-reference-count-private.h"
-#include "../../cairo-1.14/src/cairo-spans-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
+#include "cairo-types-private.h"
+#include "cairo-cache-private.h"
+#include "cairo-reference-count-private.h"
+#include "cairo-spans-private.h"
+#include "cairo-surface-private.h"
 
 cairo_private void
 _cairo_box_from_doubles (cairo_box_t *box,
@@ -393,7 +419,7 @@ _cairo_hash_bytes (unsigned long hash,
 #define _cairo_scaled_glyph_index(g) ((g)->hash_entry.hash)
 #define _cairo_scaled_glyph_set_index(g, i)  ((g)->hash_entry.hash = (i))
 
-#include "../../cairo-1.14/src/cairo-scaled-font-private.h"
+#include "cairo-scaled-font-private.h"
 
 struct _cairo_font_face {
     /* hash_entry must be first */
@@ -2011,11 +2037,11 @@ slim_hidden_proto (cairo_surface_write_to_png_stream);
 
 CAIRO_END_DECLS
 
-#include "../../cairo-1.14/src/cairo-mutex-private.h"
-#include "../../cairo-1.14/src/cairo-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-wideint-private.h"
-#include "../../cairo-1.14/src/cairo-malloc-private.h"
-#include "../../cairo-1.14/src/cairo-hash-private.h"
+#include "cairo-mutex-private.h"
+#include "cairo-fixed-private.h"
+#include "cairo-wideint-private.h"
+#include "cairo-malloc-private.h"
+#include "cairo-hash-private.h"
 
 #if HAVE_VALGRIND
 #include <memcheck.h>

@@ -36,10 +36,12 @@
 #ifndef TEST_COMPOSITOR_SURFACE_PRIVATE_H
 #define TEST_COMPOSITOR_SURFACE_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo.h"
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/test-compositor-surface.h"
+#include "cairo.h"
+
+#include "test-compositor-surface.h"
+
+#include "cairo-compiler-private.h"
+#include "cairo-compositor-private.h"
 
 CAIRO_BEGIN_DECLS
 

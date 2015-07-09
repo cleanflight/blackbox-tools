@@ -54,29 +54,29 @@
  */
 
 #define _BSD_SOURCE /* for ctime_r(), snprintf(), strdup() */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-ps.h"
-#include "../../cairo-1.14/src/cairo-ps-surface-private.h"
+#include "cairo-ps.h"
+#include "cairo-ps-surface-private.h"
 
-#include "../../cairo-1.14/src/cairo-pdf-operators-private.h"
-#include "../../cairo-1.14/src/cairo-pdf-shading-private.h"
+#include "cairo-pdf-operators-private.h"
+#include "cairo-pdf-shading-private.h"
 
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-scaled-font-subsets-private.h"
-#include "../../cairo-1.14/src/cairo-paginated-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-private.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairo-type3-glyph-surface-private.h"
-#include "../../cairo-1.14/src/cairo-image-info-private.h"
+#include "cairo-array-private.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-list-inline.h"
+#include "cairo-scaled-font-subsets-private.h"
+#include "cairo-paginated-private.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-surface-clipper-private.h"
+#include "cairo-surface-snapshot-inline.h"
+#include "cairo-surface-subsurface-private.h"
+#include "cairo-output-stream-private.h"
+#include "cairo-type3-glyph-surface-private.h"
+#include "cairo-image-info-private.h"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -628,7 +628,8 @@ _cairo_ps_surface_analyze_user_font_subset (cairo_scaled_font_subset_t *font_sub
     type3_surface = _cairo_type3_glyph_surface_create (font_subset->scaled_font,
 						       NULL,
 						       _cairo_ps_emit_imagemask,
-						       surface->font_subsets);
+						       surface->font_subsets,
+						       TRUE);
 
     for (i = 0; i < font_subset->num_glyphs; i++) {
 	status = _cairo_type3_glyph_surface_analyze_glyph (type3_surface,
@@ -676,7 +677,8 @@ _cairo_ps_surface_emit_type3_font_subset (cairo_ps_surface_t		*surface,
     type3_surface = _cairo_type3_glyph_surface_create (font_subset->scaled_font,
 						       NULL,
 						       _cairo_ps_emit_imagemask,
-						       surface->font_subsets);
+						       surface->font_subsets,
+						       TRUE);
     status = type3_surface->status;
     if (unlikely (status))
 	return status;
@@ -1068,7 +1070,8 @@ _cairo_ps_surface_create_for_stream_internal (cairo_output_stream_t *stream,
     _cairo_pdf_operators_init (&surface->pdf_operators,
 			       surface->stream,
 			       &surface->cairo_to_ps,
-			       surface->font_subsets);
+			       surface->font_subsets,
+			       TRUE);
     surface->num_pages = 0;
 
     cairo_list_init (&surface->document_media);

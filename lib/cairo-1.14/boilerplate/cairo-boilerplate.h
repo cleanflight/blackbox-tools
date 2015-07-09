@@ -33,10 +33,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 #include <string.h>
 
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
+#include "cairo-compiler-private.h"
 
 #if   HAVE_STDINT_H
 # include <stdint.h>
@@ -92,6 +92,10 @@
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
+#endif
+
+#ifndef ARRAY_LENGTH
+#define ARRAY_LENGTH(__array) ((int) (sizeof (__array) / sizeof (__array[0])))
 #endif
 
 CAIRO_BEGIN_DECLS
@@ -241,7 +245,7 @@ cairo_boilerplate_version_string (void);
 void
 cairo_boilerplate_fini (void);
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-system.h"
+#include "cairo-boilerplate-system.h"
 
 CAIRO_END_DECLS
 

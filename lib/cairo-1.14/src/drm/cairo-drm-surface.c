@@ -30,10 +30,12 @@
  * The Initial Developer of the Original Code is Chris Wilson.
  */
 
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
+#include "cairoint.h"
+
+#include "cairo-drm-private.h"
+
+#include "cairo-error-private.h"
+#include "cairo-image-surface-inline.h"
 
 void
 _cairo_drm_surface_init (cairo_drm_surface_t *surface,

@@ -29,7 +29,7 @@
  *	https://bugs.freedesktop.org/show_bug.cgi?id=4863
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH 71
 #define HEIGHT 28

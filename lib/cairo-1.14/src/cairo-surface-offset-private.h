@@ -39,7 +39,7 @@
 #ifndef CAIRO_SURFACE_OFFSET_PRIVATE_H
 #define CAIRO_SURFACE_OFFSET_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo-types-private.h"
 
 CAIRO_BEGIN_DECLS
 

@@ -24,8 +24,9 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-quartz.h"
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-quartz.h>
 
 static cairo_surface_t *
 _cairo_boilerplate_quartz_create_surface (const char		    *name,

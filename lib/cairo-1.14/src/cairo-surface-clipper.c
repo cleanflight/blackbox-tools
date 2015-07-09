@@ -33,9 +33,10 @@
  *      Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-clip-inline.h"
+#include "cairo-surface-clipper-private.h"
 
 /* A collection of routines to facilitate vector surface clipping */
 

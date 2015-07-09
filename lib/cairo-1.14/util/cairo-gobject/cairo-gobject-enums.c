@@ -5,7 +5,7 @@
 #include "config.h"
 #endif
 
-#include "../../../cairo-1.14/util/cairo-gobject/cairo-gobject.h"
+#include "cairo-gobject.h"
 
 GType
 cairo_gobject_status_get_type (void)

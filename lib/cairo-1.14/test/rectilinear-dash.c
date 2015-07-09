@@ -28,7 +28,7 @@
  * Based on the original test/rectilinear-stroke.c by Carl D. Worth.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define SIZE 50
 

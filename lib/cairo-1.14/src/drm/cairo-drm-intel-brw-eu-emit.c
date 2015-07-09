@@ -29,9 +29,10 @@
  *   Keith Whitwell <keith@tungstengraphics.com>
  */
 
+#include "cairoint.h"
+#include "cairo-drm-intel-brw-eu.h"
+
 #include <string.h>
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-brw-eu.h"
 
 /***********************************************************************
  * Internal helper for constructing instructions

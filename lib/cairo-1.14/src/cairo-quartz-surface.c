@@ -35,19 +35,19 @@
  */
 
 #define _GNU_SOURCE /* required for RTLD_DEFAULT */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-quartz-private.h"
+#include "cairo-quartz-private.h"
 
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-compositor-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-pattern-private.h"
+#include "cairo-surface-backend-private.h"
+#include "cairo-surface-clipper-private.h"
+#include "cairo-recording-surface-private.h"
 
 #include <dlfcn.h>
 

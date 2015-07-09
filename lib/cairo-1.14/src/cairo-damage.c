@@ -32,9 +32,10 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-damage-private.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-damage-private.h"
+#include "cairo-region-private.h"
 
 static const cairo_damage_t __cairo_damage__nil = { CAIRO_STATUS_NO_MEMORY };
 

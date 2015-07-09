@@ -60,7 +60,7 @@
 #ifndef CAIRO_GL_H
 #define CAIRO_GL_H
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 
 #if CAIRO_HAS_GL_SURFACE || CAIRO_HAS_GLESV2_SURFACE
 

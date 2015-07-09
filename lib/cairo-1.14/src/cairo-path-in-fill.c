@@ -33,8 +33,8 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-path-fixed-private.h"
 
 typedef struct cairo_in_fill {
     double tolerance;

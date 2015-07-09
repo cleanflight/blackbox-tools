@@ -24,8 +24,9 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-win32.h"
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-win32.h>
 
 static cairo_surface_t *
 _cairo_boilerplate_win32_create_surface (const char		   *name,

@@ -30,9 +30,10 @@
  * The Initial Developer of the Original Code is Chris Wilson.
  */
 
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-cogl.h>
 #include <cogl/cogl2-experimental.h>
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-cogl.h"
 
 typedef struct _cogl_closure {
     cairo_device_t *device;

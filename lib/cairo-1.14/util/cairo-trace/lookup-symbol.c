@@ -54,7 +54,7 @@
 #define true 1
 #define false 0
 
-#include "../../../cairo-1.14/util/cairo-trace/lookup-symbol.h"
+#include "lookup-symbol.h"
 
 #include <unistd.h>
 #include <stdio.h>

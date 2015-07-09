@@ -23,12 +23,12 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 #if CAIRO_HAS_XCB_SURFACE
 #include <cairo-xcb.h>
 #endif
 
-#include "../../cairo-1.14/test/surface-source.c"
+#include "surface-source.c"
 
 #if CAIRO_HAS_XCB_SURFACE
 static cairo_user_data_key_t closure_key;

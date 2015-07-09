@@ -29,7 +29,7 @@
 
 #include <limits.h>
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #if CAIRO_HAS_GL_SURFACE
 #include <cairo-gl.h>

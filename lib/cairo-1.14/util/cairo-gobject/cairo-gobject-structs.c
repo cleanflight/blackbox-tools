@@ -38,7 +38,7 @@
 #include "config.h"
 #endif
 
-#include "../../../cairo-1.14/util/cairo-gobject/cairo-gobject.h"
+#include "cairo-gobject.h"
 
 #define CAIRO_DEFINE_BOXED(Name,underscore_name,copy_func,free_func) \
 GType \

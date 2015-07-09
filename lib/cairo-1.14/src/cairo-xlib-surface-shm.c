@@ -35,12 +35,12 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if !CAIRO_HAS_XLIB_XCB_FUNCTIONS
 
-#include "../../cairo-1.14/src/cairo-xlib-private.h"
-#include "../../cairo-1.14/src/cairo-xlib-surface-private.h"
+#include "cairo-xlib-private.h"
+#include "cairo-xlib-surface-private.h"
 
 #if !HAVE_X11_EXTENSIONS_XSHM_H || !(HAVE_X11_EXTENSIONS_SHMPROTO_H || HAVE_X11_EXTENSIONS_SHMSTR_H)
 void _cairo_xlib_display_init_shm (cairo_xlib_display_t *display) {}
@@ -135,11 +135,11 @@ void _cairo_xlib_display_fini_shm (cairo_xlib_display_t *display) {}
 
 #else
 
-#include "../../cairo-1.14/src/cairo-damage-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-mempool-private.h"
+#include "cairo-damage-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-mempool-private.h"
 
 #include <X11/Xlibint.h>
 #include <X11/Xproto.h>
@@ -453,7 +453,7 @@ static void send_event(cairo_xlib_display_t *display,
     display->shm->last_event = ev.serial;
 }
 
-static void sync (cairo_xlib_display_t *display)
+static void _cairo_xlib_display_sync (cairo_xlib_display_t *display)
 {
     cairo_xlib_shm_info_t *info;
     struct pqueue *pq = &display->shm->info;
@@ -949,7 +949,7 @@ _cairo_xlib_surface_update_shm (cairo_xlib_surface_t *surface)
 	XChangeGC (display->display, gc, GCSubwindowMode, &gcv);
     }
 
-    sync (display);
+    _cairo_xlib_display_sync (display);
     shm->active = 0;
     shm->idle--;
 

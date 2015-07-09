@@ -22,9 +22,9 @@
 #include "config.h"
 #endif
 
-#include "../../../cairo-1.14/src/cairo.h"
-#include "../../../cairo-1.14/src/cairo-script.h"
-#include "../../../cairo-1.14/src/cairo-tee.h"
+#include <cairo.h>
+#include <cairo-script.h>
+#include <cairo-tee.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <signal.h>

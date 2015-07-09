@@ -38,11 +38,11 @@
 #ifndef CAIRO_QUARTZ_PRIVATE_H
 #define CAIRO_QUARTZ_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if CAIRO_HAS_QUARTZ_SURFACE
-#include "../../cairo-1.14/src/cairo-quartz.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
+#include "cairo-quartz.h"
+#include "cairo-surface-clipper-private.h"
 
 #ifdef CGFLOAT_DEFINED
 typedef CGFloat cairo_quartz_float_t;

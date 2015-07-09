@@ -34,17 +34,20 @@
  *      Chris Wilson      <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+
+#include "cairo-vg.h"
+
+#include "cairo-cache-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-path-fixed-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-surface-clipper-private.h"
+
 #include <pixman.h>
 #include <VG/openvg.h>
-#include "../../cairo-1.14/src/cairo-cache-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-vg.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 //#define OPENVG_DEBUG
 

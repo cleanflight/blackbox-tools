@@ -51,7 +51,7 @@
  *
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH 21
 #define HEIGHT 21

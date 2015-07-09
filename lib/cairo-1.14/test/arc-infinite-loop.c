@@ -25,8 +25,8 @@
  * Author: Andrea Canciani <ranma42@gmail.com>
  */
 
+#include "cairo-test.h"
 #include <float.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define SIZE 8
 

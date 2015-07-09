@@ -26,8 +26,9 @@
 
 /* Measure the overhead in setting a single pixel */
 
+#include "cairo-perf.h"
+
 #include <pixman.h>
-#include "../../../cairo-1.14/perf/cairo-perf.h"
 
 static cairo_time_t
 pixel_direct (cairo_t *cr, int width, int height, int loops)

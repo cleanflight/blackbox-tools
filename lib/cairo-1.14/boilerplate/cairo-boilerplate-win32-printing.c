@@ -34,7 +34,7 @@
 # define _WIN32_WINNT 0x0500
 #endif
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
+#include "cairo-boilerplate-private.h"
 
 #if CAIRO_CAN_TEST_WIN32_PRINTING_SURFACE
 

@@ -24,9 +24,8 @@
  * Author: Vladimir Vukicevic <vladimir@pobox.com>
  */
 
+#include "cairo-test.h"
 #include <stdlib.h>
-
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define CHECK_SUCCESS do { \
     if (status) { \

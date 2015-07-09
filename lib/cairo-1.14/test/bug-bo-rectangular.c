@@ -23,7 +23,7 @@
  * Author: Benjamin Otte <otte@gnome.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static void
 rect (cairo_t *cr, int x1, int y1, int x2, int y2)

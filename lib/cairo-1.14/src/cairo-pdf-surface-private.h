@@ -42,11 +42,12 @@
 #ifndef CAIRO_PDF_SURFACE_PRIVATE_H
 #define CAIRO_PDF_SURFACE_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-pdf.h"
-#include "../../cairo-1.14/src/cairo-pdf-operators-private.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
+#include "cairo-pdf.h"
+
+#include "cairo-surface-private.h"
+#include "cairo-surface-clipper-private.h"
+#include "cairo-pdf-operators-private.h"
+#include "cairo-path-fixed-private.h"
 
 typedef struct _cairo_pdf_resource {
     unsigned int id;

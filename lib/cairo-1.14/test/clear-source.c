@@ -24,7 +24,7 @@
  * Author: Benjamin Otte <otte@gnome.org>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 typedef enum {
   CLEAR,

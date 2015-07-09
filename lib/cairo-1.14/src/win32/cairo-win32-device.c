@@ -46,11 +46,11 @@
 # define _WIN32_WINNT 0x0500
 #endif
 
-#include "../../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../../cairo-1.14/src/cairo-atomic-private.h"
-#include "../../../cairo-1.14/src/cairo-device-private.h"
-#include "../../../cairo-1.14/src/win32/cairo-win32-private.h"
+#include "cairo-atomic-private.h"
+#include "cairo-device-private.h"
+#include "cairo-win32-private.h"
 
 #include <wchar.h>
 #include <windows.h>

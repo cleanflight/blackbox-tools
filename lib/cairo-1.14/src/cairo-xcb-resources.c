@@ -52,9 +52,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../../cairo-1.14/src/cairo-fontconfig-private.h"
-#include "../../cairo-1.14/src/cairo-xcb-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-xcb-private.h"
+
+#include "cairo-fontconfig-private.h"
 
 static void
 parse_boolean (const char *v, cairo_bool_t *out)
@@ -249,21 +251,13 @@ get_resources(xcb_connection_t *connection, xcb_screen_t *screen, cairo_xcb_reso
     resource_parser_done (&parser);
 }
 
-#if 0 && XCB_RENDER_MAJOR_VERSION > 99 && XCB_RENDER_MINOR_VERSION > 99
-static void
-get_rgba_from_render (xcb_connection_t *connection, xcb_screen_t *screen, cairo_xcb_resources_t *resources)
+void
+_cairo_xcb_resources_get (cairo_xcb_screen_t *screen, cairo_xcb_resources_t *resources)
 {
-    /* this is a mock-up of what the function might look like,
-       xcb_render_query_sub_pixel is not actually implemented in XCB (yet) */
+    get_resources (screen->connection->xcb_connection, screen->xcb_screen, resources);
 
-    xcb_render_query_sub_pixel_order_cookie_t cookie;
-    xcb_render_query_sub_pixel_order_reply_t *reply;
-
-    cookie = xcb_render_query_sub_pixel (connection, screen);
-    reply = xcb_render_query_sub_pixel_reply (connection, cookie, NULL);
-
-    if (reply) {
-	switch (reply->sub_pixel_order) {
+    if (resources->xft_rgba == FC_RGBA_UNKNOWN) {
+	switch (screen->subpixel_order) {
 	case XCB_RENDER_SUB_PIXEL_UNKNOWN:
 	    resources->xft_rgba = FC_RGBA_UNKNOWN;
 	    break;
@@ -283,20 +277,5 @@ get_rgba_from_render (xcb_connection_t *connection, xcb_screen_t *screen, cairo_
 	    resources->xft_rgba = FC_RGBA_NONE;
 	    break;
 	}
-
-	free(reply);
     }
-}
-#endif
-
-void
-_cairo_xcb_resources_get (cairo_xcb_screen_t *screen, cairo_xcb_resources_t *resources)
-{
-    get_resources (screen->connection->xcb_connection, screen->xcb_screen, resources);
-
-#if 0 && XCB_RENDER_MAJOR_VERSION > 99 && XCB_RENDER_MINOR_VERSION > 99
-    if (resources->xft_rgba == FC_RGBA_UNKNOWN) {
-	get_rgba_from_render (screen->connection->xcb_connection, screen->xcb_screen, resources);
-    }
-#endif
 }

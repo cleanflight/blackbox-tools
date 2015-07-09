@@ -33,11 +33,12 @@
 #ifndef CAIRO_XLIB_SURFACE_PRIVATE_H
 #define CAIRO_XLIB_SURFACE_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
-#include "../../cairo-1.14/src/cairo-xlib.h"
-#include "../../cairo-1.14/src/cairo-xlib-private.h"
-#include "../../cairo-1.14/src/cairo-xlib-xrender-private.h"
+#include "cairo-xlib-xrender-private.h"
+#include "cairo-xlib.h"
+#include "cairo-xlib-private.h"
+
+#include "cairo-surface-private.h"
+#include "cairo-surface-backend-private.h"
 
 
 #endif /* CAIRO_XLIB_SURFACE_PRIVATE_H */

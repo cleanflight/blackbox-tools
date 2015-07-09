@@ -35,7 +35,7 @@
  *  event at the end point of the right edge.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define SIZE 50
 

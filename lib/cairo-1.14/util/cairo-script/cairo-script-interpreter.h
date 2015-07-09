@@ -36,8 +36,8 @@
 #ifndef CAIRO_SCRIPT_INTERPRETER_H
 #define CAIRO_SCRIPT_INTERPRETER_H
 
+#include <cairo.h>
 #include <stdio.h>
-#include "../../../cairo-1.14/src/cairo.h"
 
 CAIRO_BEGIN_DECLS
 

@@ -20,10 +20,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-
-#include "../../../cairo-1.14/test/pdiff/args.h"
-#include "../../../cairo-1.14/test/pdiff/lpyramid.h"
-#include "../../../cairo-1.14/test/pdiff/pdiff.h"
+#include "lpyramid.h"
+#include "args.h"
+#include "pdiff.h"
 
 static bool Yee_Compare(args_t *args)
 {

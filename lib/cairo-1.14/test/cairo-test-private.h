@@ -28,7 +28,7 @@
 #ifndef _CAIRO_TEST_PRIVATE_H_
 #define _CAIRO_TEST_PRIVATE_H_
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* For communication between the core components of cairo-test and not
  * for the tests themselves.

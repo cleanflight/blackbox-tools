@@ -34,8 +34,8 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-error-private.h"
 
 typedef struct _lzw_buf {
     cairo_status_t status;

@@ -41,15 +41,15 @@
  */
 
 #define _BSD_SOURCE /* for snprintf(), strdup() */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
+#include "cairo-array-private.h"
+#include "cairo-error-private.h"
 
 #if CAIRO_HAS_FONT_SUBSET
 
-#include "../../cairo-1.14/src/cairo-scaled-font-subsets-private.h"
-#include "../../cairo-1.14/src/cairo-truetype-subset-private.h"
+#include "cairo-scaled-font-subsets-private.h"
+#include "cairo-truetype-subset-private.h"
 
 
 typedef struct subset_glyph subset_glyph_t;

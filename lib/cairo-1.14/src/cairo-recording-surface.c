@@ -76,19 +76,20 @@
  * copy-on-write implementation for _cairo_surface_snapshot.
  **/
 
-#include "../../cairo-1.14/src/cairo-analysis-surface-private.h"
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-combsort-inline.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-wrapper-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-array-private.h"
+#include "cairo-analysis-surface-private.h"
+#include "cairo-clip-private.h"
+#include "cairo-combsort-inline.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-surface-snapshot-inline.h"
+#include "cairo-surface-wrapper-private.h"
+#include "cairo-traps-private.h"
 
 typedef enum {
     CAIRO_RECORDING_REPLAY,

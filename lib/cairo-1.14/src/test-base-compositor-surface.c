@@ -39,15 +39,17 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
-#include "../../cairo-1.14/src/test-compositor-surface-private.h"
+#include "cairoint.h"
+
+#include "test-compositor-surface-private.h"
+
+#include "cairo-clip-private.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-compositor-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-region-private.h"
+#include "cairo-traps-private.h"
 
 /* The intention is that this is a surface that just works, and most
  * important of all does not try to be clever!

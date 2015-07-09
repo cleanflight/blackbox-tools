@@ -36,9 +36,9 @@
 #ifndef CAIRO_PATH_FIXED_PRIVATE_H
 #define CAIRO_PATH_FIXED_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-list-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo-types-private.h"
+#include "cairo-compiler-private.h"
+#include "cairo-list-private.h"
 
 #define WATCH_PATH 0
 #if WATCH_PATH

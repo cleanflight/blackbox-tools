@@ -28,9 +28,9 @@
 #ifndef _CAIRO_PERF_H_
 #define _CAIRO_PERF_H_
 
+#include "cairo-boilerplate.h"
+#include "../src/cairo-time-private.h"
 #include <stdio.h>
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate.h"
-#include "../../cairo-1.14/src/cairo-time-private.h"
 
 typedef struct _cairo_stats {
     cairo_time_t min_ticks;
@@ -201,10 +201,6 @@ test_report_cmp_name (const void *a,
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
-#ifndef ARRAY_LENGTH
-#define ARRAY_LENGTH(__array) ((int) (sizeof (__array) / sizeof (__array[0])))
 #endif
 
 CAIRO_PERF_DECL (fill);

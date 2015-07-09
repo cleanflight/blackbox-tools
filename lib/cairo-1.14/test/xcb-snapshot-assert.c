@@ -24,8 +24,8 @@
  * Author: Uli Schlachter <psychon@znc.in>
  */
 
-#include "../../cairo-1.14/src/cairo.h"
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
+#include "cairo.h"
 
 static cairo_surface_t *
 create_image (int width, int height)

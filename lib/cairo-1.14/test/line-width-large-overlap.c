@@ -31,8 +31,9 @@
  * LayoutTests/canvas/philip/tests/2d.path.rect.selfintersect.html
  */
 
+#include "cairo-test.h"
+
 #include <math.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define LINE_WIDTH 120
 #define SIZE 100

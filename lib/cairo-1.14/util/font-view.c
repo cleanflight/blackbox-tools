@@ -25,8 +25,7 @@
  */
 
 #include <gtk/gtk.h>
-
-#include "../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 
 struct options {
     const char *text;

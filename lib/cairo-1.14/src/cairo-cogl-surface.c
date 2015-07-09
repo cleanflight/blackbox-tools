@@ -28,30 +28,32 @@
  * Contributor(s):
  *      Robert Bragg <robert@linux.intel.com>
  */
+#include "cairoint.h"
+
 #include "cairo-cache-private.h"
+#include "cairo-error-private.h"
+#include "cairo-path-fixed-private.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-surface-clipper-private.h"
+#include "cairo-fixed-private.h"
+#include "cairo-device-private.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-cogl-private.h"
+#include "cairo-cogl-gradient-private.h"
+#include "cairo-arc-private.h"
+#include "cairo-traps-private.h"
+#include "cairo-cogl-context-private.h"
+#include "cairo-cogl-utils-private.h"
+#include "cairo-box-inline.h"
+#include "cairo-surface-subsurface-inline.h"
+#include "cairo-surface-fallback-private.h"
+#include "cairo-surface-offset-private.h"
+
+#include "cairo-cogl.h"
+
 #include <cogl/cogl2-experimental.h>
 #include <glib.h>
-#include "../../cairo-1.14/src/cairo-arc-private.h"
-#include "../../cairo-1.14/src/cairo-box-inline.h"
-#include "../../cairo-1.14/src/cairo-cache-private.h"
-#include "../../cairo-1.14/src/cairo-cogl.h"
-#include "../../cairo-1.14/src/cairo-cogl-context-private.h"
-#include "../../cairo-1.14/src/cairo-cogl-gradient-private.h"
-#include "../../cairo-1.14/src/cairo-cogl-private.h"
-#include "../../cairo-1.14/src/cairo-cogl-utils-private.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-surface-fallback-private.h"
-#include "../../cairo-1.14/src/cairo-surface-offset-private.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-inline.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 #define CAIRO_COGL_DEBUG 0
 //#define FILL_WITH_COGL_PATH

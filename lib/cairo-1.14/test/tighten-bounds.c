@@ -24,7 +24,7 @@
  * Author: Uli Schlachter <psychon@znc.in>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static void path_none (cairo_t *cr, int size)
 {

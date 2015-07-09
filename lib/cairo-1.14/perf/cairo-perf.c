@@ -29,8 +29,7 @@
  *          Andrea Canciani <ranma42@gmail.com>
  */
 
-#include "../../cairo-1.14/perf/cairo-perf.h"
-
+#include "cairo-perf.h"
 #include "../src/cairo-time-private.h"
 
 #if HAVE_UNISTD_H

@@ -36,9 +36,11 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-gl-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-gl-private.h"
+
+#include "cairo-error-private.h"
 
 typedef struct _cairo_egl_context {
     cairo_gl_context_t base;

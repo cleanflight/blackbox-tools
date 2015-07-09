@@ -38,24 +38,26 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+
+#include "cairo-private.h"
+#include "cairo-error-private.h"
+#include "cairo-arc-private.h"
+#include "cairo-backend-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-freed-pool-private.h"
+#include "cairo-gstate-private.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-path-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-skia-private.h"
+#include "cairo-surface-backend-private.h"
+
 #include <SkPaint.h>
 #include <SkShader.h>
 #include <SkColorShader.h>
 #include <SkGradientShader.h>
 #include <SkDashPathEffect.h>
-#include "../../../cairo-1.14/src/cairo-arc-private.h"
-#include "../../../cairo-1.14/src/cairo-backend-private.h"
-#include "../../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairo-freed-pool-private.h"
-#include "../../../cairo-1.14/src/cairo-gstate-private.h"
-#include "../../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../../cairo-1.14/src/cairo-path-private.h"
-#include "../../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../../cairo-1.14/src/cairo-private.h"
-#include "../../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/skia/cairo-skia-private.h"
 
 #if !defined(INFINITY)
 #define INFINITY HUGE_VAL

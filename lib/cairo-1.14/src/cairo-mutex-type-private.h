@@ -41,8 +41,8 @@
 #ifndef CAIRO_MUTEX_TYPE_PRIVATE_H
 #define CAIRO_MUTEX_TYPE_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-mutex-impl-private.h"
+#include "cairo-compiler-private.h"
+#include "cairo-mutex-impl-private.h"
 
 /* Only the following four are mandatory at this point */
 #ifndef CAIRO_MUTEX_IMPL_LOCK

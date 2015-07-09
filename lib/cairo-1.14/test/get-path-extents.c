@@ -23,9 +23,9 @@
  * Author: Robert O'Callahan <rocallahan@novell.com>
  */
 
+#include "cairo-test.h"
 #include <stddef.h>
 #include <math.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 enum ExtentsType { FILL, STROKE, PATH };
 

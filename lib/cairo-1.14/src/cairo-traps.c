@@ -37,15 +37,16 @@
  * 2002-07-15: Converted from XRenderCompositeDoublePoly to #cairo_trap_t. Carl D. Worth
  */
 
-#include "../../cairo-1.14/src/cairo-box-inline.h"
-#include "../../cairo-1.14/src/cairo-boxes-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-line-private.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairo-slope-private.h"
-#include "../../cairo-1.14/src/cairo-spans-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-box-inline.h"
+#include "cairo-boxes-private.h"
+#include "cairo-error-private.h"
+#include "cairo-line-private.h"
+#include "cairo-region-private.h"
+#include "cairo-slope-private.h"
+#include "cairo-traps-private.h"
+#include "cairo-spans-private.h"
 
 /* private functions */
 

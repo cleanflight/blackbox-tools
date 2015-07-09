@@ -14,8 +14,7 @@
   if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA
 */
 
-#include "../../../cairo-1.14/test/pdiff/args.h"
-
+#include "args.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

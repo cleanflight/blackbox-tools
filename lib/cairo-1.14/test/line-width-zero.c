@@ -24,7 +24,7 @@
  * Author: Carl Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* This is a test case for the following bug:
  *

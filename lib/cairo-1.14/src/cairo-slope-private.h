@@ -38,8 +38,8 @@
 #ifndef _CAIRO_SLOPE_PRIVATE_H
 #define _CAIRO_SLOPE_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo-types-private.h"
+#include "cairo-fixed-private.h"
 
 static inline void
 _cairo_slope_init (cairo_slope_t *slope,

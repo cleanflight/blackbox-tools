@@ -28,10 +28,10 @@
  *	    Andrea Canciani <ranma42@gmail.com>
  */
 
-#include "../../../cairo-1.14/util/cairo-missing/cairo-missing.h"
+#include "cairo-missing.h"
 
 #ifndef HAVE_GETLINE
-#include "../../../cairo-1.14/src/cairo-malloc-private.h"
+#include "cairo-malloc-private.h"
 
 #define GETLINE_MIN_BUFFER_SIZE 128
 ssize_t

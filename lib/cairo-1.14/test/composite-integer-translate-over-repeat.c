@@ -24,9 +24,9 @@
  * Author: Vladimir Vukicevic <vladimir@pobox.com>
  */
 
+#include "cairo-test.h"
 #include <math.h>
 #include <stdio.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define SIZE 100
 #define SIZE2 20

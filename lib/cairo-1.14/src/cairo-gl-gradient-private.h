@@ -43,13 +43,13 @@
 
 #define GL_GLEXT_PROTOTYPES
 
-#include "../../cairo-1.14/src/cairo-cache-private.h"
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-reference-count-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo-cache-private.h"
+#include "cairo-device-private.h"
+#include "cairo-reference-count-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-types-private.h"
 
-#include "../../cairo-1.14/src/cairo-gl.h"
+#include "cairo-gl.h"
 
 #if CAIRO_HAS_GL_SURFACE
 #include <GL/gl.h>

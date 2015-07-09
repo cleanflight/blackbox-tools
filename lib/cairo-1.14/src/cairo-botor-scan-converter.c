@@ -40,13 +40,14 @@
  */
 
 /* Provide definitions for standalone compilation */
+#include "cairoint.h"
+
 #include "cairo-error-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-freelist-private.h"
+#include "cairo-combsort-inline.h"
+
 #include <setjmp.h>
-#include "../../cairo-1.14/src/cairo-combsort-inline.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-freelist-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 #define STEP_X CAIRO_FIXED_ONE
 #define STEP_Y CAIRO_FIXED_ONE

@@ -24,13 +24,16 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/cairo-version.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
-#include "../../cairo-1.14/src/test-compositor-surface.h"
-#include "../../cairo-1.14/src/test-null-compositor-surface.h"
+#include "../cairo-version.h"
+
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-types-private.h>
+
+#include <test-compositor-surface.h>
+#include <test-null-compositor-surface.h>
 #if CAIRO_HAS_TEST_PAGINATED_SURFACE
-#include "../../cairo-1.14/src/test-paginated-surface.h"
+#include <test-paginated-surface.h>
 #endif
 
 static cairo_surface_t *

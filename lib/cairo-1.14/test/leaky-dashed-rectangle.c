@@ -30,7 +30,7 @@
  * See also: http://bugs.freedesktop.org/show_bug.cgi?id=17177
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH 60
 #define HEIGHT 60

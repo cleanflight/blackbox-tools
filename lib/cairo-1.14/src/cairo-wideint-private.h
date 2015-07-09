@@ -37,8 +37,9 @@
 #ifndef CAIRO_WIDEINT_H
 #define CAIRO_WIDEINT_H
 
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-wideint-type-private.h"
+#include "cairo-wideint-type-private.h"
+
+#include "cairo-compiler-private.h"
 
 /*
  * 64-bit datatypes.  Two separate implementations, one using

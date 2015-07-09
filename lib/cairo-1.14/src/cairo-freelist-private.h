@@ -22,9 +22,9 @@
 #ifndef CAIRO_FREELIST_H
 #define CAIRO_FREELIST_H
 
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-freelist-type-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo-types-private.h"
+#include "cairo-compiler-private.h"
+#include "cairo-freelist-type-private.h"
 
 /* for stand-alone compilation*/
 #ifndef VG

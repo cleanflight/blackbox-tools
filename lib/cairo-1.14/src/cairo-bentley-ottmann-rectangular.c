@@ -36,14 +36,15 @@
  */
 
 /* Provide definitions for standalone compilation */
+#include "cairoint.h"
+
 #include "cairo-boxes-private.h"
+#include "cairo-error-private.h"
+#include "cairo-combsort-inline.h"
+#include "cairo-list-private.h"
+#include "cairo-traps-private.h"
+
 #include <setjmp.h>
-#include "../../cairo-1.14/src/cairo-boxes-private.h"
-#include "../../cairo-1.14/src/cairo-combsort-inline.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-list-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 typedef struct _rectangle rectangle_t;
 typedef struct _edge edge_t;

@@ -32,12 +32,13 @@
 #ifndef CAIRO_COGL_PRIVATE_H
 #define CAIRO_COGL_PRIVATE_H
 
+#include "cairo-device-private.h"
+#include "cairo-cache-private.h"
+#include "cairo-backend-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-surface-private.h"
+
 #include <cogl/cogl2-experimental.h>
-#include "../../cairo-1.14/src/cairo-backend-private.h"
-#include "../../cairo-1.14/src/cairo-cache-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
 
 typedef enum _cairo_cogl_template_type {
     CAIRO_COGL_TEMPLATE_TYPE_SOLID,

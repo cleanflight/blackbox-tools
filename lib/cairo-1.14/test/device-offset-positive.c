@@ -23,8 +23,8 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
+#include "cairo-test.h"
 #include <stddef.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define SIZE 10
 #define PAD 2

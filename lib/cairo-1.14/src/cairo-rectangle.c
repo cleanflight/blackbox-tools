@@ -37,8 +37,9 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-box-inline.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-box-inline.h"
 
 const cairo_rectangle_int_t _cairo_empty_rectangle = { 0, 0, 0, 0 };
 const cairo_rectangle_int_t _cairo_unbounded_rectangle = {

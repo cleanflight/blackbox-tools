@@ -46,9 +46,9 @@
 #include <limits.h>
 #include <stdarg.h>
 
-#include "../../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 #if CAIRO_HAS_FT_FONT
-# include "../../../cairo-1.14/src/cairo-ft.h"
+# include <cairo-ft.h>
 #endif
 
 #ifndef TRUE
@@ -93,7 +93,7 @@
 #endif
 
 #if CAIRO_HAS_SYMBOL_LOOKUP
-#include "../../../cairo-1.14/util/cairo-trace/lookup-symbol.h"
+#include "lookup-symbol.h"
 #endif
 
 /* Reverse the bits in a byte with 7 operations (no 64-bit):
@@ -3738,8 +3738,7 @@ cairo_surface_create_similar_image (cairo_surface_t *other,
 	else
 	    _trace_printf ("%d index ",
 			   current_stack_depth - other_obj->operand - 1);
-	_trace_printf ("s%ld //%s %d %d similar-image %% s%ld\n",
-		       _get_surface_id (other),
+	_trace_printf ("//%s %d %d similar-image %% s%ld\n",
 		       _format_to_string (format),
 		       width, height,
 		       new_obj->token);
@@ -4742,7 +4741,7 @@ cairo_pdf_surface_set_size (cairo_surface_t *surface, double width_in_points, do
 #endif
 
 #if CAIRO_HAS_SVG_SURFACE
-#include "../../../cairo-1.14/src/cairo-svg.h"
+#include <cairo-svg.h>
 
 cairo_surface_t *
 cairo_svg_surface_create (const char *filename, double width, double height)

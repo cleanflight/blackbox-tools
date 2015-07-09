@@ -27,12 +27,15 @@
  *
  */
 
+#include "cairoint.h"
+
+#include "cairo-drm-private.h"
+#include "cairo-drm-ioctl-private.h"
+
+#include "cairo-error-private.h"
+
 #include <sys/ioctl.h>
 #include <errno.h>
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-ioctl-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
 
 #define ERR_DEBUG(x) x
 

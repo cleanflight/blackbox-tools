@@ -36,11 +36,13 @@
 #ifndef CAIRO_DRM_PRIVATE_H
 #define CAIRO_DRM_PRIVATE_H
 
+#include "cairo-drm.h"
+
+#include "cairo-device-private.h"
+#include "cairo-reference-count-private.h"
+#include "cairo-surface-private.h"
+
 #include <sys/types.h> /* dev_t */
-#include "../../../cairo-1.14/src/cairo-device-private.h"
-#include "../../../cairo-1.14/src/cairo-drm.h"
-#include "../../../cairo-1.14/src/cairo-reference-count-private.h"
-#include "../../../cairo-1.14/src/cairo-surface-private.h"
 
 typedef struct _cairo_drm_device cairo_drm_device_t;
 

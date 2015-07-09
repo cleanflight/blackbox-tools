@@ -37,8 +37,8 @@
 #ifndef CAIRO_FREED_POOL_H
 #define CAIRO_FREED_POOL_H
 
-#include "../../cairo-1.14/src/cairo-atomic-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-atomic-private.h"
 
 CAIRO_BEGIN_DECLS
 

@@ -23,7 +23,7 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../../cairo-1.14/perf/cairo-perf.h"
+#include "cairo-perf.h"
 
 static void
 init_and_set_source_surface (cairo_t		*cr,

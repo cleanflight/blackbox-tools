@@ -23,10 +23,11 @@
  * Author: Kristian Høgsberg <krh@redhat.com>
  */
 
+#include "cairo-test.h"
+
 #include <stdio.h>
 
-#include "../../cairo-1.14/src/cairo-svg.h"
-#include "../../cairo-1.14/test/cairo-test.h"
+#include <cairo-svg.h>
 
 /* Test SVG clipping */
 

@@ -24,9 +24,10 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-gl.h"
-#include "../../cairo-1.14/test/cairo-test.h"
-#include "../../cairo-1.14/test/surface-source.c"
+#include "cairo-test.h"
+#include <cairo-gl.h>
+
+#include "surface-source.c"
 
 struct closure {
     Display *dpy;

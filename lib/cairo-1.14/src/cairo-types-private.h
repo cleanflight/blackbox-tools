@@ -39,10 +39,10 @@
 #ifndef CAIRO_TYPES_PRIVATE_H
 #define CAIRO_TYPES_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo.h"
-#include "../../cairo-1.14/src/cairo-fixed-type-private.h"
-#include "../../cairo-1.14/src/cairo-list-private.h"
-#include "../../cairo-1.14/src/cairo-reference-count-private.h"
+#include "cairo.h"
+#include "cairo-fixed-type-private.h"
+#include "cairo-list-private.h"
+#include "cairo-reference-count-private.h"
 
 CAIRO_BEGIN_DECLS
 

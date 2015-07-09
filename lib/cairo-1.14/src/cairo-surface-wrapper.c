@@ -35,11 +35,12 @@
  *      Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-surface-wrapper-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-clip-inline.h"
+#include "cairo-error-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-surface-wrapper-private.h"
 
 /* A collection of routines to facilitate surface wrapping */
 

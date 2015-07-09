@@ -26,13 +26,13 @@
 
 #define CAIRO_VERSION_H 1
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-scaled-font.h"
+#include "cairo-boilerplate-private.h"
+#include "cairo-boilerplate-scaled-font.h"
 
 #include <pixman.h>
 
-#include "../../cairo-1.14/src/cairo-types-private.h"
-#include "../../cairo-1.14/src/cairo-scaled-font-private.h"
+#include <cairo-types-private.h>
+#include <cairo-scaled-font-private.h>
 
 #if CAIRO_HAS_SCRIPT_SURFACE
 #include <cairo-script.h>
@@ -40,7 +40,7 @@
 
 /* get the "real" version info instead of dummy cairo-version.h */
 #undef CAIRO_VERSION_H
-#include "../../cairo-1.14/cairo-version.h"
+#include "../cairo-version.h"
 
 #include <stdlib.h>
 #include <ctype.h>

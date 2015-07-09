@@ -34,8 +34,9 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-arc-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-arc-private.h"
 
 #define MAX_FULL_CIRCLES 65536
 

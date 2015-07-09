@@ -36,10 +36,10 @@
 #include <string.h>
 #include <pixman.h>
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
-#include "../../cairo-1.14/test/pdiff/pdiff.h"
-#include "../../cairo-1.14/test/buffer-diff.h"
+#include "pdiff.h"
+#include "buffer-diff.h"
 
 /* Don't allow any differences greater than this value, even if pdiff
  * claims that the images are identical */

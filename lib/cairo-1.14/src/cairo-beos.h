@@ -36,7 +36,7 @@
 #ifndef CAIRO_BEOS_H
 #define CAIRO_BEOS_H
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 
 #if CAIRO_HAS_BEOS_SURFACE
 

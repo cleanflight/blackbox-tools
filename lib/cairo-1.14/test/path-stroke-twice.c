@@ -23,7 +23,7 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* Exercises a bug found by alois@astro.ch:
  *   http://bugs.freedesktop.org/show_bug.cgi?id=26010

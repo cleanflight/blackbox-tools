@@ -1,7 +1,7 @@
 /* -*- Mode: c++; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /* cairo - a vector graphics library with display and print output
  *
- * Copyright ï¿½ 2007 Mozilla Corporation
+ * Copyright © 2007 Mozilla Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it either under the terms of the GNU Lesser General Public
@@ -34,13 +34,15 @@
  *	Vladimir Vukicevic <vladimir@mozilla.com>
  */
 
-#include "../../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairo-skia.h"
-#include "../../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../../cairo-1.14/src/cairo-surface-fallback-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/skia/cairo-skia-private.h"
+#include "cairoint.h"
+
+#include "cairo-skia.h"
+#include "cairo-skia-private.h"
+
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-error-private.h"
+#include "cairo-surface-backend-private.h"
+#include "cairo-surface-fallback-private.h"
 
 static cairo_skia_surface_t *
 _cairo_skia_surface_create_internal (SkBitmap::Config config,

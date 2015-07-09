@@ -24,7 +24,7 @@
  *	    Carl Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define MASK_WIDTH 8
 #define MASK_HEIGHT 8

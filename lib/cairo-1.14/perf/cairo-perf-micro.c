@@ -28,12 +28,12 @@
 
 #define _GNU_SOURCE 1	/* for sched_getaffinity() */
 
-#include "../../cairo-1.14/cairo-version.h" /* for the real version */
+#include "../cairo-version.h" /* for the real version */
 
-#include "../../cairo-1.14/perf/cairo-perf.h"
-#include "../../cairo-1.14/perf/cairo-stats.h"
+#include "cairo-perf.h"
+#include "cairo-stats.h"
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-getopt.h"
+#include "cairo-boilerplate-getopt.h"
 
 /* For basename */
 #ifdef HAVE_LIBGEN_H

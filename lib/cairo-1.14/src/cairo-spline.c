@@ -34,9 +34,10 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-box-inline.h"
-#include "../../cairo-1.14/src/cairo-slope-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-box-inline.h"
+#include "cairo-slope-private.h"
 
 cairo_bool_t
 _cairo_spline_intersects (const cairo_point_t *a,

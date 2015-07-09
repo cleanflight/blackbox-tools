@@ -31,7 +31,7 @@
  * of stroking vs filling the "identical" paths.
  */
 
-#include "../../../cairo-1.14/perf/cairo-perf.h"
+#include "cairo-perf.h"
 
 static uint32_t state;
 

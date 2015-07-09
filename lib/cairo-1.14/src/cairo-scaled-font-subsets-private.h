@@ -37,7 +37,7 @@
 #ifndef CAIRO_SCALED_FONT_SUBSETS_PRIVATE_H
 #define CAIRO_SCALED_FONT_SUBSETS_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if CAIRO_HAS_FONT_SUBSET
 

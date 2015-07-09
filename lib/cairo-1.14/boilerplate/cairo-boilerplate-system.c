@@ -25,8 +25,8 @@
 
 #define _GNU_SOURCE 1 /* for vasprintf */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate.h"
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-system.h"
+#include "cairo-boilerplate.h"
+#include "cairo-boilerplate-system.h"
 
 #include <stdio.h>
 #include <stdlib.h>

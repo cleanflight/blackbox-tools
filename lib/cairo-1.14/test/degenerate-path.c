@@ -1,5 +1,5 @@
 /*
- * Copyright � 2006 Jeff Muizelaar
+ * Copyright © 2006 Jeff Muizelaar
  *
  * Permission to use, copy, modify, distribute, and sell this software
  * and its documentation for any purpose is hereby granted without
@@ -23,7 +23,7 @@
  * Author: Jeff Muizelaar <jeff@infidigm.net>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define PAD 3.0
 #define LINE_WIDTH 6.0

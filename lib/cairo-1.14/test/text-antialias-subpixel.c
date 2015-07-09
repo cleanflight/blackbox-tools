@@ -27,7 +27,7 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH  31
 #define HEIGHT 22

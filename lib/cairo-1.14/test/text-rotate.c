@@ -83,7 +83,7 @@
  *   XFAIL now.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH  150
 #define HEIGHT 150

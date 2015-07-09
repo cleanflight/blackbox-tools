@@ -36,12 +36,13 @@
 #ifndef CAIRO_SKIA_CONTEXT_PRIVATE_H
 #define CAIRO_SKIA_CONTEXT_PRIVATE_H
 
+#include "cairo-private.h"
+#include "cairo-image-surface-private.h"
+
 #include <SkBitmap.h>
 #include <SkCanvas.h>
 #include <SkPaint.h>
 #include <SkPath.h>
-#include "../../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../../cairo-1.14/src/cairo-private.h"
 
 /**
  * cairo_skia_context_t:

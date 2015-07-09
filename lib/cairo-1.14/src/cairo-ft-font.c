@@ -39,17 +39,17 @@
  */
 
 #define _BSD_SOURCE /* for strdup() */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-ft-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-pixman-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-ft-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-pixman-private.h"
 
 #include <float.h>
 
-#include "../../cairo-1.14/src/cairo-fontconfig-private.h"
+#include "cairo-fontconfig-private.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

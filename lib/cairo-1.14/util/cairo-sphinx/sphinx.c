@@ -24,15 +24,19 @@
 #include <assert.h>
 #include <pthread.h>
 
-#include "../../../cairo-1.14/src/cairo.h"
-#include "../../../cairo-1.14/src/cairo-script.h"
-#include "../../../cairo-1.14/util/cairo-script/cairo-script-interpreter.h"
-#include "../../../cairo-1.14/boilerplate/cairo-boilerplate.h"
+#include <cairo.h>
+#include <cairo-script.h>
+#include <cairo-script-interpreter.h>
+#include <cairo-boilerplate.h>
 
 #include <glib.h> /* for checksumming */
 
 #ifndef CAIRO_HAS_REAL_PTHREAD
 # error "cairo-sphinx needs real pthreads"
+#endif
+
+#ifndef MAP_NORESERVE
+#define MAP_NORESERVE 0
 #endif
 
 #define DATA_SIZE (256 << 20)

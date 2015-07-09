@@ -25,7 +25,7 @@
  *	    Owen Taylor <otaylor@redhat.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* This test exercises code that computes the extents of a surface
  * pattern with CAIRO_FILTER_BILINEAR, (where the filtering

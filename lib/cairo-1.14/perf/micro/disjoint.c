@@ -24,9 +24,8 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+#include "cairo-perf.h"
 #include <assert.h>
-
-#include "../../../cairo-1.14/perf/cairo-perf.h"
 
 #define STEP	5
 

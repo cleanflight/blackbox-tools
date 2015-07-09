@@ -30,10 +30,12 @@
  * The Initial Developer of the Original Code is Chris Wilson.
  */
 
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-qt.h>
+
 #include <qapplication.h>
 #include <X11/Xlib.h>
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-qt.h"
 
 typedef struct _qt_closure {
     Display *dpy;

@@ -23,9 +23,10 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-quartz.h"
-#include "../../cairo-1.14/test/cairo-test.h"
-#include "../../cairo-1.14/test/surface-source.c"
+#include "cairo-test.h"
+#include "cairo-quartz.h"
+
+#include "surface-source.c"
 
 static cairo_surface_t *
 create_source_surface (int size)

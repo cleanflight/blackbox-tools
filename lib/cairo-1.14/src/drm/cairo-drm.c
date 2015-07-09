@@ -30,10 +30,12 @@
  * The Initial Developer of the Original Code is Chris Wilson.
  */
 
-#include "../../../cairo-1.14/src/cairo-device-private.h"
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
+#include "cairoint.h"
+
+#include "cairo-drm-private.h"
+
+#include "cairo-device-private.h"
+#include "cairo-error-private.h"
 
 #define LIBUDEV_I_KNOW_THE_API_IS_SUBJECT_TO_CHANGE
 #include <libudev.h>

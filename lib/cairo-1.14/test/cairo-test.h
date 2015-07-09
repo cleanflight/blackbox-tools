@@ -26,8 +26,9 @@
 #ifndef _CAIRO_TEST_H_
 #define _CAIRO_TEST_H_
 
+#include "cairo-boilerplate.h"
+
 #include <stdarg.h>
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate.h"
 
 CAIRO_BEGIN_DECLS
 
@@ -104,10 +105,6 @@ cairo_test_NaN (void)
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
-#ifndef ARRAY_LENGTH
-#define ARRAY_LENGTH(__array) ((int) (sizeof (__array) / sizeof (__array[0])))
 #endif
 
 #define CAIRO_TEST_OUTPUT_DIR "output"

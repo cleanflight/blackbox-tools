@@ -30,8 +30,9 @@
  * The Initial Developer of the Original Code is Chris Wilson.
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-drm.h"
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-drm.h>
 
 static cairo_surface_t *
 _cairo_boilerplate_drm_create_surface (const char		 *name,

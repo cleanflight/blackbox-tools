@@ -36,13 +36,15 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-output-stream-private.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <png.h>
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 /**
  * SECTION:cairo-png

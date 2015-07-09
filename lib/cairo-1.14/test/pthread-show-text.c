@@ -29,10 +29,11 @@
    https://bugs.freedesktop.org/show_bug.cgi?id=4299
 */
 
+#include "cairo-test.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define N_THREADS 8
 #define NUM_ITERATIONS 40

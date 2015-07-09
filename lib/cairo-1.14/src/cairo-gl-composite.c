@@ -43,12 +43,14 @@
  *	Martin Robinson <mrobinson@igalia.com>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-gl-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-gl-private.h"
+
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-clip-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
 
 cairo_int_status_t
 _cairo_gl_composite_set_source (cairo_gl_composite_t *setup,

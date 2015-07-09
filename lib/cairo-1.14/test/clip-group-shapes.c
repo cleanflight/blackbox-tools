@@ -23,7 +23,7 @@
  *
  * Author: M Joonas Pihlaja <jpihlaja@cc.helsinki.fi>
  */
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* Tests specific clipping fast paths and their interaction with
  * groups:  It shouldn't matter if the clip is set before or after

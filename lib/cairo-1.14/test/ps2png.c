@@ -26,8 +26,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <cairo.h>
 #include <libspectre/spectre.h>
-#include "../../cairo-1.14/src/cairo.h"
 
 #define FAIL(msg)                                                        \
     do { fprintf (stderr, "FAIL: %s\n", msg); exit (-1); } while (0)

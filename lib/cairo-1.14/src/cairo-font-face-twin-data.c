@@ -1,6 +1,6 @@
 /* See cairo-font-face-twin.c for copyright info */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 const int8_t _cairo_twin_outlines[] = {
 /* 0x0 '\0'  offset 0 */

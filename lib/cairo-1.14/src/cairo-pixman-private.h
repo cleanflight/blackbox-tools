@@ -38,7 +38,7 @@
 #ifndef CAIRO_PIXMAN_PRIVATE_H
 #define CAIRO_PIXMAN_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-pixman-private.h" /* keep make check happy */
+#include "cairo-pixman-private.h" /* keep make check happy */
 
 #include <pixman.h>
 

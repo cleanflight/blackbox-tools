@@ -26,7 +26,7 @@
  * Based on a bug snippet by Jeremy Moles <jeremy@emperorlinux.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static cairo_test_status_t
 draw (cairo_t *cr, int width, int height)

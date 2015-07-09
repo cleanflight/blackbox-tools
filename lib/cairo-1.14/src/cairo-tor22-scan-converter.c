@@ -93,13 +93,14 @@
  *      V
  *   coverage blitter
  */
+#include "cairoint.h"
+#include "cairo-spans-private.h"
+#include "cairo-error-private.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <setjmp.h>
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-spans-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 /*-------------------------------------------------------------------------
  * cairo specific config

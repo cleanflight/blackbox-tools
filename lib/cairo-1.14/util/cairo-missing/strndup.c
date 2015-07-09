@@ -28,10 +28,10 @@
  *	    Andrea Canciani <ranma42@gmail.com>
  */
 
-#include "../../../cairo-1.14/util/cairo-missing/cairo-missing.h"
+#include "cairo-missing.h"
 
 #ifndef HAVE_STRNDUP
-#include "../../../cairo-1.14/src/cairo-malloc-private.h"
+#include "cairo-malloc-private.h"
 
 char *
 strndup (const char *s,

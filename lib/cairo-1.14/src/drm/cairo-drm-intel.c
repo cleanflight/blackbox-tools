@@ -27,16 +27,19 @@
  *
  */
 
+#include "cairoint.h"
+
+#include "cairo-drm-private.h"
+#include "cairo-drm-ioctl-private.h"
+#include "cairo-drm-intel-private.h"
+#include "cairo-drm-intel-ioctl-private.h"
+
+#include "cairo-error-private.h"
+#include "cairo-freelist-private.h"
+
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <errno.h>
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairo-freelist-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-ioctl-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-ioctl-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
 
 #define GLYPH_CACHE_WIDTH 1024
 #define GLYPH_CACHE_HEIGHT 1024

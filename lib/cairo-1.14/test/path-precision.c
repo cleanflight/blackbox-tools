@@ -25,7 +25,7 @@
  * Based on an example by Dirk "krit" Schulze found during WebKit integration.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* we know that this is an inherent limitation in cairo */
 #define FAIL CAIRO_TEST_XFAILURE

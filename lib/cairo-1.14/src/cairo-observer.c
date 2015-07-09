@@ -34,8 +34,9 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-list-inline.h"
 
 void
 _cairo_observers_notify (cairo_list_t *observers, void *arg)

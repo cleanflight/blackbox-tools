@@ -36,15 +36,17 @@
 
 // This is a C++ file in order to use the C++ BeOS API
 
+#include "cairoint.h"
+
+#include "cairo-beos.h"
+
+#include "cairo-error-private.h"
+#include "cairo-image-surface-inline.h"
+
 #include <new>
 
 #include <Bitmap.h>
 #include <Region.h>
-
-#include "../../cairo-1.14/src/cairo-beos.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairoint.h"
 #if 0
 #include <DirectWindow.h>
 #endif

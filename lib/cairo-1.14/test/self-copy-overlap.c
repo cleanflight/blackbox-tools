@@ -25,7 +25,7 @@
 
 /* Question: are patterns mutable? The answer depends on who you ask... */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* This test is only interesting if the target has alpha */
 static cairo_test_status_t

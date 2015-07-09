@@ -38,15 +38,15 @@
  */
 
 #define _BSD_SOURCE /* for hypot() */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-box-inline.h"
-#include "../../cairo-1.14/src/cairo-boxes-private.h"
-#include "../../cairo-1.14/src/cairo-contour-inline.h"
-#include "../../cairo-1.14/src/cairo-contour-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-slope-private.h"
+#include "cairo-box-inline.h"
+#include "cairo-boxes-private.h"
+#include "cairo-contour-inline.h"
+#include "cairo-contour-private.h"
+#include "cairo-error-private.h"
+#include "cairo-path-fixed-private.h"
+#include "cairo-slope-private.h"
 
 #define DEBUG 0
 

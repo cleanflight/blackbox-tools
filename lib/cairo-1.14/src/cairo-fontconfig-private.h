@@ -42,7 +42,7 @@
 #ifndef _CAIRO_FONTCONFIG_PRIVATE_H
 #define _CAIRO_FONTCONFIG_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 
 #if CAIRO_HAS_FC_FONT
 #include <fontconfig/fontconfig.h>

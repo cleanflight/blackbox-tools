@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDE_LINE_WIDTH 160
 #define NARROW_LINE_WIDTH 2
@@ -56,7 +56,6 @@ static const struct spline {
 	{ 1, 0, 0, 1 },
     }
 };
-#define NUM_SPLINES (sizeof(splines)/sizeof(splines[0]))
 
 static cairo_test_status_t
 draw (cairo_t *cr, int width, int height)
@@ -68,7 +67,7 @@ draw (cairo_t *cr, int width, int height)
 
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
 
-    for (n = 0; n < NUM_SPLINES; n++) {
+    for (n = 0; n < ARRAY_LENGTH(splines); n++) {
 	cairo_set_line_width (cr, splines[n].line_width);
 	cairo_set_source_rgba (cr,
 			       splines[n].rgba[0],

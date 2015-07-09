@@ -29,23 +29,25 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-boxes-private.h"
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-paginated-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-inline.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairo-surface-offset-private.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairo-xcb-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-xcb-private.h"
+
+#include "cairo-boxes-private.h"
+#include "cairo-clip-inline.h"
+#include "cairo-clip-private.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-region-private.h"
+#include "cairo-surface-offset-private.h"
+#include "cairo-surface-snapshot-inline.h"
+#include "cairo-surface-subsurface-private.h"
+#include "cairo-traps-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-paginated-private.h"
+#include "cairo-pattern-inline.h"
 
 #define PIXMAN_MAX_INT ((pixman_fixed_1 >> 1) - pixman_fixed_e) /* need to ensure deltas also fit */
 
@@ -4465,6 +4467,9 @@ _cairo_xcb_surface_add_glyph (cairo_xcb_connection_t *connection,
 	    const uint8_t *d;
 	    uint8_t *new, *n;
 
+	    if (c == 0)
+		break;
+
 	    new = malloc (c);
 	    if (unlikely (new == NULL)) {
 		status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
@@ -4492,6 +4497,9 @@ _cairo_xcb_surface_add_glyph (cairo_xcb_connection_t *connection,
 	    unsigned int c = glyph_surface->stride * glyph_surface->height / 4;
 	    const uint32_t *d;
 	    uint32_t *new, *n;
+
+	    if (c == 0)
+		break;
 
 	    new = malloc (4 * c);
 	    if (unlikely (new == NULL)) {

@@ -23,10 +23,11 @@
  * Author: Carl Worth <cworth@cworth.org>
  */
 
+#include "cairo-test.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define WIDTH 2
 #define HEIGHT 2

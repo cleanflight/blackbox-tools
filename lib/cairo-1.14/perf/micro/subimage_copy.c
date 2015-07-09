@@ -23,7 +23,7 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../../cairo-1.14/perf/cairo-perf.h"
+#include "cairo-perf.h"
 
 /* This case exposes a performance bug found by Christopher "Monty"
  * Montgomery in that copying a tiny portion of an image surface to an

@@ -39,19 +39,20 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-paginated-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-inline.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairo-spans-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-surface-observer-private.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-private.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-compositor-private.h"
+#include "cairo-clip-inline.h"
+#include "cairo-clip-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-paginated-private.h"
+#include "cairo-pattern-inline.h"
+#include "cairo-region-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-spans-compositor-private.h"
+#include "cairo-surface-subsurface-private.h"
+#include "cairo-surface-snapshot-private.h"
+#include "cairo-surface-observer-private.h"
 
 typedef struct {
     cairo_polygon_t	*polygon;

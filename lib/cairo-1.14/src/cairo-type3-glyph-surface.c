@@ -34,18 +34,18 @@
  *	Adrian Johnson <ajohnson@redneon.com>
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if CAIRO_HAS_FONT_SUBSET
 
-#include "../../cairo-1.14/src/cairo-type3-glyph-surface-private.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-analysis-surface-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
+#include "cairo-type3-glyph-surface-private.h"
+#include "cairo-output-stream-private.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-analysis-surface-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-surface-clipper-private.h"
 
 static const cairo_surface_backend_t cairo_type3_glyph_surface_backend;
 
@@ -74,7 +74,8 @@ cairo_surface_t *
 _cairo_type3_glyph_surface_create (cairo_scaled_font_t			 *scaled_font,
 				   cairo_output_stream_t		 *stream,
 				   cairo_type3_glyph_surface_emit_image_t emit_image,
-				   cairo_scaled_font_subsets_t		 *font_subsets)
+				   cairo_scaled_font_subsets_t		 *font_subsets,
+				   cairo_bool_t ps)
 {
     cairo_type3_glyph_surface_t *surface;
     cairo_matrix_t invert_y_axis;
@@ -106,7 +107,8 @@ _cairo_type3_glyph_surface_create (cairo_scaled_font_t			 *scaled_font,
     _cairo_pdf_operators_init (&surface->pdf_operators,
 			       surface->stream,
 			       &surface->cairo_to_pdf,
-			       font_subsets);
+			       font_subsets,
+			       ps);
 
     _cairo_surface_clipper_init (&surface->clipper,
 				 _cairo_type3_glyph_surface_clipper_intersect_clip_path);

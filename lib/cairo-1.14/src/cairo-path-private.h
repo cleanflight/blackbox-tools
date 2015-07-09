@@ -37,7 +37,7 @@
 #ifndef CAIRO_PATH_PRIVATE_H
 #define CAIRO_PATH_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 cairo_private cairo_path_t *
 _cairo_path_create (cairo_path_fixed_t *path,

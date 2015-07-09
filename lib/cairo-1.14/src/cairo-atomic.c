@@ -31,9 +31,10 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-atomic-private.h"
-#include "../../cairo-1.14/src/cairo-mutex-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-atomic-private.h"
+#include "cairo-mutex-private.h"
 
 #ifdef HAS_ATOMIC_OPS
 COMPILE_TIME_ASSERT(sizeof(void*) == sizeof(int) ||

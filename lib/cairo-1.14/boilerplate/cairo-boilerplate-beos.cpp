@@ -38,12 +38,16 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include "cairo-boilerplate.h"
+#include <cairo-beos.h>
+
+// Part of this code was originally part of
+// xpfe/bootstrap/nsNativeAppSupportBeOS.cpp in the Mozilla source code.
+
 #include <Application.h>
 #include <Window.h>
 #include <View.h>
 #include <Bitmap.h>
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate.h"
-#include "../../cairo-1.14/src/cairo-beos.h"
 
 class CairoTestWindow : public BWindow
 {

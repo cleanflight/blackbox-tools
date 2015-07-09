@@ -32,6 +32,8 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-script-private.h"
+
 #include <limits.h> /* INT_MAX */
 #include <math.h> /* pow */
 #include <stdio.h> /* EOF */
@@ -40,7 +42,6 @@
 #include <string.h> /* memset */
 #include <assert.h>
 #include <zlib.h>
-#include "../../../cairo-1.14/util/cairo-script/cairo-script-private.h"
 
 #if HAVE_LZO
 #include <lzo/lzo2a.h>

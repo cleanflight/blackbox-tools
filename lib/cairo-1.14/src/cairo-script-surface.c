@@ -64,26 +64,28 @@
  **/
 
 
-#include "../../cairo-1.14/src/cairo-analysis-surface-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-scaled-font-private.h"
-#include "../../cairo-1.14/src/cairo-script.h"
-#include "../../cairo-1.14/src/cairo-script-private.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-inline.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-wrapper-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-script.h"
+#include "cairo-script-private.h"
+
+#include "cairo-analysis-surface-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-device-private.h"
+#include "cairo-error-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-output-stream-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-scaled-font-private.h"
+#include "cairo-surface-clipper-private.h"
+#include "cairo-surface-snapshot-inline.h"
+#include "cairo-surface-subsurface-private.h"
+#include "cairo-surface-wrapper-private.h"
 
 #if CAIRO_HAS_FT_FONT
-#include "../../cairo-1.14/src/cairo-ft-private.h"
+#include "cairo-ft-private.h"
 #endif
 
 #include <ctype.h>

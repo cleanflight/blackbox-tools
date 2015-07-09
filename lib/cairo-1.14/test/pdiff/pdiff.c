@@ -20,7 +20,7 @@
 #include "config.h"
 #endif
 
-#include "../../../cairo-1.14/test/pdiff/lpyramid.h"
+#include "lpyramid.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@
 #error Cannot find definitions for fixed-width integral types (uint8_t, uint32_t, etc.)
 #endif
 
-#include "../../../cairo-1.14/test/pdiff/pdiff.h"
+#include "pdiff.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265f

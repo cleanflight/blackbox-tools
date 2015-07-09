@@ -29,7 +29,7 @@
 #ifndef BUFFER_DIFF_H
 #define BUFFER_DIFF_H
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 typedef struct _buffer_diff_result {
     unsigned int pixels_changed;

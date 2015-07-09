@@ -23,7 +23,7 @@
  * Authors: Carl Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/perf/cairo-stats.h"
+#include "cairo-stats.h"
 
 #include <assert.h>
 

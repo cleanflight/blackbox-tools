@@ -34,9 +34,10 @@
  *      Behdad Esfahbod <behdad@behdad.org>
  */
 
+#include "cairoint.h"
+#include "cairo-error-private.h"
+
 #include <math.h>
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 /*
  * This file implements a user-font rendering the descendant of the Hershey

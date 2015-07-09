@@ -23,7 +23,7 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define SIZE 60 /* needs to be big to check large area effects (dithering) */
 #define PAD 2

@@ -31,13 +31,14 @@
  * made the same mistake again, it is worth adding a regression test...
  */
 
+#include "cairo-test.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../../cairo-1.14/src/cairo.h"
-#include "../../cairo-1.14/test/buffer-diff.h"
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo.h"
+
+#include "buffer-diff.h"
 
 #define SIZE 160
 #define NLOOPS 10

@@ -37,9 +37,9 @@
 #ifndef CAIRO_COMPOSITE_RECTANGLES_PRIVATE_H
 #define CAIRO_COMPOSITE_RECTANGLES_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo-types-private.h"
+#include "cairo-error-private.h"
+#include "cairo-pattern-private.h"
 
 CAIRO_BEGIN_DECLS
 

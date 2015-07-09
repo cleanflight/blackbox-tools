@@ -38,9 +38,9 @@
 #ifndef CAIRO_H
 #define CAIRO_H
 
-#include "../../cairo-1.14/src/cairo-deprecated.h"
-#include "../../cairo-1.14/src/cairo-features.h"
-#include "../../cairo-1.14/src/cairo-version.h"
+#include "cairo-version.h"
+#include "cairo-features.h"
+#include "cairo-deprecated.h"
 
 #ifdef  __cplusplus
 # define CAIRO_BEGIN_DECLS  extern "C" {

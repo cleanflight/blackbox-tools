@@ -508,8 +508,8 @@
 <indexentry><primaryie linkends="CAIRO-VERSION-MAJOR:CAPS"><link linkend="CAIRO-VERSION-MAJOR:CAPS">CAIRO_VERSION_MAJOR</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 <indexentry><primaryie linkends="CAIRO-VERSION-MICRO:CAPS"><link linkend="CAIRO-VERSION-MICRO:CAPS">CAIRO_VERSION_MICRO</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 <indexentry><primaryie linkends="CAIRO-VERSION-MINOR:CAPS"><link linkend="CAIRO-VERSION-MINOR:CAPS">CAIRO_VERSION_MINOR</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
-<indexentry><primaryie linkends="cairo-version-string"><link linkend="cairo-version-string">cairo_version_string</link>, function in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 <indexentry><primaryie linkends="CAIRO-VERSION-STRING:CAPS"><link linkend="CAIRO-VERSION-STRING:CAPS">CAIRO_VERSION_STRING</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
+<indexentry><primaryie linkends="cairo-version-string"><link linkend="cairo-version-string">cairo_version_string</link>, function in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 <indexentry><primaryie linkends="CAIRO-VERSION-STRINGIZE:CAPS"><link linkend="CAIRO-VERSION-STRINGIZE:CAPS">CAIRO_VERSION_STRINGIZE</link>, macro in <link linkend="cairo-Version-Information">Version Information</link></primaryie></indexentry>
 </indexdiv>
 <indexdiv><title>W</title>

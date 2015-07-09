@@ -35,8 +35,9 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-freed-pool-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-freed-pool-private.h"
 
 #if HAS_FREED_POOL
 

@@ -32,13 +32,15 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include <cairo.h>
+
+#include "cairo-script-private.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-#include "../../../cairo-1.14/src/cairo.h"
-#include "../../../cairo-1.14/util/cairo-script/cairo-script-private.h"
 
 #ifndef MAX
 #define MAX(a,b) (((a)>=(b))?(a):(b))

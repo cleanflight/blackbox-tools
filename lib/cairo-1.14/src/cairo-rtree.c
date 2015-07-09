@@ -34,9 +34,10 @@
  *
  */
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-rtree-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-error-private.h"
+#include "cairo-rtree-private.h"
 
 cairo_rtree_node_t *
 _cairo_rtree_node_create (cairo_rtree_t		 *rtree,

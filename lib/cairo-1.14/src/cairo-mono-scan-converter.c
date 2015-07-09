@@ -23,12 +23,13 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+#include "cairoint.h"
+#include "cairo-spans-private.h"
+#include "cairo-error-private.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-spans-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 struct quorem {
     int32_t quo;

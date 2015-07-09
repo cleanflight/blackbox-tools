@@ -34,10 +34,11 @@
 #ifndef CAIRO_BOXES_H
 #define CAIRO_BOXES_H
 
+#include "cairo-types-private.h"
+#include "cairo-compiler-private.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
 
 struct _cairo_boxes_t {
     cairo_status_t status;

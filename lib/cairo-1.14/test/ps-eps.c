@@ -34,8 +34,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../../cairo-1.14/src/cairo.h"
-#include "../../cairo-1.14/src/cairo-ps.h"
+#include <cairo.h>
+#include <cairo-ps.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -45,8 +45,8 @@
 #include <sys/stat.h>
 #endif
 
-#include "../../cairo-1.14/test/cairo-test.h"
-#include "../../cairo-1.14/test/buffer-diff.h"
+#include "cairo-test.h"
+#include "buffer-diff.h"
 
 /* Test EPS output.
  */

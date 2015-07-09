@@ -24,8 +24,13 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-fixed-type-private.h"
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
+
+/*
+ * Test the fidelity of the rasterisation, paying careful attention to rounding.
+ */
+
+#include "../src/cairo-fixed-type-private.h"
 #define PRECISION (int)(1 << CAIRO_FIXED_FRAC_BITS)
 
 #define WIDTH ((PRECISION/2+1)*3)

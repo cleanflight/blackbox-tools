@@ -37,8 +37,8 @@
 #ifndef CAIRO_MALLOC_PRIVATE_H
 #define CAIRO_MALLOC_PRIVATE_H
 
+#include "cairo-wideint-private.h"
 #include <stdlib.h>
-#include "../../cairo-1.14/src/cairo-wideint-private.h"
 
 #if HAVE_MEMFAULT
 #include <memfault.h>

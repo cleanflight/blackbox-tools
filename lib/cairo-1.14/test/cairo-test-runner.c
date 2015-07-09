@@ -23,15 +23,15 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-getopt.h"
-#include "../../cairo-1.14/test/cairo-test-private.h"
+#include "cairo-test-private.h"
+#include "cairo-boilerplate-getopt.h"
 
 /* get the "real" version info instead of dummy cairo-version.h */
 #undef CAIRO_VERSION_H
 #undef CAIRO_VERSION_MAJOR
 #undef CAIRO_VERSION_MINOR
 #undef CAIRO_VERSION_MICRO
-#include "../../cairo-1.14/cairo-version.h"
+#include "../cairo-version.h"
 
 #include <pixman.h> /* for version information */
 
@@ -1096,6 +1096,7 @@ main (int argc, char **argv)
 
     _runner_print_results (&runner);
 
+    _list_free (tests);
     free (target_status);
     return _runner_fini (&runner);
 }

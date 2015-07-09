@@ -27,7 +27,7 @@
 #include "config.h"
 #endif
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 #include <stdlib.h> /* drand48() */
 
 #define LOOPS 10

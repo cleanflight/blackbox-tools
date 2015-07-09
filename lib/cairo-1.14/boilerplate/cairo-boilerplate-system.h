@@ -26,7 +26,7 @@
 #ifndef _XMALLOC_H_
 #define _XMALLOC_H_
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate.h"
+#include "cairo-boilerplate.h"
 
 #define xmalloc cairo_boilerplate_xmalloc
 void *

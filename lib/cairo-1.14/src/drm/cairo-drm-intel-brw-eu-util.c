@@ -30,8 +30,8 @@
  */
 
 
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-brw-eu.h"
+#include "cairoint.h"
+#include "cairo-drm-intel-brw-eu.h"
 
 
 void brw_math_invert( struct brw_compile *p,

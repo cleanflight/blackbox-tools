@@ -24,7 +24,7 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
+#include "cairo-boilerplate-private.h"
 
 #if CAIRO_CAN_TEST_PDF_SURFACE
 
@@ -53,8 +53,6 @@ typedef struct _pdf_target_closure
     int 		 height;
     cairo_surface_t	*target;
 } pdf_target_closure_t;
-
-#define ARRAY_LENGTH(__array) ((int) (sizeof (__array) / sizeof (__array[0])))
 
 static cairo_surface_t *
 _cairo_boilerplate_pdf_create_surface (const char		 *name,

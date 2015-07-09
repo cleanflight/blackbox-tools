@@ -31,10 +31,11 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-box-inline.h"
-#include "../../cairo-1.14/src/cairo-boxes-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-box-inline.h"
+#include "cairo-boxes-private.h"
+#include "cairo-error-private.h"
 
 void
 _cairo_boxes_init (cairo_boxes_t *boxes)

@@ -31,17 +31,17 @@
 
 #define _GNU_SOURCE 1	/* for sched_getaffinity() and getline() */
 
-#include "../../cairo-1.14/cairo-version.h" /* for the real version */
+#include "../cairo-version.h" /* for the real version */
 
-#include "../../cairo-1.14/perf/cairo-perf.h"
-#include "../../cairo-1.14/perf/cairo-stats.h"
+#include "cairo-perf.h"
+#include "cairo-stats.h"
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-getopt.h"
-#include "../../cairo-1.14/util/cairo-script/cairo-script-interpreter.h"
-#include "../../cairo-1.14/util/cairo-missing/cairo-missing.h"
+#include "cairo-boilerplate-getopt.h"
+#include <cairo-script-interpreter.h>
+#include "cairo-missing.h"
 
 /* rudely reuse bits of the library... */
-#include "../../cairo-1.14/src/cairo-error-private.h"
+#include "../src/cairo-error-private.h"
 
 /* For basename */
 #ifdef HAVE_LIBGEN_H

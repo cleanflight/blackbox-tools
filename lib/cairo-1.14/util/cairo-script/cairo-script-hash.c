@@ -37,8 +37,9 @@
  *	Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
  */
 
+#include "cairo-script-private.h"
+
 #include <stdlib.h>
-#include "../../../cairo-1.14/util/cairo-script/cairo-script-private.h"
 
 /*
  * An entry can be in one of three states:

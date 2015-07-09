@@ -33,8 +33,8 @@
  *	Carl Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-error-private.h"
 
 void
 _cairo_stroke_style_init (cairo_stroke_style_t *style)

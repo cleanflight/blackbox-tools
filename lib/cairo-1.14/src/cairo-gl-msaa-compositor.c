@@ -39,13 +39,14 @@
  *	Martin Robinson <mrobinson@igalia.com>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-gl-private.h"
-#include "../../cairo-1.14/src/cairo-path-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-clip-inline.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-compositor-private.h"
+#include "cairo-gl-private.h"
+#include "cairo-path-private.h"
+#include "cairo-traps-private.h"
 
 static cairo_bool_t
 can_use_msaa_compositor (cairo_gl_surface_t *surface,

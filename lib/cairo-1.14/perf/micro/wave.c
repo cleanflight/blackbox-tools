@@ -24,7 +24,7 @@
  * Author: Benjamin Otte <otte@redhat.com>
  */
 
-#include "../../../cairo-1.14/perf/cairo-perf.h"
+#include "cairo-perf.h"
 
 static cairo_surface_t *
 generate_random_waveform(cairo_t *target, int width, int height)

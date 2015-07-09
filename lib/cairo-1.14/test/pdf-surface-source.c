@@ -23,9 +23,10 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-pdf.h"
-#include "../../cairo-1.14/test/cairo-test.h"
-#include "../../cairo-1.14/test/surface-source.c"
+#include "cairo-test.h"
+#include <cairo-pdf.h>
+
+#include "surface-source.c"
 
 #define BASENAME "pdf-surface-source.out"
 

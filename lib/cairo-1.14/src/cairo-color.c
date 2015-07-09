@@ -35,7 +35,7 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 static cairo_color_t const cairo_color_white = {
     1.0,    1.0,    1.0,    1.0,

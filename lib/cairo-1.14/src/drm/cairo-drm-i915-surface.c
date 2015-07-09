@@ -91,26 +91,29 @@
  *
  */
 
+#include "cairoint.h"
+
+#include "cairo-drm-private.h"
+#include "cairo-drm-ioctl-private.h"
+#include "cairo-drm-intel-private.h"
+#include "cairo-drm-intel-command-private.h"
+#include "cairo-drm-intel-ioctl-private.h"
+#include "cairo-drm-i915-private.h"
+
+#include "cairo-boxes-private.h"
+#include "cairo-cache-private.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-freelist-private.h"
+#include "cairo-list-private.h"
+#include "cairo-path-fixed-private.h"
+#include "cairo-region-private.h"
+#include "cairo-surface-offset-private.h"
+
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <errno.h>
-#include "../../../cairo-1.14/src/cairo-boxes-private.h"
-#include "../../../cairo-1.14/src/cairo-cache-private.h"
-#include "../../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairo-freelist-private.h"
-#include "../../../cairo-1.14/src/cairo-list-private.h"
-#include "../../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../../cairo-1.14/src/cairo-region-private.h"
-#include "../../../cairo-1.14/src/cairo-surface-offset-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-i915-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-command-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-ioctl-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-ioctl-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
 
 static const uint32_t i915_batch_setup[] = {
     /* Disable line anti-aliasing */

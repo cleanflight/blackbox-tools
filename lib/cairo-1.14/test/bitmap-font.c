@@ -23,14 +23,15 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
+#include "cairo-test.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cairo-ft.h>
 #include <fontconfig/fontconfig.h>
 #include <fontconfig/fcfreetype.h>
-#include "../../cairo-1.14/src/cairo-ft.h"
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define FONT "6x13.pcf"
 #define TEXT_SIZE 13

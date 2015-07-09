@@ -31,13 +31,15 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+
+#include "cairo-combsort-inline.h"
+#include "cairo-error-private.h"
+#include "cairo-freelist-private.h"
+#include "cairo-list-private.h"
+#include "cairo-spans-private.h"
+
 #include <setjmp.h>
-#include "../../cairo-1.14/src/cairo-combsort-inline.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-freelist-private.h"
-#include "../../cairo-1.14/src/cairo-list-private.h"
-#include "../../cairo-1.14/src/cairo-spans-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 typedef struct _rectangle {
     struct _rectangle *next, *prev;

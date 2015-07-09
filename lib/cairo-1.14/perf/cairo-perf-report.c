@@ -25,9 +25,11 @@
  * Authors: Carl Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/perf/cairo-perf.h"
-#include "../../cairo-1.14/perf/cairo-stats.h"
-#include "../../cairo-1.14/util/cairo-missing/cairo-missing.h"
+#define _GETDELIM 1/* for getline() on AIX */
+
+#include "cairo-perf.h"
+#include "cairo-missing.h"
+#include "cairo-stats.h"
 
 /* We use _GNU_SOURCE for getline and strndup if available. */
 #ifndef _GNU_SOURCE

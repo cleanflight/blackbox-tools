@@ -20,7 +20,7 @@
  * OF THIS SOFTWARE.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* This test attempts to trigger failures in those clone_similar
  * backend methods that have size restrictions. */

@@ -25,7 +25,7 @@
 
 #include <stdio.h>
 
-#include "../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 
 int
 main (int argc, char *argv[])

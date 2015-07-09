@@ -24,7 +24,7 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -49,7 +49,7 @@ typedef struct _wm_element {
     double y;
 } wm_element_t;
 
-#include "../../cairo-1.14/test/world-map.h"
+#include "world-map.h"
 
 enum {
     STROKE = 1,

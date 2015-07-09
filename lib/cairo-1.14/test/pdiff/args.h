@@ -17,7 +17,7 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
-#include "../../../cairo-1.14/test/pdiff/pdiff.h"
+#include "pdiff.h"
 
 /* Args to pass into the comparison function */
 typedef struct _args

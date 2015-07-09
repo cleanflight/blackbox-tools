@@ -32,8 +32,8 @@
 #ifndef CAIRO_GL_DISPATCH_PRIVATE_H
 #define CAIRO_GL_DISPATCH_PRIVATE_H
 
+#include "cairo-gl-private.h"
 #include <stddef.h>
-#include "../../cairo-1.14/src/cairo-gl-private.h"
 
 typedef enum _cairo_gl_dispatch_name {
     CAIRO_GL_DISPATCH_NAME_CORE,

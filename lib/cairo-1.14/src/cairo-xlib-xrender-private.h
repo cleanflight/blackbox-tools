@@ -33,9 +33,10 @@
 #ifndef CAIRO_XLIB_XRENDER_PRIVATE_H
 #define CAIRO_XLIB_XRENDER_PRIVATE_H
 
+#include "cairo-features.h"
+#include "cairo-compiler-private.h"
+
 #include <X11/Xlib.h>
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-features.h"
 
 /* These prototypes are used when defining interfaces missing from the
  * render headers.  As it happens, it is the case that all libxrender
@@ -49,7 +50,7 @@ __attribute__((__unused__)) static void   _void_consume_free   (Display *p, XID 
 
 #if CAIRO_HAS_XLIB_XRENDER_SURFACE
 
-#include "../../cairo-1.14/src/cairo-xlib-xrender.h"
+#include "cairo-xlib-xrender.h"
 
 #include <X11/extensions/Xrender.h>
 #include <X11/extensions/renderproto.h>

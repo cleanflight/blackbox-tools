@@ -36,7 +36,7 @@
 #ifndef CAIRO_SURFACE_OBSERVER_INLINE_H
 #define CAIRO_SURFACE_OBSERVER_INLINE_H
 
-#include "../../cairo-1.14/src/cairo-surface-observer-private.h"
+#include "cairo-surface-observer-private.h"
 
 static inline cairo_surface_t *
 _cairo_surface_observer_get_target (cairo_surface_t *surface)

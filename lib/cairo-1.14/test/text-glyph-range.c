@@ -40,7 +40,7 @@
  * act as if they were zero-width.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH  100
 #define HEIGHT 75

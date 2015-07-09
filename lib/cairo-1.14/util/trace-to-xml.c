@@ -1,10 +1,9 @@
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include "../../cairo-1.14/src/cairo-xml.h"
-#include "../../cairo-1.14/util/cairo-script/cairo-script-interpreter.h"
+#include <cairo-xml.h>
+#include <cairo-script-interpreter.h>
 
 #include <stdio.h>
 #include <string.h>

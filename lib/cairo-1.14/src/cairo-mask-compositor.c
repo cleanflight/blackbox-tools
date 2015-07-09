@@ -43,16 +43,17 @@
  * then calls composite.
  */
 
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-inline.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairo-surface-observer-private.h"
-#include "../../cairo-1.14/src/cairo-surface-offset-private.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-private.h"
-#include "../../cairo-1.14/src/cairo-surface-subsurface-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-clip-inline.h"
+#include "cairo-compositor-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-pattern-inline.h"
+#include "cairo-region-private.h"
+#include "cairo-surface-observer-private.h"
+#include "cairo-surface-offset-private.h"
+#include "cairo-surface-snapshot-private.h"
+#include "cairo-surface-subsurface-private.h"
 
 typedef cairo_int_status_t
 (*draw_func_t) (const cairo_mask_compositor_t *compositor,

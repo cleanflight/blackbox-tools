@@ -23,10 +23,11 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
+#include "cairo-test.h"
+
 #include <stdio.h>
 
-#include "../../cairo-1.14/src/cairo-svg.h"
-#include "../../cairo-1.14/test/cairo-test.h"
+#include <cairo-svg.h>
 
 /* Pretty boring test just to make sure things aren't crashing ---
  * no verification that we're getting good results yet.

@@ -37,13 +37,15 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairoint.h"
+
+#include "cairo-box-inline.h"
+#include "cairo-path-fixed-private.h"
+#include "cairo-slope-private.h"
+#include "cairo-stroke-dash-private.h"
+#include "cairo-traps-private.h"
+
 #include <float.h>
-#include "../../cairo-1.14/src/cairo-box-inline.h"
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-slope-private.h"
-#include "../../cairo-1.14/src/cairo-stroke-dash-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 struct stroker {
     const cairo_stroke_style_t	*style;
@@ -297,8 +299,9 @@ join (struct stroker *stroker,
 	    _cairo_traps_tessellate_triangle_with_edges (stroker->traps,
 							 tri, edges);
 	} else {
-	    cairo_point_t t[] = { in->point, *inpt, *outpt };
-	    cairo_point_t e[] = { in->cw, in->ccw, out->cw, out->ccw };
+	    cairo_point_t t[] = { { in->point.x, in->point.y}, { inpt->x, inpt->y }, { outpt->x, outpt->y } };
+	    cairo_point_t e[] = { { in->cw.x, in->cw.y}, { in->ccw.x, in->ccw.y },
+				  { out->cw.x, out->cw.y}, { out->ccw.x, out->ccw.y } };
 	    _cairo_traps_tessellate_triangle_with_edges (stroker->traps, t, e);
 	}
 	break;
@@ -459,8 +462,9 @@ join (struct stroker *stroker,
     }
 
     case CAIRO_LINE_JOIN_BEVEL: {
-	cairo_point_t t[] = { in->point, *inpt, *outpt };
-	cairo_point_t e[] = { in->cw, in->ccw, out->cw, out->ccw };
+	cairo_point_t t[] = { { in->point.x, in->point.y }, { inpt->x, inpt->y }, { outpt->x, outpt->y } };
+	cairo_point_t e[] = { { in->cw.x, in->cw.y }, { in->ccw.x, in->ccw.y },
+			      { out->cw.x, out->cw.y }, { out->ccw.x, out->ccw.y } };
 	_cairo_traps_tessellate_triangle_with_edges (stroker->traps, t, e);
 	break;
     }

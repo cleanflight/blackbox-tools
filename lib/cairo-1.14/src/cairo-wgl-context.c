@@ -37,9 +37,11 @@
  *	Zoxc <zoxc32@gmail.com>
  */
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-gl-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-gl-private.h"
+
+#include "cairo-error-private.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

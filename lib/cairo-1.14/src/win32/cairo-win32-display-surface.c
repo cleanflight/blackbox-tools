@@ -46,21 +46,21 @@
 # define _WIN32_WINNT 0x0500
 #endif
 
-#include "../../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../../cairo-1.14/src/cairo-damage-private.h"
-#include "../../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairo-image-surface-inline.h"
-#include "../../../cairo-1.14/src/cairo-paginated-private.h"
-#include "../../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../../cairo-1.14/src/win32/cairo-win32-private.h"
-#include "../../../cairo-1.14/src/cairo-scaled-font-subsets-private.h"
-#include "../../../cairo-1.14/src/cairo-surface-fallback-private.h"
-#include "../../../cairo-1.14/src/cairo-surface-backend-private.h"
+#include "cairo-clip-private.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-compositor-private.h"
+#include "cairo-damage-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-surface-inline.h"
+#include "cairo-paginated-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-win32-private.h"
+#include "cairo-scaled-font-subsets-private.h"
+#include "cairo-surface-fallback-private.h"
+#include "cairo-surface-backend-private.h"
 
 #include <wchar.h>
 #include <windows.h>
@@ -455,17 +455,17 @@ _cairo_win32_display_surface_map_to_image (void                    *abstract_sur
 	surface->fallback =
 	    _cairo_win32_display_surface_create_for_dc (surface->win32.dc,
 							surface->win32.format,
-							surface->win32.extents.width,
-							surface->win32.extents.height);
+							surface->win32.extents.x + surface->win32.extents.width,
+							surface->win32.extents.y + surface->win32.extents.height);
 	if (unlikely (status = surface->fallback->status))
 	    goto err;
 
 	if (!BitBlt (to_win32_surface(surface->fallback)->dc,
-		     0, 0,
+		     surface->win32.extents.x, surface->win32.extents.y,
 		     surface->win32.extents.width,
 		     surface->win32.extents.height,
 		     surface->win32.dc,
-		     0, 0,
+		     surface->win32.extents.x, surface->win32.extents.y,
 		     SRCCOPY)) {
 	    status = _cairo_error (CAIRO_STATUS_DEVICE_ERROR);
 	    goto err;

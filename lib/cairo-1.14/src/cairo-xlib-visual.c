@@ -33,14 +33,14 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if !CAIRO_HAS_XLIB_XCB_FUNCTIONS
 
-#include "../../cairo-1.14/src/cairo-xlib-private.h"
+#include "cairo-xlib-private.h"
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
+#include "cairo-error-private.h"
+#include "cairo-list-inline.h"
 
 /* A perceptual distance metric between two colors. No sqrt needed
  * since the square of the distance is still a valid metric. */

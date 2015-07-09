@@ -21,8 +21,9 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "cairo-test.h"
+
 #include <assert.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 static void
 assert_point (cairo_t *cr, double expected_x, double expected_y) {

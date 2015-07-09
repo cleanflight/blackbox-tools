@@ -34,9 +34,9 @@
  *	Kristian Høgsberg <krh@redhat.com>
  */
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-error-private.h"
+#include "cairo-output-stream-private.h"
 
 typedef struct _cairo_base85_stream {
     cairo_output_stream_t base;

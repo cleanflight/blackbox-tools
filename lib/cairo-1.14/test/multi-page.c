@@ -23,9 +23,11 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
+#include "cairo-test.h"
+
 #include <stdio.h>
 
-#include "../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 
 #if CAIRO_HAS_PS_SURFACE
 #include <cairo-ps.h>
@@ -34,8 +36,6 @@
 #if CAIRO_HAS_PDF_SURFACE
 #include <cairo-pdf.h>
 #endif
-
-#include "../../cairo-1.14/test/cairo-test.h"
 
 /* The PostScript and PDF backends are now integrated into the main
  * test suite, so we are getting good verification of most things

@@ -38,9 +38,9 @@
 #ifndef CAIRO_SPANS_COMPOSITOR_PRIVATE_H
 #define CAIRO_SPANS_COMPOSITOR_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-spans-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo-compositor-private.h"
+#include "cairo-types-private.h"
+#include "cairo-spans-private.h"
 
 CAIRO_BEGIN_DECLS
 

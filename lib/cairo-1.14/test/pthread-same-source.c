@@ -26,7 +26,7 @@
 
 #define GENERATE_REFERENCE 0
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 #if !GENERATE_REFERENCE
 #include <pthread.h>
 #endif

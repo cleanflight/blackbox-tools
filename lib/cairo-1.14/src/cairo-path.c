@@ -34,12 +34,13 @@
  *	Carl D. Worth <cworth@redhat.com>
  */
 
-#include "../../cairo-1.14/src/cairo-backend-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-path-private.h"
-#include "../../cairo-1.14/src/cairo-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-private.h"
+#include "cairo-backend-private.h"
+#include "cairo-error-private.h"
+#include "cairo-path-private.h"
+#include "cairo-path-fixed-private.h"
 
 /**
  * SECTION:cairo-paths

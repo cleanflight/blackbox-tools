@@ -44,20 +44,20 @@
 # define _WIN32_WINNT 0x0500
 #endif
 
-#include "../../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairo-paginated-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-paginated-private.h"
 
-#include "../../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../../cairo-1.14/src/win32/cairo-win32-private.h"
-#include "../../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../../cairo-1.14/src/cairo-scaled-font-subsets-private.h"
-#include "../../../cairo-1.14/src/cairo-image-info-private.h"
-#include "../../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../../cairo-1.14/src/cairo-surface-clipper-private.h"
+#include "cairo-clip-private.h"
+#include "cairo-win32-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-scaled-font-subsets-private.h"
+#include "cairo-image-info-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-surface-backend-private.h"
+#include "cairo-surface-clipper-private.h"
 
 #include <windows.h>
 

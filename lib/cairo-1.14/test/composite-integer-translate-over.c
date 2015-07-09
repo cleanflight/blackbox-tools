@@ -1,5 +1,5 @@
 /*
- * Copyright � 2006 Mozilla Corporation
+ * Copyright © 2006 Mozilla Corporation
  *
  * Permission to use, copy, modify, distribute, and sell this software
  * and its documentation for any purpose is hereby granted without
@@ -22,9 +22,9 @@
  *
  * Author: Vladimir Vukicevic <vladimir@pobox.com>
  */
+#include "cairo-test.h"
 #include <math.h>
 #include <stdio.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define SIZE 100
 #define OFFSET 10

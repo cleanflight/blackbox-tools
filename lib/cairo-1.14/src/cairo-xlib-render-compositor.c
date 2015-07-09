@@ -40,20 +40,20 @@
  *	Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if !CAIRO_HAS_XLIB_XCB_FUNCTIONS
 
-#include "../../cairo-1.14/src/cairo-xlib-private.h"
+#include "cairo-xlib-private.h"
 
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-damage-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-pixman-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairo-tristrip-private.h"
+#include "cairo-compositor-private.h"
+#include "cairo-damage-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-pattern-private.h"
+#include "cairo-pixman-private.h"
+#include "cairo-traps-private.h"
+#include "cairo-tristrip-private.h"
 
 static cairo_int_status_t
 check_composite (const cairo_composite_rectangles_t *extents)
@@ -1287,6 +1287,9 @@ _cairo_xlib_surface_add_glyph (cairo_xlib_display_t *display,
 	    unsigned char   *d;
 	    unsigned char   *new, *n;
 
+	    if (c == 0)
+		break;
+
 	    new = malloc (c);
 	    if (!new) {
 		status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
@@ -1311,6 +1314,9 @@ _cairo_xlib_surface_add_glyph (cairo_xlib_display_t *display,
 	    unsigned int c = glyph_surface->stride * glyph_surface->height / 4;
 	    const uint32_t *d;
 	    uint32_t *new, *n;
+
+	    if (c == 0)
+		break;
 
 	    new = malloc (4 * c);
 	    if (unlikely (new == NULL)) {

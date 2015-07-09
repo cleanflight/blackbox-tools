@@ -1,8 +1,9 @@
+#include <cairo.h>
+#include <cairo-script-interpreter.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../../../cairo-1.14/src/cairo.h"
-#include "../../../cairo-1.14/util/cairo-script/cairo-script-interpreter.h"
 
 static const cairo_user_data_key_t _key;
 
@@ -250,7 +251,7 @@ _ps_surface_create (void *closure,
 #endif
 
 #if CAIRO_HAS_SVG_SURFACE
-#include "../../../cairo-1.14/src/cairo-svg.h"
+#include <cairo-svg.h>
 static cairo_surface_t *
 _svg_surface_create (void *closure,
 		     cairo_content_t content,

@@ -27,9 +27,9 @@
 /* Exhibits nasty behaviour with GS due as their /Interpolate implementation
  * does not function for rotated images. */
 
+#include "cairo-test.h"
 #include <math.h>
 #include <stdio.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define SIZE 100
 

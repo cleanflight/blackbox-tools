@@ -31,8 +31,9 @@
  * https://bugs.webkit.org/show_bug.cgi?id=54471
  */
 
+#include "cairo-test.h"
+
 #include <math.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define RADIUS 50
 

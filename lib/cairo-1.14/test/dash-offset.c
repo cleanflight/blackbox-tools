@@ -25,7 +25,7 @@
  * Author: Andrea Canciani <ranma42@gmail.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* Lengths of the dashes of the dash patterns */
 static const double dashes[] = { 2, 2, 4, 4 };

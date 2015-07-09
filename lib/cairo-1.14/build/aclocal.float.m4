@@ -31,10 +31,10 @@ int main() { return 0; }
 
 ]])], [
 
-if strings - conftest | grep noonsees >/dev/null ; then
+if strings - conftest$ac_exeext | grep noonsees >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if strings - conftest | grep seesnoon >/dev/null ; then
+if strings - conftest$ac_exeext | grep seesnoon >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else

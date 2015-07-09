@@ -30,8 +30,9 @@
  * The Initial Developer of the Original Code is Chris Wilson.
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-gl.h"
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-gl.h>
 #if CAIRO_HAS_GL_SURFACE
 #include <GL/gl.h>
 #elif CAIRO_HAS_GLESV2_SURFACE

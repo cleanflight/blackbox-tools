@@ -36,8 +36,9 @@
 #ifndef CAIRO_DAMAGE_PRIVATE_H
 #define CAIRO_DAMAGE_PRIVATE_H
 
+#include "cairo-types-private.h"
+
 #include <pixman.h>
-#include "../../cairo-1.14/src/cairo-types-private.h"
 
 CAIRO_BEGIN_DECLS
 

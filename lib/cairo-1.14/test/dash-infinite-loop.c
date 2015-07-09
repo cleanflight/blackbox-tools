@@ -24,7 +24,7 @@
  * Author: M Joonas Pihlaja <jpihlaja@cc.helsinki.fi>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* When faced with very small dash lengths the stroker is liable to
  * get stuck in an infinite loop when advancing the dash offset.  This

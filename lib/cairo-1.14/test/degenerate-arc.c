@@ -28,7 +28,7 @@
  * http://lists.cairographics.org/archives/cairo/2008-May/014054.html.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static cairo_test_status_t
 draw (cairo_t *cr, int width, int height)

@@ -24,7 +24,7 @@
  * Author: Taekyun Kim <podain77@gmail.com>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static void
 rounded_rectangle(cairo_t *cr,

@@ -24,7 +24,7 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define LINE_WIDTH	30.
 #define SIZE		(2 * LINE_WIDTH)
@@ -100,7 +100,7 @@ draw (cairo_t *cr, int width, int height)
 
     cairo_set_line_width (cr, LINE_WIDTH);
 
-    for (t = 0; t < sizeof(theta)/sizeof (theta[0]); t++) {
+    for (t = 0; t < ARRAY_LENGTH(theta); t++) {
 	cairo_save (cr);
 	cairo_translate (cr, 0, t * (SIZE + PAD) + PAD);
 	draw_caps_joins (cr, theta[t]);

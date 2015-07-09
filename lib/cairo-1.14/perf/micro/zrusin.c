@@ -24,14 +24,14 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../../cairo-1.14/perf/cairo-perf.h"
+#include "cairo-perf.h"
 
 typedef struct {
     double x;
     double y;
 } point_t;
 
-#include "../../../cairo-1.14/perf/micro/zrusin-another.h"
+#include "zrusin-another.h"
 
 static void
 zrusin_another_path (cairo_t *cr)

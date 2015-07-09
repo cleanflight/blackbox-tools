@@ -24,7 +24,7 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* Test the fidelity of the rasterisation, because Cairo is my favourite
  * driver test suite.
@@ -32,7 +32,7 @@
 
 #define GENERATE_REFERENCE 0
 
-#include "../../cairo-1.14/src/cairo-fixed-type-private.h"
+#include "../src/cairo-fixed-type-private.h"
 
 #if GENERATE_REFERENCE
 #include <assert.h>

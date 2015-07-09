@@ -41,14 +41,18 @@
  * for validating cairo-xlib (which currently also uses traps).
  */
 
-#include "../../cairo-1.14/src/cairo-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-pixman-private.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairo-spans-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-traps-private.h"
-#include "../../cairo-1.14/src/cairo-tristrip-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-image-surface-private.h"
+
+#include "cairo-compositor-private.h"
+#include "cairo-spans-compositor-private.h"
+
+#include "cairo-region-private.h"
+#include "cairo-traps-private.h"
+#include "cairo-tristrip-private.h"
+
+#include "cairo-pixman-private.h"
 
 static pixman_image_t *
 to_pixman_image (cairo_surface_t *s)
@@ -2238,10 +2242,10 @@ _fill_xrgb32_lerp_opaque_spans (void *abstract_renderer, int y, int h,
 				     spans[0].x, y, len, 1, r->u.fill.pixel);
 		    } else {
 			uint32_t *d = (uint32_t*)(r->u.fill.data + r->u.fill.stride*y + spans[0].x*4);
-			while (len--)
+			while (len-- > 0)
 			    *d++ = r->u.fill.pixel;
 		    }
-		} else while (len--) {
+		} else while (len-- > 0) {
 		    *d = lerp8x4 (r->u.fill.pixel, a, *d);
 		    d++;
 		}

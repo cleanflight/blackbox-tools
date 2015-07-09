@@ -24,8 +24,8 @@
  * Author: Adrian Johnson <ajohnson@redneon.com>
  */
 
+#include "cairo-test.h"
 #include <math.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #define PAT_WIDTH  100
 #define PAT_HEIGHT 100

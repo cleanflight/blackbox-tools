@@ -28,7 +28,7 @@
  * http://lists.cairographics.org/archives/cairo/2008-November/015660.html
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static cairo_surface_t *
 create_source (cairo_surface_t *target, int width, int height)

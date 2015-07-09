@@ -34,11 +34,11 @@
  *      Behdad Esfahbod <behdad@behdad.org>
  */
 
-#include "../../cairo-1.14/src/cairo-analysis-surface-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-user-font-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-user-font-private.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-analysis-surface-private.h"
+#include "cairo-error-private.h"
 
 /**
  * SECTION:cairo-user-fonts

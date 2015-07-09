@@ -34,7 +34,7 @@
 #endif
 #include <errno.h>
 
-#include "../../cairo-1.14/test/buffer-diff.h"
+#include "buffer-diff.h"
 
 static void
 _xunlink (const char *pathname)

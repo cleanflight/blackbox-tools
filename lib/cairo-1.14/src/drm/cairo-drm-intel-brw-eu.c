@@ -29,12 +29,12 @@
  *   Keith Whitwell <keith@tungstengraphics.com>
  */
 
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-brw-eu.h"
+#include "cairoint.h"
+#include "cairo-drm-intel-brw-eu.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../../../cairo-1.14/src/cairoint.h"
 
 
 /* How does predicate control work when execution_size != 8?  Do I

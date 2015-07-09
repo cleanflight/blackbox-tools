@@ -37,9 +37,10 @@
 #ifndef CAIRO_MEMPOOL_PRIVATE_H
 #define CAIRO_MEMPOOL_PRIVATE_H
 
+#include "cairo-compiler-private.h"
+#include "cairo-error-private.h"
+
 #include <stddef.h> /* for size_t */
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
 
 CAIRO_BEGIN_DECLS
 

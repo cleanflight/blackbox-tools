@@ -37,7 +37,7 @@
 #ifndef CAIRO_FIXED_TYPE_PRIVATE_H
 #define CAIRO_FIXED_TYPE_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-wideint-type-private.h"
+#include "cairo-wideint-type-private.h"
 
 /*
  * Fixed-point configuration

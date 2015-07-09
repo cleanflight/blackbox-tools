@@ -30,11 +30,12 @@
  */
 //#include "cairoint.h"
 
+#include "cairo-cogl-private.h"
+#include "cairo-cogl-gradient-private.h"
+#include "cairo-image-surface-private.h"
+
 #include <cogl/cogl2-experimental.h>
 #include <glib.h>
-#include "../../cairo-1.14/src/cairo-cogl-gradient-private.h"
-#include "../../cairo-1.14/src/cairo-cogl-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
 
 #define DUMP_GRADIENTS_TO_PNG
 

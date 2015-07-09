@@ -35,16 +35,16 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-clip-inline.h"
-#include "../../cairo-1.14/src/cairo-clip-private.h"
-#include "../../cairo-1.14/src/cairo-composite-rectangles-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-freed-pool-private.h"
-#include "../../cairo-1.14/src/cairo-gstate-private.h"
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-region-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-clip-inline.h"
+#include "cairo-clip-private.h"
+#include "cairo-error-private.h"
+#include "cairo-freed-pool-private.h"
+#include "cairo-gstate-private.h"
+#include "cairo-path-fixed-private.h"
+#include "cairo-pattern-private.h"
+#include "cairo-composite-rectangles-private.h"
+#include "cairo-region-private.h"
 
 static cairo_bool_t
 can_convert_to_polygon (const cairo_clip_t *clip)

@@ -26,7 +26,7 @@
 
 /* I thought I spied a bug... */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH		(1024)
 #define HEIGHT		(600)

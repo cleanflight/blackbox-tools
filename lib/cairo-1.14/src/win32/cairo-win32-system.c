@@ -45,7 +45,7 @@
  */
 
 
-#include "../../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if CAIRO_MUTEX_IMPL_WIN32
 #if !CAIRO_WIN32_STATIC_BUILD

@@ -37,7 +37,7 @@
 #ifndef CAIRO_GOBJECT_H
 #define CAIRO_GOBJECT_H
 
-#include "../../../cairo-1.14/src/cairo.h"
+#include <cairo.h>
 
 #if CAIRO_HAS_GOBJECT_FUNCTIONS
 

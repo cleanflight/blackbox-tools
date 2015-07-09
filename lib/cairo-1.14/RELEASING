@@ -113,7 +113,7 @@ Here are the steps to follow to create a new cairo release:
 8) Push the newly created tag out to the central tree with a command
    something like:
 
-	git push cairo X.Y.Z
+	git push upstream master X.Y.Z
 
 9) Edit the cairo bugzilla product and add the new version numbers. Note
    that you need to add two versions.  One for the release/snapshot (with

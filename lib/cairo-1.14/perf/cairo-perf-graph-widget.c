@@ -25,9 +25,10 @@
  * Authors: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-perf.h"
+#include "cairo-perf-graph.h"
+
 #include <gtk/gtk.h>
-#include "../../cairo-1.14/perf/cairo-perf.h"
-#include "../../cairo-1.14/perf/cairo-perf-graph.h"
 
 struct _GraphView {
     GtkWidget widget;

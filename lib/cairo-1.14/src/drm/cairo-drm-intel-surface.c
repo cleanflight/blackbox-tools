@@ -27,11 +27,13 @@
  *
  */
 
-#include "../../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-intel-private.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
+#include "cairoint.h"
+
+#include "cairo-drm-private.h"
+#include "cairo-drm-intel-private.h"
+
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
 
 /* Basic generic/stub surface for intel chipsets */
 

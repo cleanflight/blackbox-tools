@@ -24,7 +24,7 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
+#include "cairo-boilerplate-private.h"
 
 #if CAIRO_CAN_TEST_PS_SURFACE
 

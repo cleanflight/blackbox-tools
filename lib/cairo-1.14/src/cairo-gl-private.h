@@ -46,17 +46,17 @@
 
 #define GL_GLEXT_PROTOTYPES
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-gl.h"
-#include "../../cairo-1.14/src/cairo-gl-gradient-private.h"
+#include "cairo-gl.h"
+#include "cairo-gl-gradient-private.h"
 
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-rtree-private.h"
-#include "../../cairo-1.14/src/cairo-scaled-font-private.h"
-#include "../../cairo-1.14/src/cairo-spans-compositor-private.h"
-#include "../../cairo-1.14/src/cairo-array-private.h"
+#include "cairo-device-private.h"
+#include "cairo-error-private.h"
+#include "cairo-rtree-private.h"
+#include "cairo-scaled-font-private.h"
+#include "cairo-spans-compositor-private.h"
+#include "cairo-array-private.h"
 
 #include <assert.h>
 
@@ -68,7 +68,7 @@
 #include <GLES2/gl2ext.h>
 #endif
 
-#include "../../cairo-1.14/src/cairo-gl-ext-def-private.h"
+#include "cairo-gl-ext-def-private.h"
 
 #define DEBUG_GL 0
 

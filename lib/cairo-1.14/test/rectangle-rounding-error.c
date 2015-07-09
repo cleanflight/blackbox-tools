@@ -23,7 +23,7 @@
  * Author: Bertram Felgenhauer <int-e@gmx.de>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* Test case for:
  *

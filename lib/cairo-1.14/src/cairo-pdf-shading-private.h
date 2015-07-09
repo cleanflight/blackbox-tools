@@ -37,9 +37,9 @@
 #ifndef CAIRO_PDF_SHADING_H
 #define CAIRO_PDF_SHADING_H
 
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-pattern-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo-compiler-private.h"
+#include "cairo-types-private.h"
+#include "cairo-pattern-private.h"
 
 
 typedef struct _cairo_pdf_shading {

@@ -24,9 +24,10 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-test.h"
+
 #include <stdio.h>
 #include <errno.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 /* Basic test to exercise the new mime-surface callback. */
 

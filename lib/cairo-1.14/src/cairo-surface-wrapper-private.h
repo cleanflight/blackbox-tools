@@ -39,9 +39,9 @@
 #ifndef CAIRO_SURFACE_WRAPPER_PRIVATE_H
 #define CAIRO_SURFACE_WRAPPER_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+#include "cairo-types-private.h"
+#include "cairo-surface-backend-private.h"
 
 CAIRO_BEGIN_DECLS
 

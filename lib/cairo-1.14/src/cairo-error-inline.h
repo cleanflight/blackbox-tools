@@ -38,7 +38,7 @@
 #ifndef _CAIRO_ERROR_INLINE_H_
 #define _CAIRO_ERROR_INLINE_H_
 
-#include "../../cairo-1.14/src/cairo-error-private.h"
+#include "cairo-error-private.h"
 
 CAIRO_BEGIN_DECLS
 

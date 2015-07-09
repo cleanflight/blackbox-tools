@@ -33,9 +33,11 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-gl-private.h"
-#include "../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-gl-private.h"
+
+#include "cairo-surface-backend-private.h"
 
 static cairo_status_t
 _cairo_gl_source_finish (void *abstract_surface)

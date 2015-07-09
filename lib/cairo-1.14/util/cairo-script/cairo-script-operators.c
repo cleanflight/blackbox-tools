@@ -34,7 +34,7 @@
 
 /* TODO real path type */
 
-#include "../../../cairo-1.14/util/cairo-script/cairo-script-private.h"
+#include "cairo-script-private.h"
 
 #if CAIRO_HAS_SCRIPT_SURFACE
 #include "cairo-script.h"
@@ -1662,7 +1662,7 @@ _font_type3 (csi_t *ctx,
 }
 
 #if CAIRO_HAS_FT_FONT
-#include "../../../cairo-1.14/src/cairo-ft.h"
+#include <cairo-ft.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 

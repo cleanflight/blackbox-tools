@@ -24,7 +24,7 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 static uint32_t data[16] = {
     0xffffffff, 0xffffffff,		0xffff0000, 0xffff0000,

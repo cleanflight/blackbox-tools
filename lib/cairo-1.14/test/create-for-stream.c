@@ -23,10 +23,11 @@
  * Author: Kristian Høgsberg <krh@redhat.com>
  */
 
+#include "cairo-test.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 #if CAIRO_HAS_PS_SURFACE
 #include <cairo-ps.h>
@@ -37,10 +38,10 @@
 #endif
 
 #if CAIRO_HAS_SVG_SURFACE
-#include "../../cairo-1.14/src/cairo-svg.h"
+#include <cairo-svg.h>
 #endif
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 /* The main test suite doesn't test the *_create_for_stream
  * constructors for the PDF, PS and SVG surface, so we do that here.

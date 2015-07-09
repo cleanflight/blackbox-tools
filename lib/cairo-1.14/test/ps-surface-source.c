@@ -23,9 +23,10 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-ps.h"
-#include "../../cairo-1.14/test/cairo-test.h"
-#include "../../cairo-1.14/test/surface-source.c"
+#include "cairo-test.h"
+#include <cairo-ps.h>
+
+#include "surface-source.c"
 
 #define BASENAME "ps-surface-source.out"
 

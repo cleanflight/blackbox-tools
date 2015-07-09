@@ -23,8 +23,9 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-test.h"
+
 #include <assert.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 static const char *png_filename = "romedalen.png";
 

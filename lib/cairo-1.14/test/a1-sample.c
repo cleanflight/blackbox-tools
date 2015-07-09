@@ -24,7 +24,7 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH	(256) //CAIRO_FIXED_ONE
 #define HEIGHT	(WIDTH)

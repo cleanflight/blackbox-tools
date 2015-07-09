@@ -36,12 +36,13 @@
  *	Carl D. Worth <cworth@cworth.org>
  */
 
-#include "../../cairo-1.14/src/cairo-box-inline.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-slope-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-box-inline.h"
+#include "cairo-error-private.h"
+#include "cairo-list-inline.h"
+#include "cairo-path-fixed-private.h"
+#include "cairo-slope-private.h"
 
 static cairo_status_t
 _cairo_path_fixed_add (cairo_path_fixed_t  *path,

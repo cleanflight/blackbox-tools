@@ -24,7 +24,7 @@
  * Author: Uli Schlachter <psychon@znc.in>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH 6000
 #define HEIGHT 6000

@@ -36,11 +36,12 @@
 #ifndef CAIRO_SCRIPT_PRIVATE_H
 #define CAIRO_SCRIPT_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo.h"
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairo-script.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
+#include "cairo.h"
+#include "cairo-script.h"
+
+#include "cairo-compiler-private.h"
+#include "cairo-output-stream-private.h"
+#include "cairo-types-private.h"
 
 CAIRO_BEGIN_DECLS
 

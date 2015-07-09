@@ -38,9 +38,10 @@
  *
  */
 
-#include "../../cairo-1.14/src/cairo-line-inline.h"
-#include "../../cairo-1.14/src/cairo-slope-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-line-inline.h"
+#include "cairo-slope-private.h"
 
 static int
 line_compare_for_y_against_x (const cairo_line_t *a,

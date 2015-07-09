@@ -26,7 +26,7 @@
 #ifndef _CAIRO_STATS_H_
 #define _CAIRO_STATS_H_
 
-#include "../../cairo-1.14/perf/cairo-perf.h"
+#include "cairo-perf.h"
 
 void
 _cairo_stats_compute (cairo_stats_t *stats,

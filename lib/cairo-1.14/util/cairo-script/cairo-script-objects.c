@@ -32,9 +32,10 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-script-private.h"
+
 #include <limits.h> /* INT_MAX */
 #include <string.h>
-#include "../../../cairo-1.14/util/cairo-script/cairo-script-private.h"
 
 csi_status_t
 csi_array_new (csi_t *ctx,

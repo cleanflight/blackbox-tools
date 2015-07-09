@@ -37,18 +37,20 @@
 #ifndef CAIRO_XLIB_PRIVATE_H
 #define CAIRO_XLIB_PRIVATE_H
 
+#include "cairo-xlib-xrender-private.h"
+#include "cairo-xlib.h"
+
+#include "cairo-compiler-private.h"
+#include "cairo-device-private.h"
+#include "cairo-freelist-type-private.h"
+#include "cairo-list-private.h"
+#include "cairo-reference-count-private.h"
+#include "cairo-types-private.h"
+#include "cairo-scaled-font-private.h"
+#include "cairo-surface-private.h"
+
 #include <pixman.h>
 #include <string.h>
-#include "../../cairo-1.14/src/cairo-compiler-private.h"
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-freelist-type-private.h"
-#include "../../cairo-1.14/src/cairo-list-private.h"
-#include "../../cairo-1.14/src/cairo-reference-count-private.h"
-#include "../../cairo-1.14/src/cairo-scaled-font-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
-#include "../../cairo-1.14/src/cairo-types-private.h"
-#include "../../cairo-1.14/src/cairo-xlib.h"
-#include "../../cairo-1.14/src/cairo-xlib-xrender-private.h"
 
 typedef struct _cairo_xlib_display cairo_xlib_display_t;
 typedef struct _cairo_xlib_shm_display cairo_xlib_shm_display_t;

@@ -29,7 +29,7 @@
  * tempted to write.
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define WIDTH		(20)
 #define HEIGHT		(20)

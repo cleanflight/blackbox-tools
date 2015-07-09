@@ -40,24 +40,24 @@
  */
 
 #define _BSD_SOURCE /* for snprintf() */
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
-#include "../../cairo-1.14/src/cairo-svg.h"
+#include "cairo-svg.h"
 
-#include "../../cairo-1.14/src/cairo-array-private.h"
-#include "../../cairo-1.14/src/cairo-analysis-surface-private.h"
-#include "../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-image-info-private.h"
-#include "../../cairo-1.14/src/cairo-image-surface-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-inline.h"
-#include "../../cairo-1.14/src/cairo-output-stream-private.h"
-#include "../../cairo-1.14/src/cairo-path-fixed-private.h"
-#include "../../cairo-1.14/src/cairo-paginated-private.h"
-#include "../../cairo-1.14/src/cairo-scaled-font-subsets-private.h"
-#include "../../cairo-1.14/src/cairo-surface-clipper-private.h"
-#include "../../cairo-1.14/src/cairo-surface-snapshot-inline.h"
-#include "../../cairo-1.14/src/cairo-svg-surface-private.h"
+#include "cairo-array-private.h"
+#include "cairo-analysis-surface-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+#include "cairo-image-info-private.h"
+#include "cairo-image-surface-private.h"
+#include "cairo-recording-surface-inline.h"
+#include "cairo-output-stream-private.h"
+#include "cairo-path-fixed-private.h"
+#include "cairo-paginated-private.h"
+#include "cairo-scaled-font-subsets-private.h"
+#include "cairo-surface-clipper-private.h"
+#include "cairo-surface-snapshot-inline.h"
+#include "cairo-svg-surface-private.h"
 
 /**
  * SECTION:cairo-svg

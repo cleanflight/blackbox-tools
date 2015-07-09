@@ -1,11 +1,10 @@
-
 #define CAIRO_VERSION_H 1
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate.h"
+#include <cairo-boilerplate.h>
 
 /* get the "real" version info instead of dummy cairo-version.h */
 #undef CAIRO_VERSION_H
-#include "../../cairo-1.14/cairo-version.h"
+#include "../cairo-version.h"
 
 #include <stdio.h>
 

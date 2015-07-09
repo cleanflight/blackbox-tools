@@ -23,8 +23,9 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
+#include "cairo-test.h"
+
 #include <string.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 /* Bug history
  *

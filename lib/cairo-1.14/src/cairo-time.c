@@ -30,8 +30,9 @@
  *          Andrea Canciani <ranma42@gmail.com>
  */
 
-#include "../../cairo-1.14/src/cairo-time-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-time-private.h"
 
 #if HAVE_CLOCK_GETTIME
 #if defined(CLOCK_MONOTONIC_RAW)

@@ -52,18 +52,18 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 #if !CAIRO_HAS_XLIB_XCB_FUNCTIONS
 
-#include "../../cairo-1.14/src/cairo-xlib-private.h"
-#include "../../cairo-1.14/src/cairo-xlib-xrender-private.h"
+#include "cairo-xlib-private.h"
+#include "cairo-xlib-xrender-private.h"
 
-#include "../../cairo-1.14/src/cairo-xlib-surface-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-list-inline.h"
+#include "cairo-xlib-surface-private.h"
+#include "cairo-error-private.h"
+#include "cairo-list-inline.h"
 
-#include "../../cairo-1.14/src/cairo-fontconfig-private.h"
+#include "cairo-fontconfig-private.h"
 
 static int
 parse_boolean (const char *v)

@@ -35,7 +35,7 @@
 #ifndef CAIRO_ANALYSIS_SURFACE_H
 #define CAIRO_ANALYSIS_SURFACE_H
 
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
 
 cairo_private cairo_surface_t *
 _cairo_analysis_surface_create (cairo_surface_t		*target);

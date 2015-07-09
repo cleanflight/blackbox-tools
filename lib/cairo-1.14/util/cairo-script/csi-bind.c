@@ -1,7 +1,8 @@
+#include <cairo.h>
+#include <cairo-script-interpreter.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../../cairo-1.14/src/cairo.h"
-#include "../../../cairo-1.14/util/cairo-script/cairo-script-interpreter.h"
 
 static cairo_status_t
 write_func (void *closure,

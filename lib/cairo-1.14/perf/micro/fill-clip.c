@@ -26,8 +26,9 @@
 
 /* Compares the overhead for WebKit's drawRect() */
 
+#include "cairo-perf.h"
+
 #include <pixman.h>
-#include "../../../cairo-1.14/perf/cairo-perf.h"
 
 static cairo_time_t
 clip_paint (cairo_t *cr, int width, int height, int loops)

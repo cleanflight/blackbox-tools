@@ -63,7 +63,7 @@
 #include <assert.h>
 #include <limits.h>
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #if CAIRO_HAS_GL_SURFACE
 #include <cairo-gl.h>
@@ -83,7 +83,7 @@
 #undef Cursor
 #endif
 #if CAIRO_HAS_SVG_SURFACE
-#include "../../cairo-1.14/src/cairo-svg.h"
+#include <cairo-svg.h>
 #endif
 #if CAIRO_HAS_TEE_SURFACE
 #include <cairo-tee.h>
@@ -181,7 +181,9 @@ test_cairo_set_operator (cairo_t *cr)
 static cairo_test_status_t
 test_cairo_set_source (cairo_t *cr)
 {
-    cairo_set_source (cr, cairo_pattern_create_rgb (0, 0, 0));
+    cairo_pattern_t *source = cairo_pattern_create_rgb (0, 0, 0);
+    cairo_set_source (cr, source);
+    cairo_pattern_destroy (source);
 
     return CAIRO_TEST_SUCCESS;
 }

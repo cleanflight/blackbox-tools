@@ -23,8 +23,9 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
+#include "cairo-test.h"
+
 #include <assert.h>
-#include "../../cairo-1.14/test/cairo-test.h"
 
 static cairo_test_status_t
 preamble (cairo_test_context_t *ctx)

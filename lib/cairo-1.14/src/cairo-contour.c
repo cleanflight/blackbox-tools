@@ -36,12 +36,13 @@
  *	Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/src/cairo-combsort-inline.h"
-#include "../../cairo-1.14/src/cairo-contour-inline.h"
-#include "../../cairo-1.14/src/cairo-contour-private.h"
-#include "../../cairo-1.14/src/cairo-error-private.h"
-#include "../../cairo-1.14/src/cairo-freelist-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-error-private.h"
+#include "cairo-freelist-private.h"
+#include "cairo-combsort-inline.h"
+#include "cairo-contour-inline.h"
+#include "cairo-contour-private.h"
 
 void
 _cairo_contour_init (cairo_contour_t *contour,

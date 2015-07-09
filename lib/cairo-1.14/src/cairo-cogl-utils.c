@@ -29,10 +29,11 @@
  *      Robert Bragg <robert@linux.intel.com>
  */
 
+#include "cairoint.h"
+#include "cairo-cogl-utils-private.h"
+
 #include <cogl/cogl.h>
 #include <glib.h>
-#include "../../cairo-1.14/src/cairo-cogl-utils-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
 
 static cairo_status_t
 _cogl_move_to (void		   *closure,

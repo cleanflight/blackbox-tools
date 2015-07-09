@@ -36,7 +36,7 @@
 #ifndef CAIRO_TEE_H
 #define CAIRO_TEE_H
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 
 #if CAIRO_HAS_TEE_SURFACE
 

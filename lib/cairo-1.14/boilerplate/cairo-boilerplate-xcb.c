@@ -24,9 +24,11 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-xcb.h>
+
 #include <assert.h>
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-xcb.h"
 
 /* Errors have response_type == 0 */
 #define CAIRO_XCB_ERROR 0

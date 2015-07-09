@@ -61,8 +61,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../cairo-1.14/src/cairo.h"
-#include "../../cairo-1.14/util/cairo-script/cairo-script-interpreter.h"
+#include <cairo.h>
+#include <cairo-script-interpreter.h>
 
 #if CAIRO_CAN_TEST_PDF_SURFACE
 #include <poppler.h>
@@ -100,7 +100,7 @@
 #endif
 #endif
 
-#define ARRAY_LENGTH(A) (sizeof (A) / sizeof (A[0]))
+#define ARRAY_LENGTH(__array) ((int) (sizeof (__array) / sizeof (__array[0])))
 
 static int
 _cairo_writen (int fd, char *buf, int len)

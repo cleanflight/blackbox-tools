@@ -73,9 +73,9 @@ We use /git/ for version control.  See:
 
 	http://cairographics.org/download/
 
-TODO:
-Add links to some git tutorials or better, write a few paragraphs
-about how to use git to efficiently hack on cairo.
+For more information on using git, see:
+
+	http://freedesktop.org/wiki/Infrastructure/git/
 
 
 Build System
@@ -103,10 +103,9 @@ No manual ChangeLog writing is necessary.
 Copyrights and Licensing
 ------------------------
 
-The cairo library is dual-licensed under LGPL and MPL.  See file named
-COPYING for details.  The test suites are more liberal.  For example,
-GPL code is allowed in the test suites, though it's always better to
-keep things simple.
+The cairo library is dual-licensed under LGPL and MPL.  See the file
+named COPYING for details.  The test suites are more liberal, and are
+allowed to include GPL code.
 
 When writing new code, update the file headers to add your (or your
 employers) copyright line and contributor line.  If adding new files
@@ -174,9 +173,8 @@ Some of those should gradually be moved to doc/.
 Utilities
 ---------
 
-There are a few useful utilities we have developed that are either
-useful when writing code using cairo, or writing cairo, or useful in
-general.  These tools can be found under the util/ directory.
+We have developed several utilities useful for writing cairo or code
+that uses cairo.  These tools can be found under the util/ directory.
 See util/README for more information.
 
 

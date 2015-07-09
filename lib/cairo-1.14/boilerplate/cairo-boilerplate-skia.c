@@ -1,6 +1,7 @@
 
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-skia.h"
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-skia.h>
 
 static cairo_surface_t *
 _cairo_boilerplate_skia_create_surface (const char		  *name,

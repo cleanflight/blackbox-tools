@@ -9,12 +9,14 @@ make check
 
 */
 
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-directfb.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <direct/debug.h>
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-directfb.h"
 
 D_DEBUG_DOMAIN (CairoDFB_Boiler, "CairoDFB/Boiler", "Cairo DirectFB Boilerplate");
 

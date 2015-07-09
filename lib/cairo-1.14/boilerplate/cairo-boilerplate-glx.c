@@ -30,10 +30,12 @@
  * The Initial Developer of the Original Code is Chris Wilson.
  */
 
+#include "cairo-boilerplate-private.h"
+
+#include <cairo-gl.h>
+
 #include <X11/X.h>
 #include <X11/Xutil.h> /* for XDestroyImage */
-#include "../../cairo-1.14/boilerplate/cairo-boilerplate-private.h"
-#include "../../cairo-1.14/src/cairo-gl.h"
 
 static const cairo_user_data_key_t gl_closure_key;
 

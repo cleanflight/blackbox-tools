@@ -39,7 +39,7 @@
 #ifndef CAIRO_XCB_H
 #define CAIRO_XCB_H
 
-#include "../../cairo-1.14/src/cairo.h"
+#include "cairo.h"
 
 #if CAIRO_HAS_XCB_SURFACE
 

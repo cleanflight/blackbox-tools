@@ -31,6 +31,12 @@
  * The Initial Developer of the Original Code is Chris Wilson.
  */
 
+#include "cairoint.h"
+
+#include "cairo-drm-private.h"
+#include "cairo-default-context-private.h"
+#include "cairo-error-private.h"
+
 #include <dlfcn.h>
 
 #include <state_tracker/drm_api.h>
@@ -40,10 +46,6 @@
 #include <pipe/p_state.h>
 
 #include <util/u_inlines.h>
-#include "../../../cairo-1.14/src/cairo-default-context-private.h"
-#include "../../../cairo-1.14/src/cairo-error-private.h"
-#include "../../../cairo-1.14/src/cairoint.h"
-#include "../../../cairo-1.14/src/drm/cairo-drm-private.h"
 
 typedef struct _gallium_surface gallium_surface_t;
 typedef struct _gallium_device gallium_device_t;

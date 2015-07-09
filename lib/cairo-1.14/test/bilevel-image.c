@@ -23,7 +23,7 @@
  * Author: Chris Wilson <chris@chris-wilson.co.uk>
  */
 
-#include "../../cairo-1.14/test/cairo-test.h"
+#include "cairo-test.h"
 
 #define RGBx 0xffff0000, 0xff00ff00, 0xff0000ff, 0x00000000
 

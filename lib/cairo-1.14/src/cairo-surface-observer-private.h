@@ -36,13 +36,14 @@
 #ifndef CAIRO_SURFACE_OBSERVER_PRIVATE_H
 #define CAIRO_SURFACE_OBSERVER_PRIVATE_H
 
-#include "../../cairo-1.14/src/cairo-device-private.h"
-#include "../../cairo-1.14/src/cairo-list-private.h"
-#include "../../cairo-1.14/src/cairo-recording-surface-private.h"
-#include "../../cairo-1.14/src/cairo-surface-backend-private.h"
-#include "../../cairo-1.14/src/cairo-surface-private.h"
-#include "../../cairo-1.14/src/cairo-time-private.h"
-#include "../../cairo-1.14/src/cairoint.h"
+#include "cairoint.h"
+
+#include "cairo-device-private.h"
+#include "cairo-list-private.h"
+#include "cairo-recording-surface-private.h"
+#include "cairo-surface-private.h"
+#include "cairo-surface-backend-private.h"
+#include "cairo-time-private.h"
 
 struct stat {
     double min, max, sum, sum_sq;
