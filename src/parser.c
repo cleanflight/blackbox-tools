@@ -781,6 +781,10 @@ static void parseEventFrame(flightLog_t *log, mmapStream_t *stream, bool raw)
                  data->inflightAdjustment.newValue = streamReadSignedVB(stream);
              }
         break;
+        case FLIGHT_LOG_EVENT_LOGGING_RESUME:
+            data->loggingResume.logIteration = streamReadUnsignedVB(stream);
+            data->loggingResume.currentTime = streamReadUnsignedVB(stream);
+        break;
         case FLIGHT_LOG_EVENT_LOG_END:
             streamRead(stream, endMessage, END_OF_LOG_MESSAGE_LEN);
 
@@ -1036,10 +1040,10 @@ static bool completeIntraframe(flightLog_t *log, mmapStream_t *stream, uint8_t f
     // Do we have a previous frame to use as a reference to validate field values against?
     if (!raw && private->lastMainFrameIteration != (uint32_t) -1) {
         /*
-         * Check that iteration count and time both moved forward, and time didn't move forward too much.
+         * Check that iteration count and time didn't move backwards, and didn't move forward too much.
          */
         acceptFrame =
-            (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] > private->lastMainFrameIteration
+            (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= private->lastMainFrameIteration
             && (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] < private->lastMainFrameIteration + MAXIMUM_ITERATION_JUMP_BETWEEN_FRAMES
             && (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= private->lastMainFrameTime
             && (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] < private->lastMainFrameTime + MAXIMUM_TIME_JUMP_BETWEEN_FRAMES;
@@ -1123,6 +1127,8 @@ static bool completeInterframe(flightLog_t *log, mmapStream_t *stream, uint8_t f
 
 static bool completeEventFrame(flightLog_t *log, mmapStream_t *stream, uint8_t frameType, const char *frameStart, const char *frameEnd, bool raw)
 {
+    flightLogEvent_t *lastEvent = &log->private->lastEvent;
+
     (void) stream;
     (void) frameType;
     (void) frameStart;
@@ -1130,9 +1136,22 @@ static bool completeEventFrame(flightLog_t *log, mmapStream_t *stream, uint8_t f
     (void) raw;
 
     //Don't bother reporting invalid event types since they're likely just garbage data that happened to look like an event
-    if (log->private->lastEvent.event != (FlightLogEvent) -1) {
+    if (lastEvent->event != (FlightLogEvent) -1) {
+        switch (lastEvent->event) {
+            case FLIGHT_LOG_EVENT_LOGGING_RESUME:
+                /*
+                 * Bring the "last time" and "last iteration" up to the new resume time so we accept the sudden jump into
+                 * the future.
+                 */
+                log->private->lastMainFrameIteration = lastEvent->data.loggingResume.logIteration;
+                log->private->lastMainFrameTime = lastEvent->data.loggingResume.currentTime;
+            break;
+            default:
+                ;
+        }
+
         if (log->private->onEvent) {
-            log->private->onEvent(log, &log->private->lastEvent);
+            log->private->onEvent(log, lastEvent);
         }
 
         return true;

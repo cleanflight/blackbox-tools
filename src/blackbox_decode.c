@@ -314,6 +314,10 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
             }
             fprintf(eventFile, "}}\n");
         break;
+        case FLIGHT_LOG_EVENT_LOGGING_RESUME:
+            fprintf(eventFile, "{\"name\":\"Logging resume\", \"time\":%u, \"data\":{\"logIteration\":%d}}\n", event->data.loggingResume.currentTime,
+                    event->data.loggingResume.logIteration);
+        break;
         case FLIGHT_LOG_EVENT_LOG_END:
             fprintf(eventFile, "{\"name\":\"Log clean end\", \"time\":%u}\n", lastFrameTime);
         break;
