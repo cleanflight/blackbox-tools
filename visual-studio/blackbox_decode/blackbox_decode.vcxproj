@@ -61,6 +61,7 @@
     <ClCompile Include="..\..\src\imu.c" />
     <ClCompile Include="..\..\src\parser.c" />
     <ClCompile Include="..\..\src\platform.c" />
+    <ClCompile Include="..\..\src\stats.c" />
     <ClCompile Include="..\..\src\stream.c" />
     <ClCompile Include="..\..\src\tools.c" />
     <ClCompile Include="..\..\src\units.c" />

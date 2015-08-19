@@ -235,7 +235,7 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint
 
     if (frameType == 'P' || frameType == 'I') {
         if (frameValid) {
-            datapointsAddFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame);
+            datapointsAddFrame(points, (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame);
         } else {
             datapointsAddGap(points);
         }
