@@ -29,6 +29,9 @@ void gpxWriterAddPreamble(gpxWriter_t *gpx)
  */
 void gpxWriterAddPoint(gpxWriter_t *gpx, uint32_t time, int32_t lat, int32_t lon, int16_t altitude)
 {
+    char negSign[] = "-";
+    char noSign[] = "";
+
     if (!gpx)
         return;
 
@@ -46,7 +49,11 @@ void gpxWriterAddPoint(gpxWriter_t *gpx, uint32_t time, int32_t lat, int32_t lon
     uint32_t latFracDegrees = abs(lat) % GPS_DEGREES_DIVIDER;
     uint32_t lonFracDegrees = abs(lon) % GPS_DEGREES_DIVIDER;
 
-    fprintf(gpx->file, "  <trkpt lat=\"%d.%07u\" lon=\"%d.%07u\"><ele>%d</ele>", latDegrees, latFracDegrees, lonDegrees, lonFracDegrees, altitude);
+    char *latSign = ((lat < 0) && (latDegrees == 0)) ? negSign : noSign;
+    char *lonSign = ((lon < 0) && (lonDegrees == 0)) ? negSign : noSign;
+
+    fprintf(gpx->file, "  <trkpt lat=\"%s%d.%07u\" lon=\"%s%d.%07u\"><ele>%d</ele>", latSign, latDegrees, latFracDegrees, lonSign, lonDegrees, lonFracDegrees, altitude);
+    
     if (time != (uint32_t) -1) {
         //We'll just assume that the timespan is less than 24 hours, and make up a date
         int hours, mins, secs, frac;

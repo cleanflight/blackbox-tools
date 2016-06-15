@@ -426,6 +426,9 @@ static void updateSimulations(flightLog_t *log, int32_t *frame, uint32_t current
  */
 void outputGPSFields(flightLog_t *log, FILE *file, int32_t *frame)
 {
+    char negSign[] = "-";
+    char noSign[] = "";
+
     int i;
     int32_t degrees;
     uint32_t fracDegrees;
@@ -445,8 +448,8 @@ void outputGPSFields(flightLog_t *log, FILE *file, int32_t *frame)
             case GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000:
                 degrees = frame[i] / 10000000;
                 fracDegrees = abs(frame[i]) % 10000000;
-
-                fprintf(file, "%d.%07u", degrees, fracDegrees);
+		char *sign = ((frame[i] < 0) && (degrees == 0)) ? negSign : noSign;
+                fprintf(file, "%s%d.%07u", sign, degrees, fracDegrees);
             break;
             case GPS_FIELD_TYPE_DEGREES_TIMES_10:
                 fprintf(file, "%d.%01u", frame[i] / 10, abs(frame[i]) % 10);
