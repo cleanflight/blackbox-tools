@@ -874,7 +874,7 @@ unsigned int flightLogVbatADCToMillivolts(flightLog_t *log, uint16_t vbatADC)
     return (vbatADC * ADCVREF * 10 * log->sysConfig.vbatscale) / 0xFFF;
 }
 
-unsigned int flightLogAmperageADCToMilliamps(flightLog_t *log, uint16_t amperageADC)
+int flightLogAmperageADCToMilliamps(flightLog_t *log, uint16_t amperageADC)
 {
     int32_t millivolts;
 
