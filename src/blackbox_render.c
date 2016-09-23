@@ -47,6 +47,9 @@
 #define FONTSIZE_AXIS_LABEL 34
 #define FONTSIZE_FRAME_LABEL 32
 
+#define X_POS_LABEL 8
+#define X_POS_VALUE 145
+
 #define PNG_RENDERING_THREADS 3
 
 #define DATAPOINTS_EXTRA_COMPUTED_FIELDS 6
@@ -202,7 +205,7 @@ static const renderOptions_t defaultOptions = {
     .timeStart = 0, .timeEnd = 0,
     .logNumber = 0,
     .gapless = 0,
-    .rawAmperage = 1
+    .rawAmperage = 0
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -923,40 +926,63 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
         //Weighted moving average with the recent history to smooth out noise
         lastAccel = (lastAccel * 2 + magnitude) / 3;
 
-        snprintf(labelBuf, sizeof(labelBuf), "Acceleration %.2fG", lastAccel);
+        cairo_move_to(cr, X_POS_LABEL, options.imageHeight - 8);
+        cairo_show_text(cr, "Accel.");
 
-        cairo_move_to(cr, 8, options.imageHeight - 8);
+        snprintf(labelBuf, sizeof(labelBuf), "%.2f G", lastAccel);
+
+        cairo_move_to(cr, X_POS_VALUE, options.imageHeight - 8);
         cairo_show_text(cr, labelBuf);
     }
 
     if (flightLog->mainFieldIndexes.vbatLatest > -1) {
         lastVoltage = (lastVoltage * 2 + flightLogVbatADCToMillivolts(flightLog, frame[flightLog->mainFieldIndexes.vbatLatest]) / (1000.0 * fieldMeta.numCells)) / 3;
 
-        snprintf(labelBuf, sizeof(labelBuf), "Batt. cell %.2fV", lastVoltage);
+        cairo_move_to(cr, X_POS_LABEL, options.imageHeight - 8 - (extent.height + 8));
+        cairo_show_text(cr, "Batt. cell");
 
-        cairo_move_to(cr, 8, options.imageHeight - 8 - (extent.height + 8));
+        snprintf(labelBuf, sizeof(labelBuf), "%.2f V", lastVoltage);
+
+        cairo_move_to(cr, X_POS_VALUE, options.imageHeight - 8 - (extent.height + 8));
         cairo_show_text(cr, labelBuf);
     }
 
     if (flightLog->mainFieldIndexes.BaroAlt > -1) {
         lastAlt = (lastAlt * 2 + frame[flightLog->mainFieldIndexes.BaroAlt]) / 3;
 
-        snprintf(labelBuf, sizeof(labelBuf), "Altitude %.1fm", lastAlt / 100.0);
+        cairo_move_to(cr, X_POS_LABEL, options.imageHeight - 8 - (extent.height + 8) * 2);
+        cairo_show_text(cr, "Altitude");
 
-        cairo_move_to(cr, 8, options.imageHeight - 8 - (extent.height + 8) * 2);
+        snprintf(labelBuf, sizeof(labelBuf), "%.1f m", lastAlt / 100.0);
+
+        cairo_move_to(cr, X_POS_VALUE, options.imageHeight - 8 - (extent.height + 8) * 2);
         cairo_show_text(cr, labelBuf);
     }
 
     if (flightLog->mainFieldIndexes.amperageLatest > -1) {
         lastCurrent = (lastCurrent * 2 + flightLogAmperageADCToMilliamps(flightLog, frame[flightLog->mainFieldIndexes.amperageLatest]) / 1000.0) / 3;
-        if (options.rawAmperage) {
-          snprintf(labelBuf, sizeof(labelBuf), "Current %d ADC, %.2fA, %dmAh total", frame[flightLog->mainFieldIndexes.amperageLatest], lastCurrent, frame[fieldMeta.cumulativeCurrent]);
-        } else {
-          snprintf(labelBuf, sizeof(labelBuf), "Current %.2fA, %dmAh total", lastCurrent, frame[fieldMeta.cumulativeCurrent]);
-        }
+        cairo_move_to(cr, X_POS_LABEL, options.imageHeight - 8 - (extent.height + 8) * 3);
+        cairo_show_text(cr, "Current");
 
-        cairo_move_to(cr, 8, options.imageHeight - 8 - (extent.height + 8) * 3);
+        snprintf(labelBuf, sizeof(labelBuf), "%.2f A", lastCurrent);
+        cairo_move_to(cr, X_POS_VALUE, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, labelBuf);
+
+        cairo_move_to(cr, X_POS_VALUE + 140, options.imageHeight - 8 - (extent.height + 8) * 3);
+        cairo_show_text(cr, "Total");
+	
+        snprintf(labelBuf, sizeof(labelBuf), "%d mAh", frame[fieldMeta.cumulativeCurrent]);
+        cairo_move_to(cr, X_POS_VALUE + 220, options.imageHeight - 8 - (extent.height + 8) * 3);
+        cairo_show_text(cr, labelBuf);
+
+	if (options.rawAmperage) {
+          cairo_move_to(cr, X_POS_VALUE + 400, options.imageHeight - 8 - (extent.height + 8) * 3);
+          cairo_show_text(cr, "ADC");
+
+	  snprintf(labelBuf, sizeof(labelBuf), "%d", frame[flightLog->mainFieldIndexes.amperageLatest]);
+          cairo_move_to(cr, X_POS_VALUE + 470, options.imageHeight - 8 - (extent.height + 8) * 3);
+          cairo_show_text(cr, labelBuf);
+        }
     }
 }
 
