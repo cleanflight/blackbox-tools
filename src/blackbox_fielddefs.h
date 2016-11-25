@@ -144,7 +144,7 @@ typedef enum FlightLogEvent {
 } FlightLogEvent;
 
 typedef struct flightLogEvent_syncBeep_t {
-    uint32_t time;
+    int64_t time;
 } flightLogEvent_syncBeep_t;
 
 typedef struct flightLogEvent_autotuneCycleStart_t {
@@ -186,7 +186,7 @@ typedef struct flightLogEvent_inflightAdjustment_t {
 
 typedef struct flightLogEvent_loggingResume_t {
     uint32_t logIteration;
-    uint32_t currentTime;
+    int64_t currentTime;
 } flightLogEvent_loggingResume_t;
 
 typedef union flightLogEventData_t

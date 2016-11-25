@@ -49,7 +49,7 @@ void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadiu
     }
 
     // Field values so that we know what they were originally before we overwrote them
-    int32_t *history = (int32_t*) malloc(sizeof(*history) * windowSize);
+    int64_t *history = (int64_t*) malloc(sizeof(*history) * windowSize);
     int historyHead = 0; //Points to the next location to insert into
     int historyTail = 0; //Points to the last value in the window
 
@@ -90,7 +90,7 @@ void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadiu
 
             //New value is added to the window
             if (windowRightIndex < partitionRight) {
-                int32_t fieldValue = (int32_t) points->frames[points->fieldCount * windowRightIndex + fieldIndex];
+                int64_t fieldValue = points->frames[points->fieldCount * windowRightIndex + fieldIndex];
 
                 accumulator += fieldValue;
 
@@ -106,7 +106,7 @@ void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadiu
 
             // Store the average of the history window into the frame in the center of the window
             if (windowCenterIndex >= partitionLeft) {
-                points->frames[points->fieldCount * windowCenterIndex + fieldIndex] = (int32_t)(accumulator / valuesInHistory);
+                points->frames[points->fieldCount * windowCenterIndex + fieldIndex] = accumulator / valuesInHistory;
             }
         }
     }
@@ -134,7 +134,7 @@ int datapointsFindFrameAtTime(datapoints_t *points, int64_t time)
     return lastGoodFrame;
 }
 
-bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime, int32_t *frame)
+bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime, int64_t *frame)
 {
     if (frameIndex < 0 || frameIndex >= points->frameCount)
         return false;
@@ -145,7 +145,7 @@ bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *fr
     return true;
 }
 
-bool datapointsGetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t *frameValue)
+bool datapointsGetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int64_t *frameValue)
 {
     if (frameIndex < 0 || frameIndex >= points->frameCount)
         return false;
@@ -155,7 +155,7 @@ bool datapointsGetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIn
     return true;
 }
 
-bool datapointsSetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t frameValue)
+bool datapointsSetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int64_t frameValue)
 {
     if (frameIndex < 0 || frameIndex >= points->frameCount)
         return false;
@@ -184,7 +184,7 @@ bool datapointsGetGapStartsAtIndex(datapoints_t *points, int frameIndex)
  * Set the data for the frame with the given index. The second field of the frame is expected to be a timestamp
  * (if you want to be able to find frames at given times).
  */
-bool datapointsAddFrame(datapoints_t *points, int64_t frameTime, const int32_t *frame)
+bool datapointsAddFrame(datapoints_t *points, int64_t frameTime, const int64_t *frame)
 {
     if (points->frameCount >= points->frameCapacity)
         return false;

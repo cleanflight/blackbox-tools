@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
-
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -228,7 +228,7 @@ static FT_Library freetypeLibrary;
 
 static uint32_t syncBeepTime = -1;
 
-void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
+void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int64_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
     (void) log;
     (void) frameSize;
@@ -238,7 +238,7 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint
 
     if (frameType == 'P' || frameType == 'I') {
         if (frameValid) {
-            datapointsAddFrame(points, (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame);
+            datapointsAddFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame);
         } else {
             datapointsAddGap(points);
         }
@@ -324,7 +324,7 @@ void updateFieldMetadata()
     }
 }
 
-void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t *cr)
+void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t *cr)
 {
     double rcCommand[4] = {0, 0, 0, 0};
     const int stickSurroundRadius = imageHeight / 11, stickSpacing = stickSurroundRadius * 3;
@@ -400,7 +400,7 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
         cairo_show_text(cr, stickLabel);
 
         //Draw vertical stick label
-        snprintf(stickLabel, sizeof(stickLabel), "%d", frame[flightLog->mainFieldIndexes.rcCommand[(1 - i) * 2 + 1]]);
+        snprintf(stickLabel, sizeof(stickLabel), "%" PRId64, frame[flightLog->mainFieldIndexes.rcCommand[(1 - i) * 2 + 1]]);
         cairo_text_extents(cr, stickLabel, &extent);
 
         cairo_move_to(cr, -stickSurroundRadius - extent.width - 8, extent.height / 2);
@@ -433,7 +433,7 @@ void drawPropeller(cairo_t *cr, craft_parameters_t *parameters)
 /**
  * Draw a craft with spinning blades at the origin
  */
-void drawCraft(cairo_t *cr, int32_t *frame, int64_t timeElapsedMicros, craft_parameters_t *parameters)
+void drawCraft(cairo_t *cr, int64_t *frame, int64_t timeElapsedMicros, craft_parameters_t *parameters)
 {
     static double propAngles[MAX_MOTORS] = {0};
 
@@ -558,7 +558,7 @@ void drawCraft(cairo_t *cr, int32_t *frame, int64_t timeElapsedMicros, craft_par
                 cairo_fill(cr);
             }
 
-            snprintf(motorLabel, sizeof(motorLabel), "%d", frame[flightLog->mainFieldIndexes.motor[motorIndex]]);
+            snprintf(motorLabel, sizeof(motorLabel), "%" PRId64, frame[flightLog->mainFieldIndexes.motor[motorIndex]]);
 
             cairo_text_extents(cr, motorLabel, &extent);
 
@@ -641,7 +641,7 @@ void plotLine(cairo_t *cr, color_t color, int64_t windowStartTime, int64_t windo
 {
     static const int GAP_WARNING_BOX_RADIUS = 4;
     uint32_t windowWidthMicros = (uint32_t) (windowEndTime - windowStartTime);
-    int32_t fieldValue;
+    int64_t fieldValue;
     int64_t frameTime;
 
     bool drawingLine = false;
@@ -683,7 +683,7 @@ void plotLine(cairo_t *cr, color_t color, int64_t windowStartTime, int64_t windo
     cairo_stroke(cr);
 }
 
-void drawPIDTable(cairo_t *cr, int32_t *frame)
+void drawPIDTable(cairo_t *cr, int64_t *frame)
 {
     cairo_font_extents_t fontExtent;
 
@@ -888,7 +888,7 @@ void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, uint32_t frameTimeMsec)
     cairo_show_text(cr, frameNumberBuf);
 }
 
-void drawAccelerometerData(cairo_t *cr, int32_t *frame)
+void drawAccelerometerData(cairo_t *cr, int64_t *frame)
 {
     int16_t accSmooth[3];
     attitude_t attitude;
@@ -971,7 +971,7 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
         cairo_move_to(cr, X_POS_VALUE + 140, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, "Total");
 	
-        snprintf(labelBuf, sizeof(labelBuf), "%d mAh", frame[fieldMeta.cumulativeCurrent]);
+        snprintf(labelBuf, sizeof(labelBuf), "%" PRId64 " mAh", frame[fieldMeta.cumulativeCurrent]);
         cairo_move_to(cr, X_POS_VALUE + 220, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, labelBuf);
 
@@ -979,7 +979,7 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
           cairo_move_to(cr, X_POS_VALUE + 400, options.imageHeight - 8 - (extent.height + 8) * 3);
           cairo_show_text(cr, "ADC");
 
-	  snprintf(labelBuf, sizeof(labelBuf), "%d", frame[flightLog->mainFieldIndexes.amperageLatest]);
+	  snprintf(labelBuf, sizeof(labelBuf), "%" PRId64, frame[flightLog->mainFieldIndexes.amperageLatest]);
           cairo_move_to(cr, X_POS_VALUE + 470, options.imageHeight - 8 - (extent.height + 8) * 3);
           cairo_show_text(cr, labelBuf);
         }
@@ -1054,7 +1054,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
     uint32_t outputFrames;
 
-    int32_t frameValues[FLIGHT_LOG_MAX_FIELDS];
+    int64_t frameValues[FLIGHT_LOG_MAX_FIELDS];
     uint64_t lastCenterTime;
     int64_t frameTime;
 
@@ -1571,7 +1571,7 @@ void computeExtraFields(void) {
     int16_t accSmooth[3], gyroADC[3], magADC[3];
     int64_t frameTime, lastFrameTime = 0;
     int32_t frameIndex;
-    int32_t frame[FLIGHT_LOG_MAX_FIELDS];
+    int64_t frame[FLIGHT_LOG_MAX_FIELDS];
     double cumulativeCurrent = 0.0; // in milliamp-hours
     attitude_t attitude;
     bool calculateAttitude = fieldMeta.hasGyros && fieldMeta.hasAccs && flightLog->sysConfig.acc_1G;

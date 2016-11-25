@@ -82,7 +82,8 @@ typedef enum {
 
 static GPSFieldType gpsFieldTypes[FLIGHT_LOG_MAX_FIELDS];
 
-static uint32_t lastFrameTime, lastFrameIteration;
+static int64_t lastFrameTime;
+static uint32_t lastFrameIteration;
 
 static FILE *csvFile = 0, *eventFile = 0, *gpsCsvFile = 0;
 static char *eventFilename = 0, *gpsCsvFilename = 0;
@@ -97,13 +98,14 @@ static Unit mainFieldUnit[FLIGHT_LOG_MAX_FIELDS];
 static Unit gpsGFieldUnit[FLIGHT_LOG_MAX_FIELDS];
 static Unit slowFieldUnit[FLIGHT_LOG_MAX_FIELDS];
 
-static int32_t bufferedSlowFrame[FLIGHT_LOG_MAX_FIELDS];
-static int32_t bufferedMainFrame[FLIGHT_LOG_MAX_FIELDS];
+static int64_t bufferedSlowFrame[FLIGHT_LOG_MAX_FIELDS];
+static int64_t bufferedMainFrame[FLIGHT_LOG_MAX_FIELDS];
 static bool haveBufferedMainFrame;
 
-static uint32_t bufferedFrameTime, bufferedFrameIteration;
+static int64_t bufferedFrameTime;
+static uint32_t bufferedFrameIteration;
 
-static int32_t bufferedGPSFrame[FLIGHT_LOG_MAX_FIELDS];
+static int64_t bufferedGPSFrame[FLIGHT_LOG_MAX_FIELDS];
 
 static seriesStats_t looptimeStats;
 
@@ -147,11 +149,11 @@ static void fprintfMilliampsInUnit(FILE *file, int32_t milliamps, Unit unit)
     }
 }
 
-static void fprintfMicrosecondsInUnit(FILE *file, uint32_t microseconds, Unit unit)
+static void fprintfMicrosecondsInUnit(FILE *file, int64_t microseconds, Unit unit)
 {
     switch (unit) {
         case UNIT_MICROSECONDS:
-            fprintf(file, "%u", microseconds);
+            fprintf(file, "%" PRId64, microseconds);
         break;
         case UNIT_MILLISECONDS:
             fprintf(file, "%.3f", microseconds / 1000.0);
@@ -166,7 +168,7 @@ static void fprintfMicrosecondsInUnit(FILE *file, uint32_t microseconds, Unit un
     }
 }
 
-static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int32_t fieldValue, Unit unit)
+static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int64_t fieldValue, Unit unit)
 {
     /* Convert the fieldValue to the given unit based on the original unit of the field (that we decide on by looking
      * for a well-known field that corresponds to the given fieldIndex.)
@@ -193,7 +195,7 @@ static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex,
         break;
         case UNIT_CENTIMETERS:
             if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
-                fprintf(file, "%d", fieldValue);
+                fprintf(file, "%" PRId64, fieldValue);
                 return true;
             }
         break;
@@ -237,7 +239,7 @@ static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex,
         case UNIT_MILLISECONDS:
         case UNIT_SECONDS:
             if (fieldIndex == log->mainFieldIndexes.time) {
-                fprintfMicrosecondsInUnit(file, (uint32_t) fieldValue, unit);
+                fprintfMicrosecondsInUnit(file, fieldValue, unit);
                 return true;
             }
         break;
@@ -278,34 +280,34 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
 
     switch (event->event) {
         case FLIGHT_LOG_EVENT_SYNC_BEEP:
-            fprintf(eventFile, "{\"name\":\"Sync beep\", \"time\":%u}\n", event->data.syncBeep.time);
+            fprintf(eventFile, "{\"name\":\"Sync beep\", \"time\":%" PRId64 "}\n", event->data.syncBeep.time);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START:
-            fprintf(eventFile, "{\"name\":\"Autotune cycle start\", \"time\":%u, \"data\":{\"phase\":%d,\"cycle\":%d,\"p\":%u,\"i\":%u,\"d\":%u,\"rising\":%d}}\n", lastFrameTime,
+            fprintf(eventFile, "{\"name\":\"Autotune cycle start\", \"time\":%" PRId64 ", \"data\":{\"phase\":%d,\"cycle\":%d,\"p\":%u,\"i\":%u,\"d\":%u,\"rising\":%d}}\n", lastFrameTime,
                 event->data.autotuneCycleStart.phase, event->data.autotuneCycleStart.cycle & 0x7F /* Top bit used for "rising: */,
                 event->data.autotuneCycleStart.p, event->data.autotuneCycleStart.i, event->data.autotuneCycleStart.d,
                 event->data.autotuneCycleStart.cycle >> 7);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
-            fprintf(eventFile, "{\"name\":\"Autotune cycle result\", \"time\":%u, \"data\":{\"overshot\":%s,\"timedout\":%s,\"p\":%u,\"i\":%u,\"d\":%u}}\n", lastFrameTime,
+            fprintf(eventFile, "{\"name\":\"Autotune cycle result\", \"time\":%" PRId64 ", \"data\":{\"overshot\":%s,\"timedout\":%s,\"p\":%u,\"i\":%u,\"d\":%u}}\n", lastFrameTime,
                 event->data.autotuneCycleResult.flags & FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_OVERSHOT ? "true" : "false",
                 event->data.autotuneCycleResult.flags & FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_TIMEDOUT ? "true" : "false",
                 event->data.autotuneCycleResult.p, event->data.autotuneCycleResult.i, event->data.autotuneCycleResult.d);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS:
-            fprintf(eventFile, "{\"name\":\"Autotune cycle targets\", \"time\":%u, \"data\":{\"currentAngle\":%.1f,\"targetAngle\":%d,\"targetAngleAtPeak\":%d,\"firstPeakAngle\":%.1f,\"secondPeakAngle\":%.1f}}\n", lastFrameTime,
+            fprintf(eventFile, "{\"name\":\"Autotune cycle targets\", \"time\":%" PRId64 ", \"data\":{\"currentAngle\":%.1f,\"targetAngle\":%d,\"targetAngleAtPeak\":%d,\"firstPeakAngle\":%.1f,\"secondPeakAngle\":%.1f}}\n", lastFrameTime,
                 event->data.autotuneTargets.currentAngle / 10.0,
                 event->data.autotuneTargets.targetAngle, event->data.autotuneTargets.targetAngleAtPeak,
                 event->data.autotuneTargets.firstPeakAngle / 10.0, event->data.autotuneTargets.secondPeakAngle / 10.0);
         break;
         case FLIGHT_LOG_EVENT_GTUNE_CYCLE_RESULT:
-            fprintf(eventFile, "{\"name\":\"Gtune result\", \"time\":%u, \"data\":{\"axis\":%d,\"gyroAVG\":%d,\"newP\":%d}}\n", lastFrameTime,
+            fprintf(eventFile, "{\"name\":\"Gtune result\", \"time\":%" PRId64 ", \"data\":{\"axis\":%d,\"gyroAVG\":%d,\"newP\":%d}}\n", lastFrameTime,
                 event->data.gtuneCycleResult.axis,
                 event->data.gtuneCycleResult.gyroAVG,
                 event->data.gtuneCycleResult.newP);
         break;
         case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
-            fprintf(eventFile, "{\"name\":\"Inflight adjustment\", \"time\":%u, \"data\":{\"adjustmentFunction\":\"%s\",\"value\":", lastFrameTime,
+            fprintf(eventFile, "{\"name\":\"Inflight adjustment\", \"time\":%" PRId64 ", \"data\":{\"adjustmentFunction\":\"%s\",\"value\":", lastFrameTime,
                     INFLIGHT_ADJUSTMENT_FUNCTIONS[event->data.inflightAdjustment.adjustmentFunction & 127]);
             if (event->data.inflightAdjustment.adjustmentFunction > 127) {
                 fprintf(eventFile, "%g", event->data.inflightAdjustment.newFloatValue);
@@ -315,14 +317,14 @@ void onEvent(flightLog_t *log, flightLogEvent_t *event)
             fprintf(eventFile, "}}\n");
         break;
         case FLIGHT_LOG_EVENT_LOGGING_RESUME:
-            fprintf(eventFile, "{\"name\":\"Logging resume\", \"time\":%u, \"data\":{\"logIteration\":%d}}\n", event->data.loggingResume.currentTime,
+            fprintf(eventFile, "{\"name\":\"Logging resume\", \"time\":%" PRId64 ", \"data\":{\"logIteration\":%d}}\n", event->data.loggingResume.currentTime,
                     event->data.loggingResume.logIteration);
         break;
         case FLIGHT_LOG_EVENT_LOG_END:
-            fprintf(eventFile, "{\"name\":\"Log clean end\", \"time\":%u}\n", lastFrameTime);
+            fprintf(eventFile, "{\"name\":\"Log clean end\", \"time\":%" PRId64 "}\n", lastFrameTime);
         break;
         default:
-            fprintf(eventFile, "{\"name\":\"Unknown event\", \"time\":%u, \"data\":{\"eventID\":%d}}\n", lastFrameTime, event->event);
+            fprintf(eventFile, "{\"name\":\"Unknown event\", \"time\":%" PRId64 ", \"data\":{\"eventID\":%d}}\n", lastFrameTime, event->event);
         break;
     }
 }
@@ -372,7 +374,7 @@ void createGPSCSVFile(flightLog_t *log)
     }
 }
 
-static void updateSimulations(flightLog_t *log, int32_t *frame, uint32_t currentTime)
+static void updateSimulations(flightLog_t *log, int64_t *frame, int64_t currentTime)
 {
     int16_t gyroADC[3];
     int16_t accSmooth[3];
@@ -424,7 +426,7 @@ static void updateSimulations(flightLog_t *log, int32_t *frame, uint32_t current
 /**
  * Print the GPS fields from the given GPS frame as comma-separated values (the GPS frame time is not printed).
  */
-void outputGPSFields(flightLog_t *log, FILE *file, int32_t *frame)
+void outputGPSFields(flightLog_t *log, FILE *file, int64_t *frame)
 {
     char negSign[] = "-";
     char noSign[] = "";
@@ -447,35 +449,36 @@ void outputGPSFields(flightLog_t *log, FILE *file, int32_t *frame)
         switch (gpsFieldTypes[i]) {
             case GPS_FIELD_TYPE_COORDINATE_DEGREES_TIMES_10000000:
                 degrees = frame[i] / 10000000;
-                fracDegrees = abs(frame[i]) % 10000000;
-		char *sign = ((frame[i] < 0) && (degrees == 0)) ? negSign : noSign;
+                fracDegrees = llabs(frame[i]) % 10000000;
+
+		        char *sign = ((frame[i] < 0) && (degrees == 0)) ? negSign : noSign;
                 fprintf(file, "%s%d.%07u", sign, degrees, fracDegrees);
             break;
             case GPS_FIELD_TYPE_DEGREES_TIMES_10:
-                fprintf(file, "%d.%01u", frame[i] / 10, abs(frame[i]) % 10);
+                fprintf(file, "%" PRId64 ".%01u", frame[i] / 10, (unsigned) (llabs(frame[i]) % 10));
             break;
             case GPS_FIELD_TYPE_METERS_PER_SECOND_TIMES_100:
                 if (options.unitGPSSpeed == UNIT_RAW) {
-                    fprintf(file, "%d", frame[i]);
+                    fprintf(file, "%" PRId64, frame[i]);
                 } else if (options.unitGPSSpeed == UNIT_METERS_PER_SECOND) {
-                    fprintf(file, "%d.%02u", frame[i] / 100, abs(frame[i]) % 100);
+                    fprintf(file, "%" PRId64 ".%02u", frame[i] / 100, (unsigned) (llabs(frame[i]) % 100));
                 } else {
                     fprintf(file, "%.2f", convertMetersPerSecondToUnit(frame[i] / 100.0, options.unitGPSSpeed));
                 }
             break;
             case GPS_FIELD_TYPE_METERS:
-                fprintf(file, "%d", frame[i]);
+                fprintf(file, "%" PRId64, frame[i]);
             break;
             case GPS_FIELD_TYPE_INTEGER:
             default:
-                fprintf(file, "%d", frame[i]);
+                fprintf(file, "%" PRId64, frame[i]);
         }
     }
 }
 
-void outputGPSFrame(flightLog_t *log, int32_t *frame)
+void outputGPSFrame(flightLog_t *log, int64_t *frame)
 {
-    uint32_t gpsFrameTime;
+    int64_t gpsFrameTime;
 
     // If we're not logging every loop iteration, we include a timestamp field in the GPS frame:
     if (log->gpsFieldIndexes.time != -1) {
@@ -502,7 +505,7 @@ void outputGPSFrame(flightLog_t *log, int32_t *frame)
     }
 }
 
-void outputSlowFrameFields(flightLog_t *log, int32_t *frame)
+void outputSlowFrameFields(flightLog_t *log, int64_t *frame)
 {
     enum {
         BUFFER_LEN = 1024
@@ -534,7 +537,7 @@ void outputSlowFrameFields(flightLog_t *log, int32_t *frame)
             fprintf(csvFile, "%s", buffer);
         } else {
             //Print raw
-            fprintf(csvFile, "%u", frame[i]);
+            fprintf(csvFile, "%" PRIu64, (uint64_t) frame[i]);
         }
     }
 }
@@ -544,7 +547,7 @@ void outputSlowFrameFields(flightLog_t *log, int32_t *frame)
  *
  * Provide (uint32_t) -1 for the frameTime in order to mark the frame time as unknown.
  */
-void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
+void outputMainFrameFields(flightLog_t *log, int64_t frameTime, int64_t *frame)
 {
     int i;
     bool needComma = false;
@@ -558,7 +561,7 @@ void outputMainFrameFields(flightLog_t *log, uint32_t frameTime, int32_t *frame)
 
         if (i == FLIGHT_LOG_FIELD_INDEX_TIME) {
             // Use the time the caller provided instead of the time in the frame
-            if (frameTime == (uint32_t) -1) {
+            if (frameTime == -1) {
                 fprintf(csvFile, "X");
             } else if (!fprintfMainFieldInUnit(log, csvFile, i, frameTime, mainFieldUnit[i])) {
                 fprintf(stderr, "Bad unit for field %d\n", i);
@@ -605,7 +608,7 @@ void outputMergeFrame(flightLog_t *log)
     haveBufferedMainFrame = false;
 }
 
-void updateFrameStatistics(flightLog_t *log, int32_t *frame)
+void updateFrameStatistics(flightLog_t *log, int64_t *frame)
 {
     (void) log;
 
@@ -623,9 +626,9 @@ void updateFrameStatistics(flightLog_t *log, int32_t *frame)
  * We also keep a copy of the GPS frame data so we can print it out multiple times if multiple main frames arrive
  * between GPS updates.
  */
-void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
+void onFrameReadyMerge(flightLog_t *log, bool frameValid, int64_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
-    uint32_t gpsFrameTime;
+    int64_t gpsFrameTime;
 
     (void) frameOffset;
     (void) frameSize;
@@ -633,7 +636,7 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_
     switch (frameType) {
         case 'G':
             if (frameValid) {
-                if (log->gpsFieldIndexes.time == -1 || (uint32_t) frame[log->gpsFieldIndexes.time] == lastFrameTime) {
+                if (log->gpsFieldIndexes.time == -1 || (int64_t) frame[log->gpsFieldIndexes.time] == lastFrameTime) {
                     //This GPS frame was logged in the same iteration as the main frame that preceded it
                     gpsFrameTime = lastFrameTime;
                 } else {
@@ -683,7 +686,7 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_
                     updateFrameStatistics(log, frame);
 
                     lastFrameIteration = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
-                    lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
+                    lastFrameTime = frame[FLIGHT_LOG_FIELD_INDEX_TIME];
 
                     updateSimulations(log, frame, lastFrameTime);
 
@@ -707,7 +710,7 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int32_t *frame, uint8_
     }
 }
 
-void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
+void onFrameReady(flightLog_t *log, bool frameValid, int64_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
     if (options.mergeGPS && log->frameDefs['G'].fieldCount > 0) {
         //Use the alternate frame processing routine which merges main stream data and GPS data together
@@ -741,10 +744,10 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
                     updateSimulations(log, frame, lastFrameTime);
 
                     lastFrameIteration = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
-                    lastFrameTime = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME];
+                    lastFrameTime = frame[FLIGHT_LOG_FIELD_INDEX_TIME];
                 }
 
-                outputMainFrameFields(log, frameValid ? (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_TIME] : (uint32_t) -1, frame);
+                outputMainFrameFields(log, frameValid ? frame[FLIGHT_LOG_FIELD_INDEX_TIME] : -1, frame);
 
                 if (options.debug) {
                     fprintf(csvFile, ", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
@@ -944,13 +947,13 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
     runningTimeMins = runningTimeSecs / 60;
     runningTimeSecs %= 60;
 
-    startTimeMS = (uint32_t) (stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].min / 1000);
+    startTimeMS = stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].min / 1000;
     startTimeSecs = startTimeMS / 1000;
     startTimeMS %= 1000;
     startTimeMins = startTimeSecs / 60;
     startTimeSecs %= 60;
 
-    endTimeMS = (uint32_t) (stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].max / 1000);
+    endTimeMS = stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].max / 1000;
     endTimeSecs = endTimeMS / 1000;
     endTimeMS %= 1000;
     endTimeMins = endTimeSecs / 60;
@@ -1043,7 +1046,8 @@ void resetParseState() {
 
     if (options.mergeGPS) {
         haveBufferedMainFrame = false;
-        bufferedFrameTime = bufferedFrameIteration = (uint32_t) -1;
+        bufferedFrameTime = -1;
+        bufferedFrameIteration = (uint32_t) -1;
         memset(bufferedGPSFrame, 0, sizeof(bufferedGPSFrame));
         memset(bufferedMainFrame, 0, sizeof(bufferedMainFrame));
     }
@@ -1051,7 +1055,7 @@ void resetParseState() {
     memset(bufferedSlowFrame, 0, sizeof(bufferedSlowFrame));
 
     lastFrameIteration = (uint32_t) -1;
-    lastFrameTime = (uint32_t) -1;
+    lastFrameTime = -1;
 
     seriesStats_init(&looptimeStats);
 }

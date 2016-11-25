@@ -587,7 +587,7 @@ static void writeSlowFrame(void)
 /**
  * Load rarely-changing values from the FC into the given structure
  */
-static void loadSlowState(int32_t *frame)
+static void loadSlowState(int64_t *frame)
 {
     slowHistory.flightModeFlags = frame[0];
     slowHistory.stateFlags = frame[1];
@@ -597,7 +597,7 @@ static void loadSlowState(int32_t *frame)
 /**
  * Fill the current state of the blackbox using values read from the flight controller
  */
-static void loadMainState(int32_t *frame)
+static void loadMainState(int64_t *frame)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
     mainFieldIndexes_t *index = &flightLog->mainFieldIndexes;
@@ -662,7 +662,7 @@ static void loadMainState(int32_t *frame)
  * Treat each decoded frame as if it were a set of freshly read flight data ready to be
  * encoded.
  */
-void onFrameReady(flightLog_t *fl, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
+void onFrameReady(flightLog_t *fl, bool frameValid, int64_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
     uint32_t start = blackboxWrittenBytes;
     unsigned int encodedFrameSize;

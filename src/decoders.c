@@ -1,7 +1,7 @@
 #include "decoders.h"
 #include "tools.h"
 
-void streamReadTag2_3S32(mmapStream_t *stream, int32_t *values)
+void streamReadTag2_3S32(mmapStream_t *stream, int64_t *values)
 {
     uint8_t leadByte;
     uint8_t byte1, byte2, byte3, byte4;
@@ -45,14 +45,14 @@ void streamReadTag2_3S32(mmapStream_t *stream, int32_t *values)
                         byte1 = streamReadByte(stream);
 
                         // Sign extend to 32 bits
-                        values[i] = (int32_t) (int8_t) (byte1);
+                        values[i] = (int8_t) (byte1);
                     break;
                     case 1: // 16-bit
                         byte1 = streamReadByte(stream);
                         byte2 = streamReadByte(stream);
 
                         // Sign extend to 32 bits
-                        values[i] = (int32_t) (int16_t) (byte1 | (byte2 << 8));
+                        values[i] = (int16_t) (byte1 | (byte2 << 8));
                     break;
                     case 2: // 24-bit
                         byte1 = streamReadByte(stream);
@@ -67,6 +67,7 @@ void streamReadTag2_3S32(mmapStream_t *stream, int32_t *values)
                         byte3 = streamReadByte(stream);
                         byte4 = streamReadByte(stream);
 
+                        // Sign-extend
                         values[i] = (int32_t) (byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24));
                     break;
                 }
@@ -77,7 +78,7 @@ void streamReadTag2_3S32(mmapStream_t *stream, int32_t *values)
     }
 }
 
-void streamReadTag8_4S16_v1(mmapStream_t *stream, int32_t *values)
+void streamReadTag8_4S16_v1(mmapStream_t *stream, int64_t *values)
 {
     uint8_t selector, combinedChar;
     uint8_t char1, char2;
@@ -110,7 +111,7 @@ void streamReadTag8_4S16_v1(mmapStream_t *stream, int32_t *values)
             break;
             case FIELD_8BIT: // 8-bit field
                 //Sign extend...
-                values[i] = (int32_t) (int8_t) streamReadByte(stream);
+                values[i] = (int8_t) streamReadByte(stream);
             break;
             case FIELD_16BIT: // 16-bit field
                 char1 = streamReadByte(stream);
@@ -125,7 +126,7 @@ void streamReadTag8_4S16_v1(mmapStream_t *stream, int32_t *values)
     }
 }
 
-void streamReadTag8_4S16_v2(mmapStream_t *stream, int32_t *values)
+void streamReadTag8_4S16_v2(mmapStream_t *stream, int64_t *values)
 {
     uint8_t selector;
     uint8_t char1, char2;
@@ -163,13 +164,13 @@ void streamReadTag8_4S16_v2(mmapStream_t *stream, int32_t *values)
             case FIELD_8BIT:
                 if (nibbleIndex == 0) {
                     //Sign extend...
-                    values[i] = (int32_t) (int8_t) streamReadByte(stream);
+                    values[i] = (int8_t) streamReadByte(stream);
                 } else {
                     char1 = buffer << 4;
                     buffer = (uint8_t) streamReadByte(stream);
 
                     char1 |= buffer >> 4;
-                    values[i] = (int32_t) (int8_t) char1;
+                    values[i] = (int8_t) char1;
                 }
             break;
             case FIELD_16BIT:
@@ -198,7 +199,7 @@ void streamReadTag8_4S16_v2(mmapStream_t *stream, int32_t *values)
     }
 }
 
-void streamReadTag8_8SVB(mmapStream_t *stream, int32_t *values, int valueCount)
+void streamReadTag8_8SVB(mmapStream_t *stream, int64_t *values, int valueCount)
 {
     uint8_t header;
 

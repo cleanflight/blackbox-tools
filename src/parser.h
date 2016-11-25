@@ -133,6 +133,7 @@ typedef struct flightLogFrameDef_t {
     char *fieldName[FLIGHT_LOG_MAX_FIELDS];
     
     int fieldSigned[FLIGHT_LOG_MAX_FIELDS];
+    int fieldWidth[FLIGHT_LOG_MAX_FIELDS];
     int predictor[FLIGHT_LOG_MAX_FIELDS];
     int encoding[FLIGHT_LOG_MAX_FIELDS];
 } flightLogFrameDef_t;
@@ -161,7 +162,7 @@ typedef struct flightLog_t {
 } flightLog_t;
 
 typedef void (*FlightLogMetadataReady)(flightLog_t *log);
-typedef void (*FlightLogFrameReady)(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize);
+typedef void (*FlightLogFrameReady)(flightLog_t *log, bool frameValid, int64_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize);
 typedef void (*FlightLogEventReady)(flightLog_t *log, flightLogEvent_t *event);
 
 flightLog_t* flightLogCreate(int fd);
