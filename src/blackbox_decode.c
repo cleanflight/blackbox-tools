@@ -488,9 +488,12 @@ void outputGPSFrame(flightLog_t *log, int64_t *frame)
         gpsFrameTime = lastFrameTime;
     }
 
-    // We need at least lat/lon/altitude from the log to write a useful GPX track
+    // We need at least lat/lon/altitude columns from the log to write a useful GPX track
     if (log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_altitude != -1) {
-        gpxWriterAddPoint(gpx, lastFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
+        // Only include points with at least 5 satellites
+        if (log->gpsFieldIndexes.GPS_numSat == -1 || frame[log->gpsFieldIndexes.GPS_numSat] >= 5) {
+            gpxWriterAddPoint(gpx, lastFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
+        }
     }
 
     createGPSCSVFile(log);
