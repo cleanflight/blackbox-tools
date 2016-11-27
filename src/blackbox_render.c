@@ -50,8 +50,6 @@
 #define X_POS_LABEL 8
 #define X_POS_VALUE 145
 
-#define PNG_RENDERING_THREADS 3
-
 #define DATAPOINTS_EXTRA_COMPUTED_FIELDS 6
 
 typedef enum Unit {
@@ -105,6 +103,7 @@ typedef struct renderOptions_t {
     int imageWidth, imageHeight;
     int fps;
     int help;
+    int threads;
 
     int plotPids, plotPidSum, plotGyros, plotMotors;
     int drawPidTable, drawSticks, drawCraft, drawTime;
@@ -196,7 +195,7 @@ static const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
 
 static const renderOptions_t defaultOptions = {
     .imageWidth = 1920, .imageHeight = 1080,
-    .fps = 30, .help = 0, .propStyle = PROP_STYLE_PIE_CHART,
+    .fps = 30, .help = 0, .threads = 3, .propStyle = PROP_STYLE_PIE_CHART,
     .plotPids = false, .plotPidSum = false, .plotGyros = true, .plotMotors = true,
     .pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
     .drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
@@ -1011,7 +1010,7 @@ void* pngRenderThread(void *arg)
 void saveSurfaceAsync(cairo_surface_t *surface, int logIndex, int outputFrameIndex)
 {
     if (!pngRenderingSemCreated) {
-        semaphore_create(&pngRenderingSem, PNG_RENDERING_THREADS);
+        semaphore_create(&pngRenderingSem, options.threads);
         pngRenderingSemCreated = true;
     }
 
@@ -1032,7 +1031,7 @@ void waitForFramesToSave()
     int i;
 
     if (pngRenderingSemCreated) {
-        for (i = 0; i < PNG_RENDERING_THREADS; i++) {
+        for (i = 0; i < options.threads; i++) {
             semaphore_wait(&pngRenderingSem);
         }
     }
@@ -1343,6 +1342,7 @@ void printUsage(const char *argv0)
         "   --width <px>           Choose the width of the image (default %d)\n"
         "   --height <px>          Choose the height of the image (default %d)\n"
         "   --fps                  FPS of the resulting video (default %d)\n"
+        "   --threads              Number of threads to use to render frames (default %d)\n"
         "   --prefix <filename>    Set the prefix of the output frame filenames\n"
         "   --start <x:xx>         Begin the log at this time offset (default 0:00)\n"
         "   --end <x:xx>           End the log at this time offset\n"
@@ -1360,9 +1360,9 @@ void printUsage(const char *argv0)
         "   --prop-style <name>    Style of propeller display (pie/blades, default %s)\n"
         "   --gapless              Fill in gaps in the log with straight lines\n"
         "   --raw-amperage         Print the current sensor ADC value along with computed amperage\n"
-        "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.pidSmoothing,
-            defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing, UNIT_NAME[defaultOptions.gyroUnit],
-            PROP_STYLE_NAME[defaultOptions.propStyle]
+        "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
+            defaultOptions.pidSmoothing, defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing,
+            UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle]
     );
 }
 
@@ -1427,7 +1427,8 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_SMOOTHING_GYRO,
         SETTING_SMOOTHING_MOTOR,
         SETTING_UNIT_GYRO,
-        SETTING_PROP_STYLE
+        SETTING_PROP_STYLE,
+        SETTING_THREADS
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1462,6 +1463,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"smoothing-motor", required_argument, 0, SETTING_SMOOTHING_MOTOR},
             {"unit-gyro", required_argument, 0, SETTING_UNIT_GYRO},
             {"prop-style", required_argument, 0, SETTING_PROP_STYLE},
+            {"threads", required_argument, 0, SETTING_THREADS},
             {"gapless", no_argument, &options.gapless, 1},
             {"raw-amperage", no_argument, &options.rawAmperage, 1},
             {0, 0, 0, 0}
@@ -1510,6 +1512,12 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_UNIT_GYRO:
                 options.gyroUnit = parseUnit(optarg);
+            break;
+            case SETTING_THREADS:
+                options.threads = atoi(optarg);
+                if (options.threads < 1) {
+                    options.threads = 1;
+                }
             break;
             case SETTING_INDEX:
                 options.logNumber = atoi(optarg);
