@@ -33,6 +33,8 @@
 #include "units.h"
 #include "stats.h"
 
+#define MIN_GPS_SATELLITES 5
+
 typedef struct decodeOptions_t {
     int help, raw, limits, debug, toStdout;
     int logNumber;
@@ -488,12 +490,11 @@ void outputGPSFrame(flightLog_t *log, int64_t *frame)
         gpsFrameTime = lastFrameTime;
     }
 
-    // We need at least lat/lon/altitude columns from the log to write a useful GPX track
-    if (log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_altitude != -1) {
-        // Only include points with at least 5 satellites
-        if (log->gpsFieldIndexes.GPS_numSat == -1 || frame[log->gpsFieldIndexes.GPS_numSat] >= 5) {
-            gpxWriterAddPoint(gpx, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
-        }
+	bool haveRequiredFields = log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[1] != -1 && log->gpsFieldIndexes.GPS_altitude != -1;
+	bool haveRequiredPrecision = log->gpsFieldIndexes.GPS_numSat == -1 || frame[log->gpsFieldIndexes.GPS_numSat] >= MIN_GPS_SATELLITES;
+
+    if (haveRequiredFields && haveRequiredPrecision) {
+		gpxWriterAddPoint(gpx, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
     }
 
     createGPSCSVFile(log);
@@ -664,7 +665,10 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int64_t *frame, uint8_
                 outputMergeFrame(log);
 
                 // We need at least lat/lon/altitude from the log to write a useful GPX track
-                if (log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_altitude != -1) {
+				bool haveRequiredFields = log->gpsFieldIndexes.GPS_coord[0] != -1 && log->gpsFieldIndexes.GPS_coord[1] != -1 && log->gpsFieldIndexes.GPS_altitude != -1;
+				bool haveRequiredPrecision = log->gpsFieldIndexes.GPS_numSat == -1 || frame[log->gpsFieldIndexes.GPS_numSat] >= MIN_GPS_SATELLITES;
+
+                if (haveRequiredFields && haveRequiredPrecision) {
                     gpxWriterAddPoint(gpx, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
                 }
             }
@@ -754,8 +758,9 @@ void onFrameReady(flightLog_t *log, bool frameValid, int64_t *frame, uint8_t fra
 
                 if (options.debug) {
                     fprintf(csvFile, ", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
-                } else
+                } else {
                     fprintf(csvFile, "\n");
+				}
             } else if (options.debug) {
                 // Print to stdout so that these messages line up with our other output on stdout (stderr isn't synchronised to it)
                 if (frame) {

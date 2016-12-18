@@ -1081,28 +1081,48 @@ static void flightLogInvalidateStream(flightLog_t *log)
     log->private->mainHistory[2] = 0;
 }
 
-static void flightLogApplyTimeRollover(flightLog_t *log)
+/**
+ * Detects rollovers in the 32-bit system microtime that we use for frame timestamps. When a rollover is detected, it
+ * is accumulated to allow the recovery of 64-bit timestamps.
+ *
+ * Returns the recovered 64-bit timestamp for the frame.
+ */
+static int64_t flightLogDetectAndApplyTimestampRollover(flightLog_t *log, int64_t timestamp)
 {
     if (log->private->lastMainFrameTime != -1) {
         if (
             // If we appeared to travel backwards in time (modulo 32 bits)...
-            (uint32_t) log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] < (uint32_t) log->private->lastMainFrameTime
+            (uint32_t) timestamp < (uint32_t) log->private->lastMainFrameTime
             // But we actually just incremented a reasonable amount (modulo 32-bits)...
-            && (uint32_t) ((uint32_t) log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] - (uint32_t) log->private->lastMainFrameTime) < MAXIMUM_TIME_JUMP_BETWEEN_FRAMES
+            && (uint32_t) ((uint32_t) timestamp - (uint32_t) log->private->lastMainFrameTime) < MAXIMUM_TIME_JUMP_BETWEEN_FRAMES
         ) {
             // 32-bit time counter has wrapped, so add 2^32 to the timestamp
             log->private->timeRolloverAccumulator += 0x100000000LL;
         }
     }
 
-    log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] = (uint32_t) log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] + log->private->timeRolloverAccumulator;
+    return (uint32_t) timestamp + log->private->timeRolloverAccumulator;
+}
+
+static void flightLogApplyMainFrameTimeRollover(flightLog_t *log)
+{
+    log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] = flightLogDetectAndApplyTimestampRollover(log, log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME]);
+}
+
+static void flightLogApplyGPSFrameTimeRollover(flightLog_t *log)
+{
+	int timeFieldIndex = log->gpsFieldIndexes.time;
+
+	if (timeFieldIndex != -1) {
+		log->private->lastGPS[timeFieldIndex] = flightLogDetectAndApplyTimestampRollover(log, log->private->lastGPS[timeFieldIndex]);
+	}
 }
 
 static bool completeIntraframe(flightLog_t *log, mmapStream_t *stream, uint8_t frameType, const char *frameStart, const char *frameEnd, bool raw)
 {
     flightLogPrivate_t *private = log->private;
 
-    flightLogApplyTimeRollover(log);
+    flightLogApplyMainFrameTimeRollover(log);
 
     // Only attempt to validate the frame values if we have something to check it against
     if (!raw && private->lastMainFrameIteration != (uint32_t) -1 && !flightLogValidateMainFrameValues(log)) {
@@ -1148,7 +1168,7 @@ static bool completeInterframe(flightLog_t *log, mmapStream_t *stream, uint8_t f
     (void) frameType;
     (void) raw;
 
-    flightLogApplyTimeRollover(log);
+    flightLogApplyMainFrameTimeRollover(log);
 
     if (private->mainStreamIsValid && !raw && !flightLogValidateMainFrameValues(log)) {
         flightLogInvalidateStream(log);
@@ -1242,6 +1262,8 @@ static bool completeGPSFrame(flightLog_t *log, mmapStream_t *stream, uint8_t fra
     (void) frameStart;
     (void) frameEnd;
     (void) raw;
+
+	flightLogApplyGPSFrameTimeRollover(log);
 
     if (log->private->onFrameReady) {
         log->private->onFrameReady(log, log->private->gpsHomeIsValid, log->private->lastGPS, frameType, log->frameDefs[frameType].fieldCount, frameStart - stream->data, frameEnd - frameStart);
