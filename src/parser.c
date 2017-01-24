@@ -454,7 +454,7 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
 
         log->sysConfig.currentMeterOffset = currentMeterParams[0];
         log->sysConfig.currentMeterScale = currentMeterParams[1];
-    } else if (strcmp(fieldName, "gyro.scale") == 0) {
+    } else if (strcmp(fieldName, "gyro.scale") == 0 || strcmp(fieldName, "gyro_scale") == 0) {
         floatConvert.u = strtoul(fieldValue, 0, 16);
 
         log->sysConfig.gyroScale = floatConvert.f;
@@ -463,7 +463,7 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
          * per second and leaves the conversion to radians per us to the IMU. Let's just convert Cleanflight's scale to
          * match Baseflight so we can use Baseflight's IMU for both: */
 
-        if (log->sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
+        if (log->sysConfig.firmwareType != FIRMWARE_TYPE_BASEFLIGHT) {
             log->sysConfig.gyroScale = (float) (log->sysConfig.gyroScale * (M_PI / 180.0) * 0.000001);
         }
     } else if (strcmp(fieldName, "acc_1G") == 0) {

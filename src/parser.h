@@ -20,7 +20,8 @@
 typedef enum FirmwareType {
     FIRMWARE_TYPE_UNKNOWN = 0,
     FIRMWARE_TYPE_BASEFLIGHT,
-    FIRMWARE_TYPE_CLEANFLIGHT
+    FIRMWARE_TYPE_CLEANFLIGHT,
+	FIRMWARE_TYPE_BETAFLIGHT
 } FirmwareType;
 
 typedef struct flightLogFrameStatistics_t {
