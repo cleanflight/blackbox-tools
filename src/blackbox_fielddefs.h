@@ -67,6 +67,9 @@ typedef enum FlightLogFieldPredictor {
     //Predict the last time value written in the main stream
     FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10,
 
+  	//Predict that this field is the minimum motor output
+ 	FLIGHT_LOG_FIELD_PREDICTOR_MINMOTOR       = 11,
+
     //Home coord predictors appear in pairs (two copies of FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD). Rewrite the second
     //one we see to this to make parsing easier
     FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD_1   = 256,

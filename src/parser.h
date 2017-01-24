@@ -107,6 +107,7 @@ typedef struct mainFieldIndexes_t {
  */
 typedef struct flightLogSysConfig_t {
     int minthrottle, maxthrottle;
+    int motorOutputLow, motorOutputHigh; // Betaflight
     unsigned int rcRate, yawRate;
 
     // Calibration constants from the hardware sensors:

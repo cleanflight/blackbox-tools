@@ -474,7 +474,7 @@ void drawCraft(cairo_t *cr, int64_t *frame, int64_t timeElapsedMicros, craft_par
     //Compute prop speed and position
     for (motorIndex = 0; motorIndex < parameters->numMotors; motorIndex++) {
         if (flightLog->mainFieldIndexes.motor[motorIndex] > -1) {
-            double scaled = doubleMax(frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->sysConfig.minthrottle, 0) / (flightLog->sysConfig.maxthrottle - flightLog->sysConfig.minthrottle);
+            double scaled = doubleMax(frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->sysConfig.motorOutputLow, 0) / (flightLog->sysConfig.motorOutputHigh - flightLog->sysConfig.motorOutputLow);
 
             //If motors are armed (above minthrottle), keep them spinning at least a bit
             if (scaled > 0)
@@ -553,7 +553,7 @@ void drawCraft(cairo_t *cr, int64_t *frame, int64_t timeElapsedMicros, craft_par
                  * (as it spins round and round the axis I bet) so be careful to clamp the angle properly.
                  */
                 cairo_arc(cr, 0, 0, parameters->bladeLength, -M_PI_2, -M_PI_2 + M_PI * 2 *
-                    doubleMin(doubleMax((double) (frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->sysConfig.minthrottle) / (flightLog->sysConfig.maxthrottle - flightLog->sysConfig.minthrottle), 0.0), 1.0));
+                    doubleMin(doubleMax((double) (frame[flightLog->mainFieldIndexes.motor[motorIndex]] - (int32_t) flightLog->sysConfig.motorOutputLow) / (flightLog->sysConfig.motorOutputHigh - flightLog->sysConfig.motorOutputLow), 0.0), 1.0));
                 cairo_fill(cr);
             }
 
@@ -1088,8 +1088,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
     accCurve = expoCurveCreate(0, 0.7, 5000, 1.0, 10);
     pidCurve = expoCurveCreate(0, 0.7, 500, 1.0, 10);
 
-    motorCurve = expoCurveCreate(-(flightLog->sysConfig.maxthrottle + flightLog->sysConfig.minthrottle) / 2, 1.0,
-            (flightLog->sysConfig.maxthrottle - flightLog->sysConfig.minthrottle) / 2, 1.0, 2);
+    motorCurve = expoCurveCreate(-(flightLog->sysConfig.motorOutputHigh + flightLog->sysConfig.motorOutputLow) / 2, 1.0,
+            (flightLog->sysConfig.motorOutputHigh - flightLog->sysConfig.motorOutputLow) / 2, 1.0, 2);
 
     // Default Servo range is [1020...2000] but we'll just use [1000...2000] for simplicity
     servoCurve = expoCurveCreate(-1500, 1.0, 1000, 1.0, 2);
