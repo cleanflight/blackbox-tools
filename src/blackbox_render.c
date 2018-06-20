@@ -101,7 +101,7 @@ typedef struct craftDrawingParameters_t {
 typedef struct renderOptions_t {
     int logNumber;
     int imageWidth, imageHeight;
-    int sticksTop, sticksRight;
+    int sticksTop, sticksRight, sticksWidth;
     int fps;
     int help;
     int threads;
@@ -201,7 +201,7 @@ static const renderOptions_t defaultOptions = {
     .pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
     .drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
     .drawAcc = true,
-    .sticksTop = -1, .sticksRight = -1,
+    .sticksTop = -1, .sticksRight = -1, .sticksWidth = 0,
     .gyroUnit = UNIT_RAW,
     .filename = 0,
     .timeStart = 0, .timeEnd = 0,
@@ -329,7 +329,11 @@ void updateFieldMetadata()
 void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t *cr)
 {
     double rcCommand[4] = {0, 0, 0, 0};
-    const int stickSurroundRadius = imageHeight / 11, stickSpacing = stickSurroundRadius * 3;
+    int stickSurroundRadius = imageHeight / 11;
+    if(options.sticksWidth > 0) {
+      stickSurroundRadius = options.sticksWidth;
+    }
+    const int stickSpacing = stickSurroundRadius * 3;
     const int yawStickMax = 500;
     int stickIndex;
 
@@ -1270,12 +1274,12 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
                 cairo_save(cr);
                 {
 
-                    if(options.sticksTop >= 0) {
-                      cairo_translate(cr, 0.75 * options.imageWidth, options.sticksTop);
+                    if(options.sticksTop >= 0 && options.sticksRight >= 0) {
+                      cairo_translate(cr, options.imageWidth - options.sticksRight, options.sticksTop);
                     } else if(options.sticksRight >= 0) {
                       cairo_translate(cr, options.imageWidth - options.sticksRight, 0.20 * options.imageHeight);
-                    } else if(options.sticksTop >= 0 && options.sticksRight >= 0) {
-                      cairo_translate(cr, options.sticksRight, options.sticksTop);
+                    } else if(options.sticksTop >= 0) {
+                      cairo_translate(cr, 0.75 * options.imageWidth, options.sticksTop);
                     } else {
                       cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
                     }
@@ -1370,6 +1374,7 @@ void printUsage(const char *argv0)
         "   --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)\n"
         "   --sticks-top <px>      Offset the stick overlay from the top (default off)\n"
         "   --sticks-right <px>    Offset the stick overlay from the right (default off)\n"
+        "   --sticks-width <px>    Size of the stick area (default off)\n"
         "   --smoothing-pid <n>    Smoothing window for the PIDs (default %d)\n"
         "   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default %d)\n"
         "   --smoothing-motor <n>  Smoothing window for the motors (default %d)\n"
@@ -1447,7 +1452,8 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_PROP_STYLE,
         SETTING_THREADS,
         SETTING_STICKS_TOP,
-        SETTING_STICKS_RIGHT
+        SETTING_STICKS_RIGHT,
+        SETTING_STICKS_WIDTH
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1489,6 +1495,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"raw-amperage", no_argument, &options.rawAmperage, 1},
             {"sticks-top", required_argument, 0, SETTING_STICKS_TOP},
             {"sticks-right", required_argument, 0, SETTING_STICKS_RIGHT},
+            {"sticks-width", required_argument, 0, SETTING_STICKS_WIDTH},
             {0, 0, 0, 0}
         };
 
@@ -1557,6 +1564,9 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_STICKS_RIGHT:
                 options.sticksRight = atoi(optarg);
+            break;
+            case SETTING_STICKS_WIDTH:
+                options.sticksWidth = atoi(optarg);
             break;
             case '\0':
                 //Longopt which has set a flag
