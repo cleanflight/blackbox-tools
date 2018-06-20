@@ -101,6 +101,7 @@ typedef struct craftDrawingParameters_t {
 typedef struct renderOptions_t {
     int logNumber;
     int imageWidth, imageHeight;
+    int sticksTop, sticksRight;
     int fps;
     int help;
     int threads;
@@ -200,6 +201,7 @@ static const renderOptions_t defaultOptions = {
     .pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
     .drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
     .drawAcc = true,
+    .sticksTop = -1, .sticksRight = -1,
     .gyroUnit = UNIT_RAW,
     .filename = 0,
     .timeStart = 0, .timeEnd = 0,
@@ -1267,7 +1269,16 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
             if (options.drawSticks) {
                 cairo_save(cr);
                 {
-                    cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
+
+                    if(options.sticksTop >= 0) {
+                      cairo_translate(cr, 0.75 * options.imageWidth, options.sticksTop);
+                    } else if(options.sticksRight >= 0) {
+                      cairo_translate(cr, options.imageWidth - options.sticksRight, 0.20 * options.imageHeight);
+                    } else if(options.sticksTop >= 0 && options.sticksRight >= 0) {
+                      cairo_translate(cr, options.sticksRight, options.sticksTop);
+                    } else {
+                      cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
+                    }
 
                     drawCommandSticks(frameValues, options.imageWidth, options.imageHeight, cr);
                 }
@@ -1357,6 +1368,8 @@ void printUsage(const char *argv0)
         "   --[no-]plot-motor      Draw motors on the upper graph (default on)\n"
         "   --[no-]plot-pid        Draw PIDs on the lower graph (default off)\n"
         "   --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)\n"
+        "   --sticks-top <px>      Offset the stick overlay from the top (default off)\n"
+        "   --sticks-right <px>    Offset the stick overlay from the right (default off)\n"
         "   --smoothing-pid <n>    Smoothing window for the PIDs (default %d)\n"
         "   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default %d)\n"
         "   --smoothing-motor <n>  Smoothing window for the motors (default %d)\n"
@@ -1432,7 +1445,9 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_SMOOTHING_MOTOR,
         SETTING_UNIT_GYRO,
         SETTING_PROP_STYLE,
-        SETTING_THREADS
+        SETTING_THREADS,
+        SETTING_STICKS_TOP,
+        SETTING_STICKS_RIGHT
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1472,6 +1487,8 @@ void parseCommandlineOptions(int argc, char **argv)
             {"threads", required_argument, 0, SETTING_THREADS},
             {"gapless", no_argument, &options.gapless, 1},
             {"raw-amperage", no_argument, &options.rawAmperage, 1},
+            {"sticks-top", required_argument, 0, SETTING_STICKS_TOP},
+            {"sticks-right", required_argument, 0, SETTING_STICKS_RIGHT},
             {0, 0, 0, 0}
         };
 
@@ -1534,6 +1551,12 @@ void parseCommandlineOptions(int argc, char **argv)
                 } else {
                     options.propStyle = PROP_STYLE_BLADES;
                 }
+            break;
+            case SETTING_STICKS_TOP:
+                options.sticksTop = atoi(optarg);
+            break;
+            case SETTING_STICKS_RIGHT:
+                options.sticksRight = atoi(optarg);
             break;
             case '\0':
                 //Longopt which has set a flag
