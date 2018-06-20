@@ -106,7 +106,7 @@ typedef struct renderOptions_t {
     int threads;
 
     int plotPids, plotPidSum, plotGyros, plotMotors;
-    int drawPidTable, drawSticks, drawCraft, drawTime;
+    int drawPidTable, drawSticks, drawCraft, drawTime, drawAcc;
 
     int pidSmoothing, gyroSmoothing, motorSmoothing;
 
@@ -199,6 +199,7 @@ static const renderOptions_t defaultOptions = {
     .plotPids = false, .plotPidSum = false, .plotGyros = true, .plotMotors = true,
     .pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
     .drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
+    .drawAcc = true,
     .gyroUnit = UNIT_RAW,
     .filename = 0,
     .timeStart = 0, .timeEnd = 0,
@@ -969,7 +970,7 @@ void drawAccelerometerData(cairo_t *cr, int64_t *frame)
 
         cairo_move_to(cr, X_POS_VALUE + 140, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, "Total");
-	
+
         snprintf(labelBuf, sizeof(labelBuf), "%" PRId64 " mAh", frame[fieldMeta.cumulativeCurrent]);
         cairo_move_to(cr, X_POS_VALUE + 220, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, labelBuf);
@@ -1291,7 +1292,9 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
                 cairo_restore(cr);
             }
 
-            drawAccelerometerData(cr, frameValues);
+            if (options.drawAcc) {
+              drawAccelerometerData(cr, frameValues);
+            }
 
             if (options.drawTime)
                 drawFrameLabel(cr, frameValues[FLIGHT_LOG_FIELD_INDEX_ITERATION], (uint32_t) ((windowCenterTime - flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000));
@@ -1350,6 +1353,7 @@ void printUsage(const char *argv0)
         "   --[no-]draw-craft      Show craft drawing (default on)\n"
         "   --[no-]draw-sticks     Show RC command sticks (default on)\n"
         "   --[no-]draw-time       Show frame number and time in bottom right (default on)\n"
+        "   --[no-]draw-acc        Show accelerometer data and amperage in bottom left (default on)\n"
         "   --[no-]plot-motor      Draw motors on the upper graph (default on)\n"
         "   --[no-]plot-pid        Draw PIDs on the lower graph (default off)\n"
         "   --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)\n"
@@ -1454,10 +1458,12 @@ void parseCommandlineOptions(int argc, char **argv)
             {"draw-craft", no_argument, &options.drawCraft, 1},
             {"draw-sticks", no_argument, &options.drawSticks, 1},
             {"draw-time", no_argument, &options.drawTime, 1},
+            {"draw-acc", no_argument, &options.drawAcc, 1},
             {"no-draw-pid-table", no_argument, &options.drawPidTable, 0},
             {"no-draw-craft", no_argument, &options.drawCraft, 0},
             {"no-draw-sticks", no_argument, &options.drawSticks, 0},
             {"no-draw-time", no_argument, &options.drawTime, 0},
+            {"no-draw-acc", no_argument, &options.drawAcc, 0},
             {"smoothing-pid", required_argument, 0, SETTING_SMOOTHING_PID},
             {"smoothing-gyro", required_argument, 0, SETTING_SMOOTHING_GYRO},
             {"smoothing-motor", required_argument, 0, SETTING_SMOOTHING_MOTOR},
