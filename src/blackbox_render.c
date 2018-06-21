@@ -1385,7 +1385,7 @@ void printUsage(const char *argv0)
         "   --prop-style <name>    Style of propeller display (pie/blades, default %s)\n"
         "   --gapless              Fill in gaps in the log with straight lines\n"
         "   --raw-amperage         Print the current sensor ADC value along with computed amperage\n"
-        "   --text-color           Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
+        "   --text-color-sticks    Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
             defaultOptions.pidSmoothing, defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing,
             UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle]
