@@ -105,6 +105,7 @@ Options:
    --gapless              Fill in gaps in the log with straight lines
    --raw-amperage         Print the current sensor ADC value along with computed amperage
    --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)
+   --sticks-color         Set the RGBA sticks color (default 1.0,1.0,1.0,1.0)
 ```
 
 (At least on Windows) if you just want to render a log file using the defaults, you can drag and drop a log onto the

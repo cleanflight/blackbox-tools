@@ -123,7 +123,7 @@ typedef struct renderOptions_t {
     //Start and end time of video in seconds offset from the beginning of the log
     uint32_t timeStart, timeEnd;
 
-    colorAlpha_t sticksTextColor;
+    colorAlpha_t sticksTextColor, stickColor;
 
     char *filename, *outputPrefix;
 } renderOptions_t;
@@ -191,7 +191,7 @@ const color_t WHITE = {.r = 1, .g = 1, .b = 1};
 
 #define NUM_LINE_COLORS (sizeof(lineColors) / sizeof(lineColors[0]))
 
-static const colorAlpha_t stickColor = {1, 0.4, 0.4, 1.0};
+//static const colorAlpha_t stickColor = {1, 0.4, 0.4, 1.0};
 static const colorAlpha_t stickAreaColor = {0.3, 0.3, 0.3, 0.8};
 static const colorAlpha_t craftColor = {0.3, 0.3, 0.3, 1};
 static const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
@@ -210,7 +210,8 @@ static const renderOptions_t defaultOptions = {
     .logNumber = 0,
     .gapless = 0,
     .rawAmperage = 0,
-    .sticksTextColor = {1, 1, 1, 1}
+    .sticksTextColor = {1, 1, 1, 1},
+    .stickColor = {1, 0.4, 0.4, 1.0},
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -390,7 +391,7 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
         cairo_stroke(cr);
 
         //Draw circle to represent stick position
-        cairo_set_source_rgba(cr, stickColor.r, stickColor.g, stickColor.b, stickColor.a);
+        cairo_set_source_rgba(cr, options.stickColor.r, options.stickColor.g, options.stickColor.b, options.stickColor.a);
         cairo_arc(cr, stickPositions[i * 2 + 0], stickPositions[i * 2 + 1], stickSurroundRadius / 5, 0, 2 * M_PI);
         cairo_fill(cr);
 
@@ -1386,6 +1387,7 @@ void printUsage(const char *argv0)
         "   --gapless              Fill in gaps in the log with straight lines\n"
         "   --raw-amperage         Print the current sensor ADC value along with computed amperage\n"
         "   --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
+        "   --sticks-color         Set the RGBA sticks color (default 1.0,1.0,1.0,1.0)\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
             defaultOptions.pidSmoothing, defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing,
             UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle]
@@ -1488,7 +1490,8 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_STICKS_TOP,
         SETTING_STICKS_RIGHT,
         SETTING_STICKS_WIDTH,
-        SETTING_STICKS_TEXT_COLOR
+        SETTING_STICKS_TEXT_COLOR,
+        SETTING_STICK_COLOR
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1532,6 +1535,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"sticks-right", required_argument, 0, SETTING_STICKS_RIGHT},
             {"sticks-width", required_argument, 0, SETTING_STICKS_WIDTH},
             {"sticks-text-color", required_argument, 0, SETTING_STICKS_TEXT_COLOR},
+            {"sticks-color", required_argument, 0, SETTING_STICK_COLOR},
             {0, 0, 0, 0}
         };
 
@@ -1558,6 +1562,12 @@ void parseCommandlineOptions(int argc, char **argv)
             case SETTING_STICKS_TEXT_COLOR:
                 if (!parseTextColor(optarg, &options.sticksTextColor))  {
                     fprintf(stderr, "Bad --sticks-text-color color value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_STICK_COLOR:
+                if (!parseTextColor(optarg, &options.stickColor))  {
+                    fprintf(stderr, "Bad --stick-color color value\n");
                     exit(-1);
                 }
             break;
