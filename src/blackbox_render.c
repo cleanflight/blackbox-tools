@@ -123,6 +123,8 @@ typedef struct renderOptions_t {
     //Start and end time of video in seconds offset from the beginning of the log
     uint32_t timeStart, timeEnd;
 
+    colorAlpha_t textColor;
+
     char *filename, *outputPrefix;
 } renderOptions_t;
 
@@ -207,7 +209,8 @@ static const renderOptions_t defaultOptions = {
     .timeStart = 0, .timeEnd = 0,
     .logNumber = 0,
     .gapless = 0,
-    .rawAmperage = 0
+    .rawAmperage = 0,
+    .textColor = {1, 1, 1, 1}
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -391,7 +394,7 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
         cairo_arc(cr, stickPositions[i * 2 + 0], stickPositions[i * 2 + 1], stickSurroundRadius / 5, 0, 2 * M_PI);
         cairo_fill(cr);
 
-        cairo_set_source_rgba(cr, 1,1,1, 1);
+        cairo_set_source_rgba(cr, options.textColor.r, options.textColor.g, options.textColor.b, options.textColor.a);
         cairo_set_font_size(cr, FONTSIZE_CURRENT_VALUE_LABEL);
 
         //Draw horizontal stick label
@@ -1382,6 +1385,7 @@ void printUsage(const char *argv0)
         "   --prop-style <name>    Style of propeller display (pie/blades, default %s)\n"
         "   --gapless              Fill in gaps in the log with straight lines\n"
         "   --raw-amperage         Print the current sensor ADC value along with computed amperage\n"
+        "   --text-color           Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
             defaultOptions.pidSmoothing, defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing,
             UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle]
@@ -1426,6 +1430,36 @@ bool parseFrameTime(const char *text, uint32_t *frameTime)
     return true;
 }
 
+bool parseTextColor(const char *text, colorAlpha_t *color) {
+  int counter = 0;
+  const char *cur;
+
+  color->r = atof(text);
+  for(cur = text; *cur; cur++) {
+    if(*cur == ',') {
+      switch(counter) {
+        case 0: {
+          color->g = atof(cur + 1);
+        } break;
+        case 1: {
+          color->b = atof(cur + 1);
+        } break;
+        case 2: {
+          color->a = atof(cur + 1);
+        } break;
+      }
+
+      counter++;
+    }
+  }
+
+  if (counter != 3) {
+    return false;
+  }
+
+  return true;
+}
+
 Unit parseUnit(const char *s)
 {
     if (strcmp(s, "degree") == 0 || strcmp(s, "degrees") == 0)
@@ -1453,7 +1487,8 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_THREADS,
         SETTING_STICKS_TOP,
         SETTING_STICKS_RIGHT,
-        SETTING_STICKS_WIDTH
+        SETTING_STICKS_WIDTH,
+        SETTING_TEXT_COLOR
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1496,6 +1531,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"sticks-top", required_argument, 0, SETTING_STICKS_TOP},
             {"sticks-right", required_argument, 0, SETTING_STICKS_RIGHT},
             {"sticks-width", required_argument, 0, SETTING_STICKS_WIDTH},
+            {"text-color", required_argument, 0, SETTING_TEXT_COLOR},
             {0, 0, 0, 0}
         };
 
@@ -1516,6 +1552,12 @@ void parseCommandlineOptions(int argc, char **argv)
             case SETTING_END:
                 if (!parseFrameTime(optarg, &options.timeEnd))  {
                     fprintf(stderr, "Bad --end time value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_TEXT_COLOR:
+                if (!parseTextColor(optarg, &options.textColor))  {
+                    fprintf(stderr, "Bad --text-color time value\n");
                     exit(-1);
                 }
             break;
