@@ -104,7 +104,7 @@ Options:
    --prop-style <name>    Style of propeller display (pie/blades, default pie)
    --gapless              Fill in gaps in the log with straight lines
    --raw-amperage         Print the current sensor ADC value along with computed amperage
-   --text-color-sticks    Set the RGBA text color (default 1.0,1.0,1.0,1.0)
+   --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)
 ```
 
 (At least on Windows) if you just want to render a log file using the defaults, you can drag and drop a log onto the
