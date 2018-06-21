@@ -201,7 +201,7 @@ static const renderOptions_t defaultOptions = {
     .pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
     .drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
     .drawAcc = true,
-    .sticksTop = -1, .sticksRight = -1, .sticksWidth = 0,
+    .sticksTop = 0, .sticksRight = 0, .sticksWidth = 0,
     .gyroUnit = UNIT_RAW,
     .filename = 0,
     .timeStart = 0, .timeEnd = 0,
@@ -1274,11 +1274,11 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
                 cairo_save(cr);
                 {
 
-                    if(options.sticksTop >= 0 && options.sticksRight >= 0) {
+                    if(options.sticksTop != 0 && options.sticksRight != 0) {
                       cairo_translate(cr, options.imageWidth - options.sticksRight, options.sticksTop);
-                    } else if(options.sticksRight >= 0) {
+                    } else if(options.sticksRight != 0) {
                       cairo_translate(cr, options.imageWidth - options.sticksRight, 0.20 * options.imageHeight);
-                    } else if(options.sticksTop >= 0) {
+                    } else if(options.sticksTop != 0) {
                       cairo_translate(cr, 0.75 * options.imageWidth, options.sticksTop);
                     } else {
                       cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
