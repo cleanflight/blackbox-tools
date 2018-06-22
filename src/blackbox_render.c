@@ -191,7 +191,6 @@ const color_t WHITE = {.r = 1, .g = 1, .b = 1};
 
 #define NUM_LINE_COLORS (sizeof(lineColors) / sizeof(lineColors[0]))
 
-//static const colorAlpha_t stickColor = {1, 0.4, 0.4, 1.0};
 static const colorAlpha_t stickAreaColor = {0.3, 0.3, 0.3, 0.8};
 static const colorAlpha_t craftColor = {0.3, 0.3, 0.3, 1};
 static const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
@@ -1387,7 +1386,7 @@ void printUsage(const char *argv0)
         "   --gapless              Fill in gaps in the log with straight lines\n"
         "   --raw-amperage         Print the current sensor ADC value along with computed amperage\n"
         "   --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
-        "   --sticks-color         Set the RGBA sticks color (default 1.0,1.0,1.0,1.0)\n"
+        "   --sticks-color         Set the RGBA sticks color (default 1.0,0.4,0.4,1.0)\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
             defaultOptions.pidSmoothing, defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing,
             UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle]
@@ -1567,7 +1566,7 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_STICK_COLOR:
                 if (!parseTextColor(optarg, &options.stickColor))  {
-                    fprintf(stderr, "Bad --stick-color color value\n");
+                    fprintf(stderr, "Bad --sticks-color color value\n");
                     exit(-1);
                 }
             break;
