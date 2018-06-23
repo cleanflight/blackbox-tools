@@ -108,6 +108,7 @@ Options:
    --sticks-color         Set the RGBA sticks color (default 1.0,0.4,0.4,1.0)
    --sticks-area-color    Set the RGBA sticks area color (default 0.3,0.3,0.3,0.8)
    --sticks-cross-color   Set the RGBA sticks area color (default 0.75,0.75,0.75,0.5)
+   --sticks-trail-length <px> Length of the stick trails (default 0)
 ```
 
 (At least on Windows) if you just want to render a log file using the defaults, you can drag and drop a log onto the

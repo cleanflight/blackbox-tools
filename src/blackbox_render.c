@@ -72,6 +72,10 @@ static const char* const PROP_STYLE_NAME[] = {
     "pie"
 };
 
+typedef struct point_t {
+  double x, y;
+} point_t;
+
 typedef struct color_t {
     double r, g, b;
 } color_t;
@@ -123,10 +127,13 @@ typedef struct renderOptions_t {
     //Start and end time of video in seconds offset from the beginning of the log
     uint32_t timeStart, timeEnd;
 
-    colorAlpha_t sticksTextColor, stickColor, stickAreaColor, crosshairColor;
+    colorAlpha_t sticksTextColor, stickColor, stickAreaColor, crosshairColor, stickTrailColor;
+    int stickTrailLength;
 
     char *filename, *outputPrefix;
 } renderOptions_t;
+
+int stickTrailCurrent[2] = {0, 0};
 
 const double DASHED_LINE[] = {
     20.0,  /* ink */
@@ -210,7 +217,9 @@ static const renderOptions_t defaultOptions = {
     .sticksTextColor = {1, 1, 1, 1},
     .stickColor = {1, 0.4, 0.4, 1.0},
     .stickAreaColor = {0.3, 0.3, 0.3, 0.8},
-    .crosshairColor = {0.75, 0.75, 0.75, 0.5}
+    .crosshairColor = {0.75, 0.75, 0.75, 0.5},
+    .stickTrailColor = {1, 1, 1, 1},
+    .stickTrailLength = 0
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -232,6 +241,8 @@ static fieldIdentifications_t fieldMeta;
 static FT_Library freetypeLibrary;
 
 static uint32_t syncBeepTime = -1;
+
+static point_t *stickTrails[2];
 
 void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int64_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
@@ -389,9 +400,34 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
         cairo_line_to(cr, 0, stickSurroundRadius);
         cairo_stroke(cr);
 
+        //Draw trail
+        for(int j = 0; j < stickTrailCurrent[i]; j++) {
+          point_t current = stickTrails[i][j];
+
+          cairo_set_source_rgba(cr, options.stickTrailColor.r, options.stickTrailColor.g, options.stickTrailColor.b, options.stickTrailColor.a - (options.stickTrailColor.a - (j / (stickTrailCurrent[i] + 1.0))));
+          cairo_arc(cr, current.x, current.y, stickSurroundRadius / 5, 0, 2 * M_PI);
+          cairo_fill(cr);
+
+          if(j > 0) {
+            stickTrails[i][j-1] = stickTrails[i][j];
+          }
+        }
+
         //Draw circle to represent stick position
+        double stickX = stickPositions[i * 2 + 0];
+        double stickY = stickPositions[i * 2 + 1];
+
+        if(stickTrailCurrent[i] < options.stickTrailLength) {
+          stickTrailCurrent[i]++;
+        }
+
+        if(stickTrailCurrent[i] > 0) {
+          point_t p = {stickX, stickY};
+          stickTrails[i][stickTrailCurrent[i] - 1] = p;
+        }
+
         cairo_set_source_rgba(cr, options.stickColor.r, options.stickColor.g, options.stickColor.b, options.stickColor.a);
-        cairo_arc(cr, stickPositions[i * 2 + 0], stickPositions[i * 2 + 1], stickSurroundRadius / 5, 0, 2 * M_PI);
+        cairo_arc(cr, stickX, stickY, stickSurroundRadius / 5, 0, 2 * M_PI);
         cairo_fill(cr);
 
         cairo_set_source_rgba(cr, options.sticksTextColor.r, options.sticksTextColor.g, options.sticksTextColor.b, options.sticksTextColor.a);
@@ -1388,10 +1424,12 @@ void printUsage(const char *argv0)
         "   --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
         "   --sticks-color         Set the RGBA sticks color (default 1.0,0.4,0.4,1.0)\n"
         "   --sticks-area-color    Set the RGBA sticks area color (default 0.3,0.3,0.3,0.8)\n"
-        "   --sticks-cross-color   Set the RGBA sticks area color (default 0.3,0.3,0.3,0.8)\n"
+        "   --sticks-cross-color   Set the RGBA sticks area color (default 0.75,0.75,0.75,0.5)\n"
+        "   --sticks-trail-length <px> Length of the stick trails (default %d)\n"
+        "   --sticks-trail-color   Set the RGBA stick trail color (default 1.0,1.0,1.0,1.0)\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
             defaultOptions.pidSmoothing, defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing,
-            UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle]
+            UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle], defaultOptions.stickTrailLength
     );
 }
 
@@ -1495,6 +1533,8 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_STICK_COLOR,
         SETTING_STICK_AREA_COLOR,
         SETTING_STICK_CROSSHAIR_COLOR,
+        SETTING_STICK_TRAIL_LENGTH,
+        SETTING_STICK_TRAIL_COLOR,
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1541,6 +1581,8 @@ void parseCommandlineOptions(int argc, char **argv)
             {"sticks-color", required_argument, 0, SETTING_STICK_COLOR},
             {"sticks-area-color", required_argument, 0, SETTING_STICK_AREA_COLOR},
             {"sticks-cross-color", required_argument, 0, SETTING_STICK_CROSSHAIR_COLOR},
+            {"sticks-trail-length", required_argument, 0, SETTING_STICK_TRAIL_LENGTH},
+            {"sticks-trail-color", required_argument, 0, SETTING_STICK_TRAIL_COLOR},
             {0, 0, 0, 0}
         };
 
@@ -1585,6 +1627,12 @@ void parseCommandlineOptions(int argc, char **argv)
             case SETTING_STICK_CROSSHAIR_COLOR:
                 if (!parseTextColor(optarg, &options.crosshairColor))  {
                     fprintf(stderr, "Bad --sticks-cross-color color value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_STICK_TRAIL_COLOR:
+                if (!parseTextColor(optarg, &options.stickTrailColor))  {
+                    fprintf(stderr, "Bad --sticks-trail-color color value\n");
                     exit(-1);
                 }
             break;
@@ -1636,6 +1684,9 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_STICKS_WIDTH:
                 options.sticksWidth = atoi(optarg);
+            break;
+            case SETTING_STICK_TRAIL_LENGTH:
+                options.stickTrailLength = atoi(optarg);
             break;
             case '\0':
                 //Longopt which has set a flag
@@ -1786,6 +1837,9 @@ int main(int argc, char **argv)
     }
 
     options.bottomGraphSplitAxes = options.plotPids;
+
+    stickTrails[0] = malloc(options.stickTrailLength * sizeof(struct point_t));
+    stickTrails[1] = malloc(options.stickTrailLength * sizeof(struct point_t));
 
     fd = open(options.filename, O_RDONLY);
     if (fd < 0) {
