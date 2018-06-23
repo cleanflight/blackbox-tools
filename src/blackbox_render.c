@@ -106,6 +106,7 @@ typedef struct renderOptions_t {
     int logNumber;
     int imageWidth, imageHeight;
     int sticksTop, sticksRight, sticksWidth;
+    int craftTop, craftRight, craftWidth;
     int fps;
     int help;
     int threads;
@@ -208,6 +209,7 @@ static const renderOptions_t defaultOptions = {
     .drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
     .drawAcc = true,
     .sticksTop = 0, .sticksRight = 0, .sticksWidth = 0,
+    .craftTop = 0, .craftRight = 0, .craftWidth = 0,
     .gyroUnit = UNIT_RAW,
     .filename = 0,
     .timeStart = 0, .timeEnd = 0,
@@ -637,6 +639,9 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
     parameters->numMotors = fieldMeta.numMotors == 3 || fieldMeta.numMotors == 4 ? fieldMeta.numMotors : 4;
     parameters->numBlades = 2;
     parameters->bladeLength = imageWidth / 25;
+    if(options.craftWidth > 0) {
+      parameters->bladeLength = options.craftWidth;
+    }
     parameters->tipBezierWidth = 0.2 * parameters->bladeLength;
     parameters->tipBezierHeight = 0.1 * parameters->bladeLength;
     parameters->motorSpacing = parameters->bladeLength * 1.15;
@@ -1340,7 +1345,16 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
             if (options.drawCraft) {
                 cairo_save(cr);
                 {
-                    cairo_translate(cr, 0.25 * options.imageWidth, 0.20 * options.imageHeight);
+                    if(options.craftTop != 0 && options.craftRight != 0) {
+                      cairo_translate(cr, options.imageWidth - options.craftRight, options.craftTop);
+                    } else if(options.craftRight != 0) {
+                      cairo_translate(cr, options.imageWidth - options.craftRight, 0.20 * options.imageHeight);
+                    } else if(options.craftTop != 0) {
+                      cairo_translate(cr, 0.75 * options.imageWidth, options.craftTop);
+                    } else {
+                      cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
+                    }
+
                     drawCraft(cr, frameValues, outputFrameIndex > 0 ? windowCenterTime - lastCenterTime : 0, &craftParameters);
                 }
                 cairo_restore(cr);
@@ -1414,6 +1428,9 @@ void printUsage(const char *argv0)
         "   --sticks-top <px>      Offset the stick overlay from the top (default off)\n"
         "   --sticks-right <px>    Offset the stick overlay from the right (default off)\n"
         "   --sticks-width <px>    Size of the stick area (default off)\n"
+        "   --craft-top <px>       Offset the craft overlay from the top (default off)\n"
+        "   --craft-right <px>     Offset the craft overlay from the right (default off)\n"
+        "   --craft-width <px>     Size of the craft area (default off)\n"
         "   --smoothing-pid <n>    Smoothing window for the PIDs (default %d)\n"
         "   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default %d)\n"
         "   --smoothing-motor <n>  Smoothing window for the motors (default %d)\n"
@@ -1535,6 +1552,9 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_STICK_CROSSHAIR_COLOR,
         SETTING_STICK_TRAIL_LENGTH,
         SETTING_STICK_TRAIL_COLOR,
+        SETTING_CRAFT_TOP,
+        SETTING_CRAFT_RIGHT,
+        SETTING_CRAFT_WIDTH,
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1583,6 +1603,9 @@ void parseCommandlineOptions(int argc, char **argv)
             {"sticks-cross-color", required_argument, 0, SETTING_STICK_CROSSHAIR_COLOR},
             {"sticks-trail-length", required_argument, 0, SETTING_STICK_TRAIL_LENGTH},
             {"sticks-trail-color", required_argument, 0, SETTING_STICK_TRAIL_COLOR},
+            {"craft-top", required_argument, 0, SETTING_CRAFT_TOP},
+            {"craft-right", required_argument, 0, SETTING_CRAFT_RIGHT},
+            {"craft-width", required_argument, 0, SETTING_CRAFT_WIDTH},
             {0, 0, 0, 0}
         };
 
@@ -1687,6 +1710,15 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_STICK_TRAIL_LENGTH:
                 options.stickTrailLength = atoi(optarg);
+            break;
+            case SETTING_CRAFT_WIDTH:
+                options.craftWidth = atoi(optarg);
+            break;
+            case SETTING_CRAFT_TOP:
+                options.craftTop = atoi(optarg);
+            break;
+            case SETTING_CRAFT_RIGHT:
+                 options.craftRight = atoi(optarg);
             break;
             case '\0':
                 //Longopt which has set a flag
