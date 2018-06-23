@@ -98,6 +98,7 @@ Options:
    --sticks-right <px>    Offset the stick overlay from the right (default off)
    --sticks-width <px>    Size of the stick area (default off)
    --sticks-radius <px>   Diameter of the sticks (default relative to image size)
+   --sticks-trail-radius <px>  Diameter of the sticks (default same ad stick radius)
    --craft-top <px>       Offset the craft overlay from the top (default off)
    --craft-right <px>     Offset the craft overlay from the right (default off)
    --craft-width <px>     Size of the craft area (default off)

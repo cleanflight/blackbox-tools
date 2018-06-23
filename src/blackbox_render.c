@@ -129,7 +129,7 @@ typedef struct renderOptions_t {
     uint32_t timeStart, timeEnd;
 
     colorAlpha_t sticksTextColor, stickColor, stickAreaColor, crosshairColor, stickTrailColor;
-    int stickTrailLength, stickRadius;
+    int stickTrailLength, stickRadius, stickTrailRadius;
 
     char *filename, *outputPrefix;
 } renderOptions_t;
@@ -223,6 +223,7 @@ static const renderOptions_t defaultOptions = {
     .stickTrailColor = {1, 1, 1, 1},
     .stickTrailLength = 0,
     .stickRadius = 0,
+    .stickTrailRadius = 0,
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -355,9 +356,14 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
     int stickIndex;
 
     int stickRadius = stickSurroundRadius / 5;
+    int stickTrailRadius = stickRadius;
 
     if(options.stickRadius > 0) {
       stickRadius = options.stickRadius;
+    }
+
+    if(options.stickTrailRadius > 0) {
+      stickTrailRadius = options.stickTrailRadius;
     }
 
     char stickLabel[16];
@@ -414,7 +420,7 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
           point_t current = stickTrails[i][j];
 
           cairo_set_source_rgba(cr, options.stickTrailColor.r, options.stickTrailColor.g, options.stickTrailColor.b, options.stickTrailColor.a - (options.stickTrailColor.a - (j / (stickTrailCurrent[i] + 1.0))));
-          cairo_arc(cr, current.x, current.y, stickRadius, 0, 2 * M_PI);
+          cairo_arc(cr, current.x, current.y, stickTrailRadius, 0, 2 * M_PI);
           cairo_fill(cr);
 
           if(j > 0) {
@@ -1564,6 +1570,7 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_CRAFT_RIGHT,
         SETTING_CRAFT_WIDTH,
         SETTING_STICK_RADIUS,
+        SETTING_STICK_TRAIL_RADIUS,
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1616,6 +1623,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"craft-right", required_argument, 0, SETTING_CRAFT_RIGHT},
             {"craft-width", required_argument, 0, SETTING_CRAFT_WIDTH},
             {"sticks-radius", required_argument, 0, SETTING_STICK_RADIUS},
+            {"sticks-trail-radius", required_argument, 0, SETTING_STICK_TRAIL_RADIUS},
             {0, 0, 0, 0}
         };
 
@@ -1720,6 +1728,9 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_STICK_RADIUS:
                 options.stickRadius = atoi(optarg);
+            break;
+            case SETTING_STICK_TRAIL_RADIUS:
+                options.stickTrailRadius = atoi(optarg);
             break;
             case SETTING_STICK_TRAIL_LENGTH:
                 options.stickTrailLength = atoi(optarg);
