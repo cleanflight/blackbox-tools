@@ -129,7 +129,7 @@ typedef struct renderOptions_t {
     uint32_t timeStart, timeEnd;
 
     colorAlpha_t sticksTextColor, stickColor, stickAreaColor, crosshairColor, stickTrailColor;
-    int stickTrailLength;
+    int stickTrailLength, stickRadius;
 
     char *filename, *outputPrefix;
 } renderOptions_t;
@@ -221,7 +221,8 @@ static const renderOptions_t defaultOptions = {
     .stickAreaColor = {0.3, 0.3, 0.3, 0.8},
     .crosshairColor = {0.75, 0.75, 0.75, 0.5},
     .stickTrailColor = {1, 1, 1, 1},
-    .stickTrailLength = 0
+    .stickTrailLength = 0,
+    .stickRadius = 0,
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -353,6 +354,12 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
     const int yawStickMax = 500;
     int stickIndex;
 
+    int stickRadius = stickSurroundRadius / 5;
+
+    if(options.stickRadius > 0) {
+      stickRadius = options.stickRadius;
+    }
+
     char stickLabel[16];
     cairo_text_extents_t extent;
 
@@ -407,7 +414,7 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
           point_t current = stickTrails[i][j];
 
           cairo_set_source_rgba(cr, options.stickTrailColor.r, options.stickTrailColor.g, options.stickTrailColor.b, options.stickTrailColor.a - (options.stickTrailColor.a - (j / (stickTrailCurrent[i] + 1.0))));
-          cairo_arc(cr, current.x, current.y, stickSurroundRadius / 5, 0, 2 * M_PI);
+          cairo_arc(cr, current.x, current.y, stickRadius, 0, 2 * M_PI);
           cairo_fill(cr);
 
           if(j > 0) {
@@ -429,7 +436,7 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
         }
 
         cairo_set_source_rgba(cr, options.stickColor.r, options.stickColor.g, options.stickColor.b, options.stickColor.a);
-        cairo_arc(cr, stickX, stickY, stickSurroundRadius / 5, 0, 2 * M_PI);
+        cairo_arc(cr, stickX, stickY, stickRadius, 0, 2 * M_PI);
         cairo_fill(cr);
 
         cairo_set_source_rgba(cr, options.sticksTextColor.r, options.sticksTextColor.g, options.sticksTextColor.b, options.sticksTextColor.a);
@@ -1428,6 +1435,7 @@ void printUsage(const char *argv0)
         "   --sticks-top <px>      Offset the stick overlay from the top (default off)\n"
         "   --sticks-right <px>    Offset the stick overlay from the right (default off)\n"
         "   --sticks-width <px>    Size of the stick area (default off)\n"
+        "   --sticks-radius <px>   Radius of the sticks (default relative to image size)\n"
         "   --craft-top <px>       Offset the craft overlay from the top (default off)\n"
         "   --craft-right <px>     Offset the craft overlay from the right (default off)\n"
         "   --craft-width <px>     Size of the craft area (default off)\n"
@@ -1555,6 +1563,7 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_CRAFT_TOP,
         SETTING_CRAFT_RIGHT,
         SETTING_CRAFT_WIDTH,
+        SETTING_STICK_RADIUS,
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1606,6 +1615,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"craft-top", required_argument, 0, SETTING_CRAFT_TOP},
             {"craft-right", required_argument, 0, SETTING_CRAFT_RIGHT},
             {"craft-width", required_argument, 0, SETTING_CRAFT_WIDTH},
+            {"sticks-radius", required_argument, 0, SETTING_STICK_RADIUS},
             {0, 0, 0, 0}
         };
 
@@ -1707,6 +1717,9 @@ void parseCommandlineOptions(int argc, char **argv)
             break;
             case SETTING_STICKS_WIDTH:
                 options.sticksWidth = atoi(optarg);
+            break;
+            case SETTING_STICK_RADIUS:
+                options.stickRadius = atoi(optarg);
             break;
             case SETTING_STICK_TRAIL_LENGTH:
                 options.stickTrailLength = atoi(optarg);
