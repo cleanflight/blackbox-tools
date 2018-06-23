@@ -123,7 +123,7 @@ typedef struct renderOptions_t {
     //Start and end time of video in seconds offset from the beginning of the log
     uint32_t timeStart, timeEnd;
 
-    colorAlpha_t sticksTextColor, stickColor, stickAreaColor;
+    colorAlpha_t sticksTextColor, stickColor, stickAreaColor, crosshairColor;
 
     char *filename, *outputPrefix;
 } renderOptions_t;
@@ -191,9 +191,7 @@ const color_t WHITE = {.r = 1, .g = 1, .b = 1};
 
 #define NUM_LINE_COLORS (sizeof(lineColors) / sizeof(lineColors[0]))
 
-//static const colorAlpha_t stickAreaColor = {0.3, 0.3, 0.3, 0.8};
 static const colorAlpha_t craftColor = {0.3, 0.3, 0.3, 1};
-static const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
 
 static const renderOptions_t defaultOptions = {
     .imageWidth = 1920, .imageHeight = 1080,
@@ -211,7 +209,8 @@ static const renderOptions_t defaultOptions = {
     .rawAmperage = 0,
     .sticksTextColor = {1, 1, 1, 1},
     .stickColor = {1, 0.4, 0.4, 1.0},
-    .stickAreaColor = {0.3, 0.3, 0.3, 0.8}
+    .stickAreaColor = {0.3, 0.3, 0.3, 0.8},
+    .crosshairColor = {0.75, 0.75, 0.75, 0.5}
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -383,7 +382,7 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
 
         //Draw crosshair
         cairo_set_line_width(cr, 1);
-        cairo_set_source_rgba(cr, crosshairColor.r, crosshairColor.g, crosshairColor.b, crosshairColor.a);
+        cairo_set_source_rgba(cr, options.crosshairColor.r, options.crosshairColor.g, options.crosshairColor.b, options.crosshairColor.a);
         cairo_move_to(cr, -stickSurroundRadius, 0);
         cairo_line_to(cr, stickSurroundRadius, 0);
         cairo_move_to(cr, 0, -stickSurroundRadius);
@@ -1388,7 +1387,8 @@ void printUsage(const char *argv0)
         "   --raw-amperage         Print the current sensor ADC value along with computed amperage\n"
         "   --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
         "   --sticks-color         Set the RGBA sticks color (default 1.0,0.4,0.4,1.0)\n"
-        "   --sticks-area-color    Set the RGBA sticks area color (default 0.3, 0.3, 0.3, 0.8)\n"
+        "   --sticks-area-color    Set the RGBA sticks area color (default 0.3,0.3,0.3,0.8)\n"
+        "   --sticks-cross-color   Set the RGBA sticks area color (default 0.3,0.3,0.3,0.8)\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
             defaultOptions.pidSmoothing, defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing,
             UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle]
@@ -1493,7 +1493,8 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_STICKS_WIDTH,
         SETTING_STICKS_TEXT_COLOR,
         SETTING_STICK_COLOR,
-        SETTING_STICK_AREA_COLOR
+        SETTING_STICK_AREA_COLOR,
+        SETTING_STICK_CROSSHAIR_COLOR,
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1539,6 +1540,7 @@ void parseCommandlineOptions(int argc, char **argv)
             {"sticks-text-color", required_argument, 0, SETTING_STICKS_TEXT_COLOR},
             {"sticks-color", required_argument, 0, SETTING_STICK_COLOR},
             {"sticks-area-color", required_argument, 0, SETTING_STICK_AREA_COLOR},
+            {"sticks-cross-color", required_argument, 0, SETTING_STICK_CROSSHAIR_COLOR},
             {0, 0, 0, 0}
         };
 
@@ -1577,6 +1579,12 @@ void parseCommandlineOptions(int argc, char **argv)
             case SETTING_STICK_AREA_COLOR:
                 if (!parseTextColor(optarg, &options.stickAreaColor))  {
                     fprintf(stderr, "Bad --sticks-area-color color value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_STICK_CROSSHAIR_COLOR:
+                if (!parseTextColor(optarg, &options.crosshairColor))  {
+                    fprintf(stderr, "Bad --sticks-cross-color color value\n");
                     exit(-1);
                 }
             break;
