@@ -1455,7 +1455,7 @@ void printUsage(const char *argv0)
         "   --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
         "   --sticks-color         Set the RGBA sticks color (default 1.0,0.4,0.4,1.0)\n"
         "   --sticks-area-color    Set the RGBA sticks area color (default 0.3,0.3,0.3,0.8)\n"
-        "   --sticks-cross-color   Set the RGBA sticks area color (default 0.75,0.75,0.75,0.5)\n"
+        "   --sticks-cross-color   Set the RGBA sticks crosshair color (default 0.75,0.75,0.75,0.5)\n"
         "   --sticks-trail-length <px> Length of the stick trails (default %d)\n"
         "   --sticks-trail-color   Set the RGBA stick trail color (default 1.0,1.0,1.0,1.0)\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
