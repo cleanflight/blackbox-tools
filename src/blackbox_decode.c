@@ -178,23 +178,40 @@ static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex,
     switch (unit) {
         case UNIT_VOLTS:
             if (fieldIndex == log->mainFieldIndexes.vbatLatest) {
-                fprintf(file, "%.3f", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue) / 1000.0);
+                if(log->sysConfig.vbatType == INAV_V2)
+                    fprintf(file, "%.3f", (uint16_t)fieldValue / 100.0);
+                else
+                    fprintf(file, "%.3f", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue) / 1000.0);
                 return true;
             }
         break;
         case UNIT_MILLIVOLTS:
             if (fieldIndex == log->mainFieldIndexes.vbatLatest) {
-                fprintf(file, "%u", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue));
+                if(log->sysConfig.vbatType == INAV_V2)
+                    fprintf(file, "%u", (uint16_t)fieldValue * 10);
+                else
+                    fprintf(file, "%u", flightLogVbatADCToMillivolts(log, (uint16_t)fieldValue));
                 return true;
             }
         break;
         case UNIT_AMPS:
-        case UNIT_MILLIAMPS:
             if (fieldIndex == log->mainFieldIndexes.amperageLatest) {
-                fprintfMilliampsInUnit(file, flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue), unit);
+                if(log->sysConfig.vbatType == INAV_V2)
+                    fprintf(file, "%.3f", (uint16_t)fieldValue / 100.0);
+                else
+                    fprintfMilliampsInUnit(file, flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue), unit);
                 return true;
             }
-        break;
+            break;
+        case UNIT_MILLIAMPS:
+            if (fieldIndex == log->mainFieldIndexes.amperageLatest) {
+                if(log->sysConfig.vbatType == INAV_V2)
+                    fprintf(file, "%u", (uint16_t)fieldValue * 10);
+                else
+                    fprintfMilliampsInUnit(file, flightLogAmperageADCToMilliamps(log, (uint16_t)fieldValue), unit);
+                return true;
+            }
+            break;
         case UNIT_CENTIMETERS:
             if (fieldIndex == log->mainFieldIndexes.BaroAlt) {
                 fprintf(file, "%" PRId64, fieldValue);

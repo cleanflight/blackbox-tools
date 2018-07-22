@@ -24,6 +24,12 @@ typedef enum FirmwareType {
 	FIRMWARE_TYPE_BETAFLIGHT
 } FirmwareType;
 
+typedef enum VbatType {
+    ORIGINAL = 0,
+    TRANSITIONAL,
+    INAV_V2
+} VbatType;
+
 typedef struct flightLogFrameStatistics_t {
     uint32_t bytes;
     // Frames decoded to the right length and had reasonable data in them:
@@ -125,6 +131,8 @@ typedef struct flightLogSysConfig_t {
     uint16_t vbatref;
 
     FirmwareType firmwareType;
+
+    VbatType vbatType;
 } flightLogSysConfig_t;
 
 typedef struct flightLogFrameDef_t {
