@@ -24,6 +24,10 @@ const char * const FLIGHT_LOG_FLIGHT_STATE_NAME[] = {
 const char * const FLIGHT_LOG_FAILSAFE_PHASE_NAME[] = {
     "IDLE",
     "RX_LOSS_DETECTED",
+    "RX_LOSS_IDLE",
+    "RETURN_TO_HOME",
     "LANDING",
-    "LANDED"
+    "LANDED",
+    "RX_LOSS_MONITORING",
+    "RX_LOSS_RECOVERED"
 };
