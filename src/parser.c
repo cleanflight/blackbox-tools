@@ -67,7 +67,7 @@ typedef struct flightLogPrivate_t
 
     // How many intentionally un-logged frames did we skip over before we decoded the current frame?
     uint32_t lastSkippedFrames;
-    
+
     // Details about the last main frame that was successfully parsed
     uint32_t lastMainFrameIteration;
     int64_t lastMainFrameTime;
@@ -228,7 +228,11 @@ static void identifyMainFields(flightLog_t *log, flightLogFrameDef_t *frameDef)
             log->mainFieldIndexes.servo[servoIndex] = fieldIndex;
         } else if (strcmp(fieldName, "vbatLatest") == 0) {
             log->mainFieldIndexes.vbatLatest = fieldIndex;
+        } else if (strcmp(fieldName, "vbat") == 0) {
+            log->mainFieldIndexes.vbatLatest = fieldIndex;
         } else if (strcmp(fieldName, "amperageLatest") == 0) {
+            log->mainFieldIndexes.amperageLatest = fieldIndex;
+        } else if (strcmp(fieldName, "amperage") == 0) {
             log->mainFieldIndexes.amperageLatest = fieldIndex;
         } else if (strcmp(fieldName, "BaroAlt") == 0) {
             log->mainFieldIndexes.BaroAlt = fieldIndex;
@@ -475,7 +479,42 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
 
 		log->sysConfig.motorOutputLow = motorOutputs[0];
 		log->sysConfig.motorOutputHigh = motorOutputs[1];
-     }
+    } else if (strcmp(fieldName, "Firmware revision") == 0) {
+
+        if(strncmp(fieldValue, "INAV", 4) == 0) {
+            uint8_t major=0,minor=0,micro=0;
+            char *ptr = fieldValue+5; // "INAV "
+            major = strtol(ptr, &ptr, 10);
+            if (ptr)
+                minor = strtol(ptr+1, &ptr, 10);
+            if(ptr)
+                micro = strtol(ptr+1, NULL, 10);
+
+            if(major > 2) // Must be new vbat code
+                log->sysConfig.vbatType = INAV_V2;
+            else if (major  ==  2) // Possibly new vbat code
+            {
+                if (minor != 0 || micro != 0)
+                    log->sysConfig.vbatType = INAV_V2;
+                else
+                    log->sysConfig.vbatType = TRANSITIONAL; // needs data check
+            }
+        }
+    } else if (strcmp(fieldName, "Firmware date") == 0 && log->sysConfig.vbatType == TRANSITIONAL) {
+        // This stanz is only necessary for 2.0.0 RC2, RC1 and prior development builds
+        int day = atoi(fieldValue+4);
+        int yr = atoi(fieldValue+7);
+        if (yr == 2018)
+        {
+            if(strncmp(fieldValue,"Apr", 3) == 0 ||
+               strncmp(fieldValue,"May", 3) == 0 ||
+               strncmp(fieldValue,"Jun", 3) == 0 ||
+               (strncmp(fieldValue,"Jul", 3) == 0 && day < 8))
+                log->sysConfig.vbatType = ORIGINAL;
+            else
+                log->sysConfig.vbatType = INAV_V2;
+        }
+    }
 }
 
 /**
@@ -1189,7 +1228,7 @@ static bool completeInterframe(flightLog_t *log, mmapStream_t *stream, uint8_t f
     if (private->mainStreamIsValid && !raw && !flightLogValidateMainFrameValues(log)) {
         flightLogInvalidateStream(log);
     }
-    
+
     if (private->mainStreamIsValid) {
         private->lastMainFrameIteration = (uint32_t) private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION];
         private->lastMainFrameTime = private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME];
