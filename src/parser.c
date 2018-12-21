@@ -428,13 +428,6 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
             log->sysConfig.firmwareType = FIRMWARE_TYPE_CLEANFLIGHT;
         else
             log->sysConfig.firmwareType = FIRMWARE_TYPE_BASEFLIGHT;
-    } else if (strcmp(fieldName, "Firmware revision") == 0) {
-        if (strncmp(fieldValue, "Betaflight",10) == 0)
-            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_BETAFLIGHT;
-        else if (strncmp(fieldValue, "INAV", 4) == 0)
-            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_INAV;
-        else
-            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_UNKNOWN;
     } else if (strcmp(fieldName, "minthrottle") == 0) {
         log->sysConfig.minthrottle = atoi(fieldValue);
 
@@ -488,7 +481,9 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
 		log->sysConfig.motorOutputHigh = motorOutputs[1];
     } else if (strcmp(fieldName, "Firmware revision") == 0) {
 
-        if(strncmp(fieldValue, "INAV", 4) == 0) {
+        if (strncmp(fieldValue, "Betaflight", 10) == 0)
+            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_BETAFLIGHT;
+        else if(strncmp(fieldValue, "INAV", 4) == 0) {
             uint8_t major=0,minor=0,micro=0;
             char *ptr = fieldValue+5; // "INAV "
             major = strtol(ptr, &ptr, 10);
@@ -506,7 +501,11 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
                 else
                     log->sysConfig.vbatType = TRANSITIONAL; // needs data check
             }
+            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_INAV;
         }
+        else
+            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_UNKNOWN;
+
     } else if (strcmp(fieldName, "Firmware date") == 0 && log->sysConfig.vbatType == TRANSITIONAL) {
         // This stanz is only necessary for 2.0.0 RC2, RC1 and prior development builds
         int day = atoi(fieldValue+4);
@@ -988,7 +987,7 @@ static void flightlogDecodeFlagsToString(uint64_t flags, const char * const *fla
     //dest += sprintf(dest, "(0x%016llX) ", flags);
 
     for (int i = 0; flagNames[i] != NULL; i++) {
-        if ((flags & (1i64 << i)) != 0) {
+        if ((flags & (1LL << i)) != 0) {
             const char *flagName = flagNames[i];
             unsigned flagNameLen = strlen(flagName);
 
