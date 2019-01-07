@@ -41,6 +41,7 @@ typedef struct decodeOptions_t {
     int simulateIMU, imuIgnoreMag;
     int simulateCurrentMeter;
     int mergeGPS;
+    int datetime;
     const char *outputPrefix;
 
     bool overrideSimCurrentMeterOffset, overrideSimCurrentMeterScale;
@@ -55,6 +56,7 @@ decodeOptions_t options = {
     .simulateIMU = false, .imuIgnoreMag = 0,
     .simulateCurrentMeter = false,
     .mergeGPS = 0,
+    .datetime = 0,
 
     .overrideSimCurrentMeterOffset = false,
     .overrideSimCurrentMeterScale = false,
@@ -173,18 +175,20 @@ static void fprintfMicrosecondsInUnit(flightLog_t *log, FILE *file, int64_t micr
         break;
     }
 
-    frac = (uint32_t)(time % 1000000);
-    secs = (uint32_t)(time / 1000000);
+    if (options.datetime) {
+        frac = (uint32_t)(time % 1000000);
+        secs = (uint32_t)(time / 1000000);
 
-    mins = secs / 60;
-    secs %= 60;
+        mins = secs / 60;
+        secs %= 60;
 
-    hours = mins / 60;
-    mins %= 60;
+        hours = mins / 60;
+        mins %= 60;
 
-    fprintf(file, ",%04u-%02u-%02uT%02u:%02u:%02u.%06uZ",
-        log->sysConfig.logStartTime.tm_year + 1900, log->sysConfig.logStartTime.tm_mon + 1, log->sysConfig.logStartTime.tm_mday,
-        hours, mins, secs, frac);
+        fprintf(file, ",%04u-%02u-%02uT%02u:%02u:%02u.%06uZ",
+            log->sysConfig.logStartTime.tm_year + 1900, log->sysConfig.logStartTime.tm_mon + 1, log->sysConfig.logStartTime.tm_mday,
+            hours, mins, secs, frac);
+    }
 }
 
 static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int64_t fieldValue, Unit unit)
@@ -401,7 +405,12 @@ void createGPSCSVFile(flightLog_t *log)
 
         if (gpsCsvFile) {
             // Since the GPS frame itself may or may not include a timestamp field, skip it and print our own:
-            fprintf(gpsCsvFile, "time (%s), dateTime,", UNIT_NAME[options.unitFrameTime]);
+            if (options.datetime) {
+                fprintf(gpsCsvFile, "time (%s), dateTime,", UNIT_NAME[options.unitFrameTime]);
+            }
+            else {
+                fprintf(gpsCsvFile, "time (%s),", UNIT_NAME[options.unitFrameTime]);
+            }
 
             outputFieldNamesHeader(gpsCsvFile, &log->frameDefs['G'], gpsGFieldUnit, true);
 
@@ -918,7 +927,7 @@ void writeMainCSVHeader(flightLog_t *log)
             fprintf(csvFile, " (%s)", UNIT_NAME[mainFieldUnit[i]]);
         }
 
-        if (strcmp(log->frameDefs['I'].fieldName[i], "time") == 0) {
+        if (options.datetime && strcmp(log->frameDefs['I'].fieldName[i], "time") == 0) {
             fprintf(csvFile, ", dateTime");
         }
     }
@@ -1247,6 +1256,7 @@ void printUsage(const char *argv0)
         "   --index <num>            Choose the log from the file that should be decoded (or omit to decode all)\n"
         "   --limits                 Print the limits and range of each field\n"
         "   --stdout                 Write log to stdout instead of to a file\n"
+        "   --datetime               Add a dateTime column with UTC date time\n"
         "   --unit-amperage <unit>   Current meter unit (raw|mA|A), default is A (amps)\n"
         "   --unit-flags <unit>      State flags unit (raw|flags), default is flags\n"
         "   --unit-frame-time <unit> Frame timestamp unit (us|s), default is us (microseconds)\n"
@@ -1308,7 +1318,8 @@ void parseCommandlineOptions(int argc, char **argv)
             {"debug", no_argument, &options.debug, 1},
             {"limits", no_argument, &options.limits, 1},
             {"stdout", no_argument, &options.toStdout, 1},
-            {"merge-gps", no_argument, &options.mergeGPS, 1},
+            { "merge-gps", no_argument, &options.mergeGPS, 1 },
+            { "datetime", no_argument, &options.datetime, 1 },
             {"simulate-imu", no_argument, &options.simulateIMU, 1},
             {"simulate-current-meter", no_argument, &options.simulateCurrentMeter, 1},
             {"imu-ignore-mag", no_argument, &options.imuIgnoreMag, 1},
