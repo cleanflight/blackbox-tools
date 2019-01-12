@@ -151,8 +151,12 @@ static void fprintfMilliampsInUnit(FILE *file, int32_t milliamps, Unit unit)
     }
 }
 
-static void fprintfMicrosecondsInUnit(FILE *file, int64_t microseconds, Unit unit)
+static void fprintfMicrosecondsInUnit(flightLog_t *log, FILE *file, int64_t microseconds, Unit unit)
 {
+    int64_t startTime = log->sysConfig.logStartTime.tm_hour * 3600 + log->sysConfig.logStartTime.tm_min * 60 + log->sysConfig.logStartTime.tm_sec;
+    int64_t time = microseconds + startTime * 1000000;
+    uint32_t hours, mins, secs, frac;
+
     switch (unit) {
         case UNIT_MICROSECONDS:
             fprintf(file, "%" PRId64, microseconds);
@@ -168,6 +172,19 @@ static void fprintfMicrosecondsInUnit(FILE *file, int64_t microseconds, Unit uni
             exit(-1);
         break;
     }
+
+    frac = (uint32_t)(time % 1000000);
+    secs = (uint32_t)(time / 1000000);
+
+    mins = secs / 60;
+    secs %= 60;
+
+    hours = mins / 60;
+    mins %= 60;
+
+    fprintf(file, ",%04u-%02u-%02uT%02u:%02u:%02u.%06uZ",
+        log->sysConfig.logStartTime.tm_year + 1900, log->sysConfig.logStartTime.tm_mon + 1, log->sysConfig.logStartTime.tm_mday,
+        hours, mins, secs, frac);
 }
 
 static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex, int64_t fieldValue, Unit unit)
@@ -258,7 +275,7 @@ static bool fprintfMainFieldInUnit(flightLog_t *log, FILE *file, int fieldIndex,
         case UNIT_MILLISECONDS:
         case UNIT_SECONDS:
             if (fieldIndex == log->mainFieldIndexes.time) {
-                fprintfMicrosecondsInUnit(file, fieldValue, unit);
+                fprintfMicrosecondsInUnit(log, file, fieldValue, unit);
                 return true;
             }
         break;
@@ -384,7 +401,7 @@ void createGPSCSVFile(flightLog_t *log)
 
         if (gpsCsvFile) {
             // Since the GPS frame itself may or may not include a timestamp field, skip it and print our own:
-            fprintf(gpsCsvFile, "time (%s), ", UNIT_NAME[options.unitFrameTime]);
+            fprintf(gpsCsvFile, "time (%s), dateTime,", UNIT_NAME[options.unitFrameTime]);
 
             outputFieldNamesHeader(gpsCsvFile, &log->frameDefs['G'], gpsGFieldUnit, true);
 
@@ -511,13 +528,13 @@ void outputGPSFrame(flightLog_t *log, int64_t *frame)
 	bool haveRequiredPrecision = log->gpsFieldIndexes.GPS_numSat == -1 || frame[log->gpsFieldIndexes.GPS_numSat] >= MIN_GPS_SATELLITES;
 
     if (haveRequiredFields && haveRequiredPrecision) {
-		gpxWriterAddPoint(gpx, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
+		gpxWriterAddPoint(gpx, log, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
     }
 
     createGPSCSVFile(log);
 
     if (gpsCsvFile) {
-        fprintfMicrosecondsInUnit(gpsCsvFile, gpsFrameTime, options.unitFrameTime);
+        fprintfMicrosecondsInUnit(log, gpsCsvFile, gpsFrameTime, options.unitFrameTime);
         fprintf(gpsCsvFile, ", ");
 
         outputGPSFields(log, gpsCsvFile, frame);
@@ -686,7 +703,7 @@ void onFrameReadyMerge(flightLog_t *log, bool frameValid, int64_t *frame, uint8_
 				bool haveRequiredPrecision = log->gpsFieldIndexes.GPS_numSat == -1 || frame[log->gpsFieldIndexes.GPS_numSat] >= MIN_GPS_SATELLITES;
 
                 if (haveRequiredFields && haveRequiredPrecision) {
-                    gpxWriterAddPoint(gpx, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
+                    gpxWriterAddPoint(gpx, log, gpsFrameTime, frame[log->gpsFieldIndexes.GPS_coord[0]], frame[log->gpsFieldIndexes.GPS_coord[1]], frame[log->gpsFieldIndexes.GPS_altitude]);
                 }
             }
         break;
@@ -899,6 +916,10 @@ void writeMainCSVHeader(flightLog_t *log)
 
         if (mainFieldUnit[i] != UNIT_RAW) {
             fprintf(csvFile, " (%s)", UNIT_NAME[mainFieldUnit[i]]);
+        }
+
+        if (strcmp(log->frameDefs['I'].fieldName[i], "time") == 0) {
+            fprintf(csvFile, ", dateTime");
         }
     }
 

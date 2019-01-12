@@ -27,7 +27,7 @@ void gpxWriterAddPreamble(gpxWriter_t *gpx)
  * Time is in microseconds since device power-on. Lat and lon are degrees multiplied by GPS_DEGREES_DIVIDER. Altitude
  * is in meters.
  */
-void gpxWriterAddPoint(gpxWriter_t *gpx, int64_t time, int32_t lat, int32_t lon, int16_t altitude)
+void gpxWriterAddPoint(gpxWriter_t *gpx, flightLog_t *log, int64_t time, int32_t lat, int32_t lon, int16_t altitude)
 {
     char negSign[] = "-";
     char noSign[] = "";
@@ -40,6 +40,7 @@ void gpxWriterAddPoint(gpxWriter_t *gpx, int64_t time, int32_t lat, int32_t lon,
 
         fprintf(gpx->file, "<trk><name>Blackbox flight log</name><trkseg>\n");
 
+        gpx->startTime = log->sysConfig.logStartTime.tm_hour * 3600 + log->sysConfig.logStartTime.tm_min * 60 + log->sysConfig.logStartTime.tm_sec;
         gpx->state = GPXWRITER_STATE_WRITING_TRACK;
     }
 
@@ -58,8 +59,10 @@ void gpxWriterAddPoint(gpxWriter_t *gpx, int64_t time, int32_t lat, int32_t lon,
         //We'll just assume that the timespan is less than 24 hours, and make up a date
         uint32_t hours, mins, secs, frac;
 
-        frac = time % 1000000;
-        secs = time / 1000000;
+        time += gpx->startTime * 1000000;
+
+        frac = (uint32_t)(time % 1000000);
+        secs = (uint32_t)(time / 1000000);
 
         mins = secs / 60;
         secs %= 60;
@@ -67,7 +70,9 @@ void gpxWriterAddPoint(gpxWriter_t *gpx, int64_t time, int32_t lat, int32_t lon,
         hours = mins / 60;
         mins %= 60;
 
-        fprintf(gpx->file, "<time>2000-01-01T%02u:%02u:%02u.%06uZ</time>", hours, mins, secs, frac);
+        fprintf(gpx->file, "<time>%04u-%02u-%02uT%02u:%02u:%02u.%06uZ</time>",
+            log->sysConfig.logStartTime.tm_year + 1900, log->sysConfig.logStartTime.tm_mon + 1, log->sysConfig.logStartTime.tm_mday,
+            hours, mins, secs, frac);
     }
     fprintf(gpx->file, "</trkpt>\n");
 }

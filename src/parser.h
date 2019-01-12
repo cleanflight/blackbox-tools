@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "blackbox_fielddefs.h"
 
@@ -133,6 +134,8 @@ typedef struct flightLogSysConfig_t {
     FirmwareType firmwareType;
 
     VbatType vbatType;
+
+    struct tm logStartTime;
 } flightLogSysConfig_t;
 
 typedef struct flightLogFrameDef_t {

@@ -515,6 +515,14 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
                 log->sysConfig.vbatType = INAV_V2;
         }
     }
+    else if (strcmp(fieldName, "Log start datetime") == 0) {
+        log->sysConfig.logStartTime.tm_year = atoi(fieldValue + 2) + 100;
+        log->sysConfig.logStartTime.tm_mon = atoi(fieldValue + 5) - 1;
+        log->sysConfig.logStartTime.tm_mday = atoi(fieldValue + 8);
+        log->sysConfig.logStartTime.tm_hour = atoi(fieldValue + 11);
+        log->sysConfig.logStartTime.tm_min = atoi(fieldValue + 14);
+        log->sysConfig.logStartTime.tm_sec = atoi(fieldValue + 17);
+    }
 }
 
 /**
