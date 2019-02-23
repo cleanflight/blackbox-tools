@@ -1,4 +1,5 @@
 #include "blackbox_fielddefs.h"
+#include <stdlib.h>
 
 const char * const FLIGHT_LOG_FLIGHT_MODE_NAME[] = {
     "ANGLE_MODE",
@@ -10,7 +11,93 @@ const char * const FLIGHT_LOG_FLIGHT_MODE_NAME[] = {
     "HEADFREE",
     "AUTOTUNE",
     "PASSTHRU",
-    "SONAR"
+    "SONAR",
+    NULL
+};
+
+const char * const FLIGHT_LOG_FLIGHT_MODE_NAME_BETAFLIGHT[] = {
+    "ARM",
+    "ANGLE",
+    "HORIZON",
+    "MAG",
+    "HEADFREE",
+    "PASSTHRU",
+    "FAILSAFE",
+    "GPSRESCUE",
+    "GPSRESCUE",
+    "ANTIGRAVITY",
+    "HEADADJ",
+    "CAMSTAB",
+    "BEEPERON",
+    "LEDLOW",
+    "CALIB",
+    "OSD",
+    "TELEMETRY",
+    "SERVO1",
+    "SERVO2",
+    "SERVO3",
+    "BLACKBOX",
+    "AIRMODE",
+    "3D",
+    "FPVANGLEMIX",
+    "BLACKBOXERASE",
+    "CAMERA1",
+    "CAMERA2",
+    "CAMERA3",
+    "FLIPOVERAFTERCRASH",
+    "PREARM",
+    "BEEPGPSCOUNT",
+    "VTXPITMODE",
+    "PARALYZE",
+    "USER1",
+    "USER2",
+    "USER3",
+    "USER4",
+    "PIDAUDIO",
+    "ACROTRAINER",
+    "VTXCONTROLDISABLE",
+    "LAUNCHCONTROL",
+    NULL
+};
+
+const char * const FLIGHT_LOG_FLIGHT_MODE_NAME_INAV[] = {
+    "ARM",
+    "ANGLE",
+    "HORIZON",
+    "NAVALTHOLD",
+    "HEADINGHOLD",
+    "HEADFREE",
+    "HEADADJ",
+    "CAMSTAB",
+    "NAVRTH",
+    "NAVPOSHOLD",
+    "MANUAL",
+    "BEEPERON",
+    "LEDLOW",
+    "LIGHTS",
+    "NAVLAUNCH",
+    "OSD",
+    "TELEMETRY",
+    "BLACKBOX",
+    "FAILSAFE",
+    "NAVWP",
+    "AIRMODE",
+    "HOMERESET",
+    "GCSNAV",
+    "KILLSWITCH",
+    "SURFACE",
+    "FLAPERON",
+    "TURNASSIST",
+    "AUTOTRIM",
+    "AUTOTUNE",
+    "CAMERA1",
+    "CAMERA2",
+    "CAMERA3",
+    "OSDALT1",
+    "OSDALT2",
+    "OSDALT3",
+    "NAVCRUISE",
+    NULL
 };
 
 const char * const FLIGHT_LOG_FLIGHT_STATE_NAME[] = {
@@ -18,7 +105,24 @@ const char * const FLIGHT_LOG_FLIGHT_STATE_NAME[] = {
     "GPS_FIX",
     "CALIBRATE_MAG",
     "SMALL_ANGLE",
-    "FIXED_WING"
+    "FIXED_WING",
+    NULL
+};
+
+const char * const FLIGHT_LOG_FLIGHT_STATE_NAME_INAV[] = {
+    "GPS_FIX_HOME",
+    "GPS_FIX",
+    "CALIBRATE_MAG",
+    "SMALL_ANGLE",
+    "FIXED_WING",
+    "ANTI_WINDUP",
+    "FLAPERON_AVAILABLE",
+    "NAV_MOTOR_STOP_OR_IDLE",
+    "COMPASS_CALIBRATED",
+    "ACCELEROMETER_CALIBRATED",
+    "PWM_DRIVER_AVAILABLE",
+    "HELICOPTER",
+    NULL
 };
 
 const char * const FLIGHT_LOG_FAILSAFE_PHASE_NAME[] = {

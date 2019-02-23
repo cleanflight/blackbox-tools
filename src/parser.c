@@ -481,7 +481,9 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
 		log->sysConfig.motorOutputHigh = motorOutputs[1];
     } else if (strcmp(fieldName, "Firmware revision") == 0) {
 
-        if(strncmp(fieldValue, "INAV", 4) == 0) {
+        if (strncmp(fieldValue, "Betaflight", 10) == 0)
+            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_BETAFLIGHT;
+        else if(strncmp(fieldValue, "INAV", 4) == 0) {
             uint8_t major=0,minor=0,micro=0;
             char *ptr = fieldValue+5; // "INAV "
             major = strtol(ptr, &ptr, 10);
@@ -499,7 +501,11 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
                 else
                     log->sysConfig.vbatType = TRANSITIONAL; // needs data check
             }
+            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_INAV;
         }
+        else
+            log->sysConfig.firmwareRevison = FIRMWARE_REVISON_UNKNOWN;
+
     } else if (strcmp(fieldName, "Firmware date") == 0 && log->sysConfig.vbatType == TRANSITIONAL) {
         // This stanz is only necessary for 2.0.0 RC2, RC1 and prior development builds
         int day = atoi(fieldValue+4);
@@ -967,7 +973,7 @@ double flightlogGyroToRadiansPerSecond(flightLog_t *log, int32_t gyroRaw)
     return (double)log->sysConfig.gyroScale * 1000000 * gyroRaw;
 }
 
-static void flightlogDecodeFlagsToString(uint32_t flags, int numFlags, const char * const *flagNames, char *dest, unsigned destLen)
+static void flightlogDecodeFlagsToString(uint64_t flags, const char * const *flagNames, char *dest, unsigned destLen)
 {
     bool printedFlag = false;
     const char NO_FLAGS_MESSAGE[] = "0";
@@ -978,8 +984,10 @@ static void flightlogDecodeFlagsToString(uint32_t flags, int numFlags, const cha
         exit(-1);
     }
 
-    for (int i = 0; i < numFlags; i++) {
-        if ((flags & (1 << i)) != 0) {
+    //dest += sprintf(dest, "(0x%016llX) ", flags);
+
+    for (int i = 0; flagNames[i] != NULL; i++) {
+        if ((flags & (1LL << i)) != 0) {
             const char *flagName = flagNames[i];
             unsigned flagNameLen = strlen(flagName);
 
@@ -1028,14 +1036,29 @@ void flightlogDecodeEnumToString(uint32_t value, unsigned numEnums, const char *
     }
 }
 
-void flightlogFlightModeToString(uint32_t flightMode, char *dest, int destLen)
+void flightlogFlightModeToString(flightLog_t *log, uint64_t flightMode, char *dest, int destLen)
 {
-    flightlogDecodeFlagsToString(flightMode, FLIGHT_LOG_FLIGHT_MODE_COUNT, FLIGHT_LOG_FLIGHT_MODE_NAME, dest, destLen);
+    if (log->sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT)
+    {
+        if (log->sysConfig.firmwareRevison == FIRMWARE_REVISON_INAV)
+            flightlogDecodeFlagsToString(flightMode, FLIGHT_LOG_FLIGHT_MODE_NAME_INAV, dest, destLen);
+        else
+            flightlogDecodeFlagsToString(flightMode, FLIGHT_LOG_FLIGHT_MODE_NAME_BETAFLIGHT, dest, destLen);
+    }
+    else
+        flightlogDecodeFlagsToString(flightMode, FLIGHT_LOG_FLIGHT_MODE_NAME, dest, destLen);
 }
 
-void flightlogFlightStateToString(uint32_t flightState, char *dest, int destLen)
+void flightlogFlightStateToString(flightLog_t *log, uint64_t flightState, char *dest, int destLen)
 {
-    flightlogDecodeFlagsToString(flightState, FLIGHT_LOG_FLIGHT_STATE_COUNT, FLIGHT_LOG_FLIGHT_STATE_NAME, dest, destLen);
+    if (log->sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && log->sysConfig.firmwareRevison == FIRMWARE_REVISON_INAV)
+    {
+        flightlogDecodeFlagsToString(flightState, FLIGHT_LOG_FLIGHT_STATE_NAME, dest, destLen);
+    }
+    else
+    {
+        flightlogDecodeFlagsToString(flightState, FLIGHT_LOG_FLIGHT_STATE_NAME, dest, destLen);
+    }
 }
 
 void flightlogFailsafePhaseToString(uint8_t failsafePhase, char *dest, int destLen)

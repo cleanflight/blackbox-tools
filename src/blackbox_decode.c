@@ -546,9 +546,9 @@ void outputSlowFrameFields(flightLog_t *log, int64_t *frame)
                 && options.unitFlags == UNIT_FLAGS) {
 
             if (i == log->slowFieldIndexes.flightModeFlags) {
-                flightlogFlightModeToString(frame[i], buffer, BUFFER_LEN);
+                flightlogFlightModeToString(log, frame[i], buffer, BUFFER_LEN);
             } else {
-                flightlogFlightStateToString(frame[i], buffer, BUFFER_LEN);
+                flightlogFlightStateToString(log, frame[i], buffer, BUFFER_LEN);
             }
 
             fprintf(csvFile, "%s", buffer);

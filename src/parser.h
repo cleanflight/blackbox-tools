@@ -21,8 +21,13 @@ typedef enum FirmwareType {
     FIRMWARE_TYPE_UNKNOWN = 0,
     FIRMWARE_TYPE_BASEFLIGHT,
     FIRMWARE_TYPE_CLEANFLIGHT,
-	FIRMWARE_TYPE_BETAFLIGHT
 } FirmwareType;
+
+typedef enum FirmwareRevison {
+    FIRMWARE_REVISON_UNKNOWN = 0,
+    FIRMWARE_REVISON_BETAFLIGHT,
+    FIRMWARE_REVISON_INAV,
+} FirmwareRevison;
 
 typedef enum VbatType {
     ORIGINAL = 0,
@@ -131,6 +136,7 @@ typedef struct flightLogSysConfig_t {
     uint16_t vbatref;
 
     FirmwareType firmwareType;
+    FirmwareRevison firmwareRevison;
 
     VbatType vbatType;
 } flightLogSysConfig_t;
@@ -183,8 +189,8 @@ unsigned int flightLogVbatADCToMillivolts(flightLog_t *log, uint16_t vbatADC);
 int flightLogAmperageADCToMilliamps(flightLog_t *log, uint16_t amperageADC);
 double flightlogGyroToRadiansPerSecond(flightLog_t *log, int32_t gyroRaw);
 double flightlogAccelerationRawToGs(flightLog_t *log, int32_t accRaw);
-void flightlogFlightModeToString(uint32_t flightMode, char *dest, int destLen);
-void flightlogFlightStateToString(uint32_t flightState, char *dest, int destLen);
+void flightlogFlightModeToString(flightLog_t *log, uint64_t flightMode, char *dest, int destLen);
+void flightlogFlightStateToString(flightLog_t *log, uint64_t flightState, char *dest, int destLen);
 void flightlogFailsafePhaseToString(uint8_t failsafePhase, char *dest, int destLen);
 
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw);
