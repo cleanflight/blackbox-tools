@@ -27,6 +27,8 @@
 
 #define LOG_START_MARKER "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
 
+#define HEADER_MAX_SIZE 2048
+
 //Assume that even in the most woeful logging situation, we won't miss 10 seconds of frames
 #define MAXIMUM_TIME_JUMP_BETWEEN_FRAMES (10 * 1000000)
 
@@ -342,7 +344,7 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
     char *fieldName, *fieldValue;
     const char *lineStart, *lineEnd, *separatorPos;
     int i, c;
-    char valueBuffer[1024];
+    char valueBuffer[HEADER_MAX_SIZE];
     union {
         float f;
         uint32_t u;
@@ -357,7 +359,7 @@ static void parseHeaderLine(flightLog_t *log, mmapStream_t *stream)
     lineStart = stream->pos;
     separatorPos = 0;
 
-    for (i = 0; i < 1024; i++) {
+    for (i = 0; i < HEADER_MAX_SIZE; i++) {
         c = streamReadChar(stream);
 
         if (c == ':' && !separatorPos) {
