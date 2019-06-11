@@ -422,10 +422,16 @@ static void updateSimulations(flightLog_t *log, int64_t *frame, int64_t currentT
     }
 
     if (hasAmperageADC) {
+        int currentAmps;
+        if(log->sysConfig.vbatType == INAV_V2)
+            currentAmps = frame[log->mainFieldIndexes.amperageLatest]*10;
+        else
+            currentAmps =  flightLogAmperageADCToMilliamps(log, frame[log->mainFieldIndexes.amperageLatest]);
+
         currentMeterUpdateMeasured(
             &currentMeterMeasured,
-            flightLogAmperageADCToMilliamps(log, frame[log->mainFieldIndexes.amperageLatest]),
-            currentTime
+            currentAmps,
+           currentTime
         );
     }
 
@@ -843,7 +849,7 @@ void applyFieldUnits(flightLog_t *log)
         memset(mainFieldUnit, 0, sizeof(mainFieldUnit));
         memset(gpsGFieldUnit, 0, sizeof(gpsGFieldUnit));
         memset(slowFieldUnit, 0, sizeof(slowFieldUnit));
-    
+
         if (log->mainFieldIndexes.vbatLatest > -1) {
             mainFieldUnit[log->mainFieldIndexes.vbatLatest] = options.unitVbat;
         }
