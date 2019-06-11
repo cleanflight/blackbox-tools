@@ -1327,10 +1327,10 @@ static bool completeGPSHomeFrame(flightLog_t *log, mmapStream_t *stream, uint8_t
 
     //Copy the decoded frame into the "last state" entry of gpsHomeHistory to publish it:
     memcpy(&log->private->gpsHomeHistory[1], &log->private->gpsHomeHistory[0], sizeof(*log->private->gpsHomeHistory));
-    log->private->gpsHomeIsValid = true;
+    log->private->gpsHomeIsValid = log->private->mainStreamIsValid;
 
     if (log->private->onFrameReady) {
-        log->private->onFrameReady(log, true, log->private->gpsHomeHistory[1], frameType, log->frameDefs[frameType].fieldCount, frameStart - stream->data, frameEnd - frameStart);
+        log->private->onFrameReady(log, log->private->gpsHomeIsValid, log->private->gpsHomeHistory[1], frameType, log->frameDefs[frameType].fieldCount, frameStart - stream->data, frameEnd - frameStart);
     }
 
     return true;
