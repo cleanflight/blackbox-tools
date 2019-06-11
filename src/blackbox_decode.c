@@ -426,7 +426,7 @@ static void updateSimulations(flightLog_t *log, int64_t *frame, int64_t currentT
         if(log->sysConfig.vbatType == INAV_V2)
             currentAmps = frame[log->mainFieldIndexes.amperageLatest]*10;
         else
-            currentAmps =  flightLogAmperageADCToMilliamps(log, frame[log->mainFieldIndexes.amperageLatest]);
+            currentAmps = flightLogAmperageADCToMilliamps(log, frame[log->mainFieldIndexes.amperageLatest]);
 
         currentMeterUpdateMeasured(
             &currentMeterMeasured,
