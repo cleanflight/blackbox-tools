@@ -556,6 +556,8 @@ void outputSlowFrameFields(flightLog_t *log, int64_t *frame)
             flightlogFailsafePhaseToString(frame[i], buffer, BUFFER_LEN);
 
             fprintf(csvFile, "%s", buffer);
+        } else if (log->frameDefs['S'].fieldSigned[i]) {
+            fprintf(csvFile, "%" PRId64, (uint64_t)frame[i]);
         } else {
             //Print raw
             fprintf(csvFile, "%" PRIu64, (uint64_t) frame[i]);
