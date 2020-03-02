@@ -82,6 +82,7 @@ Options:
    --width <px>           Choose the width of the image (default 1920)
    --height <px>          Choose the height of the image (default 1080)
    --fps                  FPS of the resulting video (default 30)
+   --threads              Number of threads to use to render frames (default 3)
    --prefix <filename>    Set the prefix of the output frame filenames
    --start <x:xx>         Begin the log at this time offset (default 0:00)
    --end <x:xx>           End the log at this time offset
@@ -89,14 +90,30 @@ Options:
    --[no-]draw-craft      Show craft drawing (default on)
    --[no-]draw-sticks     Show RC command sticks (default on)
    --[no-]draw-time       Show frame number and time in bottom right (default on)
+   --[no-]draw-acc        Show accelerometer data and amperage in bottom left (default on)
    --[no-]plot-motor      Draw motors on the upper graph (default on)
    --[no-]plot-pid        Draw PIDs on the lower graph (default off)
    --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)
+   --sticks-top <px>      Offset the stick overlay from the top (default off)
+   --sticks-right <px>    Offset the stick overlay from the right (default off)
+   --sticks-width <px>    Size of the stick area (default off)
+   --sticks-radius <px>   Diameter of the sticks (default relative to image size)
+   --sticks-trail-radius <px>  Diameter of the sticks (default same ad stick radius)
+   --craft-top <px>       Offset the craft overlay from the top (default off)
+   --craft-right <px>     Offset the craft overlay from the right (default off)
+   --craft-width <px>     Size of the craft area (default off)
    --smoothing-pid <n>    Smoothing window for the PIDs (default 4)
    --smoothing-gyro <n>   Smoothing window for the gyroscopes (default 2)
    --smoothing-motor <n>  Smoothing window for the motors (default 2)
+   --unit-gyro <raw|degree>  Unit for the gyro values in the table (default raw)
    --prop-style <name>    Style of propeller display (pie/blades, default pie)
    --gapless              Fill in gaps in the log with straight lines
+   --raw-amperage         Print the current sensor ADC value along with computed amperage
+   --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)
+   --sticks-color         Set the RGBA sticks color (default 1.0,0.4,0.4,1.0)
+   --sticks-area-color    Set the RGBA sticks area color (default 0.3,0.3,0.3,0.8)
+   --sticks-cross-color   Set the RGBA sticks crosshair color (default 0.75,0.75,0.75,0.5)
+   --sticks-trail-length <px> Length of the stick trails (default 0)
 ```
 
 (At least on Windows) if you just want to render a log file using the defaults, you can drag and drop a log onto the
@@ -113,13 +130,13 @@ blackbox_render program and it'll start generating the PNGs immediately.
 In Resolve, create a new project. On the Media tab, find your flight video and drag it from the top pane to the bottom
 one to add it to your media library. When prompted, choose the option to change your framerate/resolution settings to
 match the video you added. Now add the PNG series that you rendered with `blackbox_render` (it'll be represented as a
-single file). If the PNGs don't appear in the media library, try right clicking on the folder that contains them and 
+single file). If the PNGs don't appear in the media library, try right clicking on the folder that contains them and
 selecting "Refresh".
 
 Now over on the Edit tab, click File -> New Timeline and click Ok. At the top left, switch over to the Media Pool. Drag
 and drop your flight video onto the timeline, then drag and drop the Blackbox stream onto the video track above it.
 You'll need to play around with the alignment between the two tracks to sync things up (I usually sync up the audio from
-the initial throttle-up with the throttle-up shown on the motor graph). 
+the initial throttle-up with the throttle-up shown on the motor graph).
 
 If your Blackbox PNGs were rendered using the default settings (30 FPS) and your flight video is 60 FPS, you'll need to
 right-click on the Blackbox stream and click "change clip speed". Enter 30 FPS since this is the FPS that you rendered
@@ -156,7 +173,7 @@ sudo apt-get install make gcc libcairo2-dev
 Build blackbox_render by running `make obj/blackbox_render` (or build both tools by just running `make`).
 
 #### MacOSX
-The easiest way to build is to install the [Xcode development tool][], then install an environment like [Homebrew][] 
+The easiest way to build is to install the [Xcode development tool][], then install an environment like [Homebrew][]
 or [MacPorts][] onto your system.
 
 From MacPorts, you would do this to get LibCairo:
@@ -204,16 +221,16 @@ The binary version of `blackbox_render` for MacOSX is statically linked to these
  - libcairo & libpixman http://cairographics.org/ (LGPL)
  - libfreetype http://www.freetype.org/ (BSD-like/GPLv2)
  - libpng16 http://www.libpng.org/pub/png/libpng.html
- 
+
 The windows binary of `blackbox_render` additionally ships with these DLLs:
 
  - libiconv https://www.gnu.org/software/libiconv/ (LGPL)
  - libfontconfig http://www.freedesktop.org/wiki/Software/fontconfig/
  - libxml2 http://xmlsoft.org/ (MIT)
  - liblzma http://tukaani.org/xz/ (Public Domain)
- 
+
 This font is included with both binary and source distributions:
 
  - Source Sans Pro - Regular https://github.com/adobe-fonts/source-sans-pro (SIL Open Font license)
- 
+
 Both binary and source builds include IMU code from Baseflight https://github.com/multiwii/baseflight (GPLv3)

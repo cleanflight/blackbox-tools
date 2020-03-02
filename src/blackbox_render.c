@@ -72,6 +72,10 @@ static const char* const PROP_STYLE_NAME[] = {
     "pie"
 };
 
+typedef struct point_t {
+  double x, y;
+} point_t;
+
 typedef struct color_t {
     double r, g, b;
 } color_t;
@@ -101,12 +105,14 @@ typedef struct craftDrawingParameters_t {
 typedef struct renderOptions_t {
     int logNumber;
     int imageWidth, imageHeight;
+    int sticksTop, sticksRight, sticksWidth;
+    int craftTop, craftRight, craftWidth;
     int fps;
     int help;
     int threads;
 
     int plotPids, plotPidSum, plotGyros, plotMotors;
-    int drawPidTable, drawSticks, drawCraft, drawTime;
+    int drawPidTable, drawSticks, drawCraft, drawTime, drawAcc;
 
     int pidSmoothing, gyroSmoothing, motorSmoothing;
 
@@ -122,8 +128,13 @@ typedef struct renderOptions_t {
     //Start and end time of video in seconds offset from the beginning of the log
     uint32_t timeStart, timeEnd;
 
+    colorAlpha_t sticksTextColor, stickColor, stickAreaColor, crosshairColor, stickTrailColor;
+    int stickTrailLength, stickRadius, stickTrailRadius;
+
     char *filename, *outputPrefix;
 } renderOptions_t;
+
+int stickTrailCurrent[2] = {0, 0};
 
 const double DASHED_LINE[] = {
     20.0,  /* ink */
@@ -188,10 +199,7 @@ const color_t WHITE = {.r = 1, .g = 1, .b = 1};
 
 #define NUM_LINE_COLORS (sizeof(lineColors) / sizeof(lineColors[0]))
 
-static const colorAlpha_t stickColor = {1, 0.4, 0.4, 1.0};
-static const colorAlpha_t stickAreaColor = {0.3, 0.3, 0.3, 0.8};
 static const colorAlpha_t craftColor = {0.3, 0.3, 0.3, 1};
-static const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
 
 static const renderOptions_t defaultOptions = {
     .imageWidth = 1920, .imageHeight = 1080,
@@ -199,12 +207,23 @@ static const renderOptions_t defaultOptions = {
     .plotPids = false, .plotPidSum = false, .plotGyros = true, .plotMotors = true,
     .pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
     .drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
+    .drawAcc = true,
+    .sticksTop = 0, .sticksRight = 0, .sticksWidth = 0,
+    .craftTop = 0, .craftRight = 0, .craftWidth = 0,
     .gyroUnit = UNIT_RAW,
     .filename = 0,
     .timeStart = 0, .timeEnd = 0,
     .logNumber = 0,
     .gapless = 0,
-    .rawAmperage = 0
+    .rawAmperage = 0,
+    .sticksTextColor = {1, 1, 1, 1},
+    .stickColor = {1, 0.4, 0.4, 1.0},
+    .stickAreaColor = {0.3, 0.3, 0.3, 0.8},
+    .crosshairColor = {0.75, 0.75, 0.75, 0.5},
+    .stickTrailColor = {1, 1, 1, 1},
+    .stickTrailLength = 0,
+    .stickRadius = 0,
+    .stickTrailRadius = 0,
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -226,6 +245,8 @@ static fieldIdentifications_t fieldMeta;
 static FT_Library freetypeLibrary;
 
 static uint32_t syncBeepTime = -1;
+
+static point_t *stickTrails[2];
 
 void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int64_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
@@ -326,9 +347,24 @@ void updateFieldMetadata()
 void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t *cr)
 {
     double rcCommand[4] = {0, 0, 0, 0};
-    const int stickSurroundRadius = imageHeight / 11, stickSpacing = stickSurroundRadius * 3;
+    int stickSurroundRadius = imageHeight / 11;
+    if(options.sticksWidth > 0) {
+      stickSurroundRadius = options.sticksWidth;
+    }
+    const int stickSpacing = stickSurroundRadius * 3;
     const int yawStickMax = 500;
     int stickIndex;
+
+    int stickRadius = stickSurroundRadius / 5;
+    int stickTrailRadius = stickRadius;
+
+    if(options.stickRadius > 0) {
+      stickRadius = options.stickRadius;
+    }
+
+    if(options.stickTrailRadius > 0) {
+      stickTrailRadius = options.stickTrailRadius;
+    }
 
     char stickLabel[16];
     cairo_text_extents_t extent;
@@ -366,25 +402,50 @@ void drawCommandSticks(int64_t *frame, int imageWidth, int imageHeight, cairo_t 
     //For each stick
     for (int i = 0; i < 2; i++) {
         //Fill in background
-        cairo_set_source_rgba(cr, stickAreaColor.r, stickAreaColor.g, stickAreaColor.b, stickAreaColor.a);
+        cairo_set_source_rgba(cr, options.stickAreaColor.r, options.stickAreaColor.g, options.stickAreaColor.b, options.stickAreaColor.a);
         cairo_rectangle(cr, -stickSurroundRadius, -stickSurroundRadius, stickSurroundRadius * 2, stickSurroundRadius * 2);
         cairo_fill(cr);
 
         //Draw crosshair
         cairo_set_line_width(cr, 1);
-        cairo_set_source_rgba(cr, crosshairColor.r, crosshairColor.g, crosshairColor.b, crosshairColor.a);
+        cairo_set_source_rgba(cr, options.crosshairColor.r, options.crosshairColor.g, options.crosshairColor.b, options.crosshairColor.a);
         cairo_move_to(cr, -stickSurroundRadius, 0);
         cairo_line_to(cr, stickSurroundRadius, 0);
         cairo_move_to(cr, 0, -stickSurroundRadius);
         cairo_line_to(cr, 0, stickSurroundRadius);
         cairo_stroke(cr);
 
+        //Draw trail
+        for(int j = 0; j < stickTrailCurrent[i]; j++) {
+          point_t current = stickTrails[i][j];
+
+          cairo_set_source_rgba(cr, options.stickTrailColor.r, options.stickTrailColor.g, options.stickTrailColor.b, options.stickTrailColor.a - (options.stickTrailColor.a - (j / (stickTrailCurrent[i] + 1.0))));
+          cairo_arc(cr, current.x, current.y, stickTrailRadius, 0, 2 * M_PI);
+          cairo_fill(cr);
+
+          if(j > 0) {
+            stickTrails[i][j-1] = stickTrails[i][j];
+          }
+        }
+
         //Draw circle to represent stick position
-        cairo_set_source_rgba(cr, stickColor.r, stickColor.g, stickColor.b, stickColor.a);
-        cairo_arc(cr, stickPositions[i * 2 + 0], stickPositions[i * 2 + 1], stickSurroundRadius / 5, 0, 2 * M_PI);
+        double stickX = stickPositions[i * 2 + 0];
+        double stickY = stickPositions[i * 2 + 1];
+
+        if(stickTrailCurrent[i] < options.stickTrailLength) {
+          stickTrailCurrent[i]++;
+        }
+
+        if(stickTrailCurrent[i] > 0) {
+          point_t p = {stickX, stickY};
+          stickTrails[i][stickTrailCurrent[i] - 1] = p;
+        }
+
+        cairo_set_source_rgba(cr, options.stickColor.r, options.stickColor.g, options.stickColor.b, options.stickColor.a);
+        cairo_arc(cr, stickX, stickY, stickRadius, 0, 2 * M_PI);
         cairo_fill(cr);
 
-        cairo_set_source_rgba(cr, 1,1,1, 1);
+        cairo_set_source_rgba(cr, options.sticksTextColor.r, options.sticksTextColor.g, options.sticksTextColor.b, options.sticksTextColor.a);
         cairo_set_font_size(cr, FONTSIZE_CURRENT_VALUE_LABEL);
 
         //Draw horizontal stick label
@@ -591,6 +652,9 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
     parameters->numMotors = fieldMeta.numMotors == 3 || fieldMeta.numMotors == 4 ? fieldMeta.numMotors : 4;
     parameters->numBlades = 2;
     parameters->bladeLength = imageWidth / 25;
+    if(options.craftWidth > 0) {
+      parameters->bladeLength = options.craftWidth;
+    }
     parameters->tipBezierWidth = 0.2 * parameters->bladeLength;
     parameters->tipBezierHeight = 0.1 * parameters->bladeLength;
     parameters->motorSpacing = parameters->bladeLength * 1.15;
@@ -969,7 +1033,7 @@ void drawAccelerometerData(cairo_t *cr, int64_t *frame)
 
         cairo_move_to(cr, X_POS_VALUE + 140, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, "Total");
-	
+
         snprintf(labelBuf, sizeof(labelBuf), "%" PRId64 " mAh", frame[fieldMeta.cumulativeCurrent]);
         cairo_move_to(cr, X_POS_VALUE + 220, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, labelBuf);
@@ -1266,7 +1330,16 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
             if (options.drawSticks) {
                 cairo_save(cr);
                 {
-                    cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
+
+                    if(options.sticksTop != 0 && options.sticksRight != 0) {
+                      cairo_translate(cr, options.imageWidth - options.sticksRight, options.sticksTop);
+                    } else if(options.sticksRight != 0) {
+                      cairo_translate(cr, options.imageWidth - options.sticksRight, 0.20 * options.imageHeight);
+                    } else if(options.sticksTop != 0) {
+                      cairo_translate(cr, 0.75 * options.imageWidth, options.sticksTop);
+                    } else {
+                      cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
+                    }
 
                     drawCommandSticks(frameValues, options.imageWidth, options.imageHeight, cr);
                 }
@@ -1285,13 +1358,24 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
             if (options.drawCraft) {
                 cairo_save(cr);
                 {
-                    cairo_translate(cr, 0.25 * options.imageWidth, 0.20 * options.imageHeight);
+                    if(options.craftTop != 0 && options.craftRight != 0) {
+                      cairo_translate(cr, options.imageWidth - options.craftRight, options.craftTop);
+                    } else if(options.craftRight != 0) {
+                      cairo_translate(cr, options.imageWidth - options.craftRight, 0.20 * options.imageHeight);
+                    } else if(options.craftTop != 0) {
+                      cairo_translate(cr, 0.75 * options.imageWidth, options.craftTop);
+                    } else {
+                      cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
+                    }
+
                     drawCraft(cr, frameValues, outputFrameIndex > 0 ? windowCenterTime - lastCenterTime : 0, &craftParameters);
                 }
                 cairo_restore(cr);
             }
 
-            drawAccelerometerData(cr, frameValues);
+            if (options.drawAcc) {
+              drawAccelerometerData(cr, frameValues);
+            }
 
             if (options.drawTime)
                 drawFrameLabel(cr, frameValues[FLIGHT_LOG_FIELD_INDEX_ITERATION], (uint32_t) ((windowCenterTime - flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000));
@@ -1350,9 +1434,17 @@ void printUsage(const char *argv0)
         "   --[no-]draw-craft      Show craft drawing (default on)\n"
         "   --[no-]draw-sticks     Show RC command sticks (default on)\n"
         "   --[no-]draw-time       Show frame number and time in bottom right (default on)\n"
+        "   --[no-]draw-acc        Show accelerometer data and amperage in bottom left (default on)\n"
         "   --[no-]plot-motor      Draw motors on the upper graph (default on)\n"
         "   --[no-]plot-pid        Draw PIDs on the lower graph (default off)\n"
         "   --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)\n"
+        "   --sticks-top <px>      Offset the stick overlay from the top (default off)\n"
+        "   --sticks-right <px>    Offset the stick overlay from the right (default off)\n"
+        "   --sticks-width <px>    Size of the stick area (default off)\n"
+        "   --sticks-radius <px>   Radius of the sticks (default relative to image size)\n"
+        "   --craft-top <px>       Offset the craft overlay from the top (default off)\n"
+        "   --craft-right <px>     Offset the craft overlay from the right (default off)\n"
+        "   --craft-width <px>     Size of the craft area (default off)\n"
         "   --smoothing-pid <n>    Smoothing window for the PIDs (default %d)\n"
         "   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default %d)\n"
         "   --smoothing-motor <n>  Smoothing window for the motors (default %d)\n"
@@ -1360,9 +1452,15 @@ void printUsage(const char *argv0)
         "   --prop-style <name>    Style of propeller display (pie/blades, default %s)\n"
         "   --gapless              Fill in gaps in the log with straight lines\n"
         "   --raw-amperage         Print the current sensor ADC value along with computed amperage\n"
+        "   --sticks-text-color    Set the RGBA text color (default 1.0,1.0,1.0,1.0)\n"
+        "   --sticks-color         Set the RGBA sticks color (default 1.0,0.4,0.4,1.0)\n"
+        "   --sticks-area-color    Set the RGBA sticks area color (default 0.3,0.3,0.3,0.8)\n"
+        "   --sticks-cross-color   Set the RGBA sticks crosshair color (default 0.75,0.75,0.75,0.5)\n"
+        "   --sticks-trail-length <px> Length of the stick trails (default %d)\n"
+        "   --sticks-trail-color   Set the RGBA stick trail color (default 1.0,1.0,1.0,1.0)\n"
         "\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.threads,
             defaultOptions.pidSmoothing, defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing,
-            UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle]
+            UNIT_NAME[defaultOptions.gyroUnit], PROP_STYLE_NAME[defaultOptions.propStyle], defaultOptions.stickTrailLength
     );
 }
 
@@ -1404,6 +1502,36 @@ bool parseFrameTime(const char *text, uint32_t *frameTime)
     return true;
 }
 
+bool parseTextColor(const char *text, colorAlpha_t *color) {
+  int counter = 0;
+  const char *cur;
+
+  color->r = atof(text);
+  for(cur = text; *cur; cur++) {
+    if(*cur == ',') {
+      switch(counter) {
+        case 0: {
+          color->g = atof(cur + 1);
+        } break;
+        case 1: {
+          color->b = atof(cur + 1);
+        } break;
+        case 2: {
+          color->a = atof(cur + 1);
+        } break;
+      }
+
+      counter++;
+    }
+  }
+
+  if (counter != 3) {
+    return false;
+  }
+
+  return true;
+}
+
 Unit parseUnit(const char *s)
 {
     if (strcmp(s, "degree") == 0 || strcmp(s, "degrees") == 0)
@@ -1428,7 +1556,21 @@ void parseCommandlineOptions(int argc, char **argv)
         SETTING_SMOOTHING_MOTOR,
         SETTING_UNIT_GYRO,
         SETTING_PROP_STYLE,
-        SETTING_THREADS
+        SETTING_THREADS,
+        SETTING_STICKS_TOP,
+        SETTING_STICKS_RIGHT,
+        SETTING_STICKS_WIDTH,
+        SETTING_STICKS_TEXT_COLOR,
+        SETTING_STICK_COLOR,
+        SETTING_STICK_AREA_COLOR,
+        SETTING_STICK_CROSSHAIR_COLOR,
+        SETTING_STICK_TRAIL_LENGTH,
+        SETTING_STICK_TRAIL_COLOR,
+        SETTING_CRAFT_TOP,
+        SETTING_CRAFT_RIGHT,
+        SETTING_CRAFT_WIDTH,
+        SETTING_STICK_RADIUS,
+        SETTING_STICK_TRAIL_RADIUS,
     };
 
     memcpy(&options, &defaultOptions, sizeof(options));
@@ -1454,10 +1596,12 @@ void parseCommandlineOptions(int argc, char **argv)
             {"draw-craft", no_argument, &options.drawCraft, 1},
             {"draw-sticks", no_argument, &options.drawSticks, 1},
             {"draw-time", no_argument, &options.drawTime, 1},
+            {"draw-acc", no_argument, &options.drawAcc, 1},
             {"no-draw-pid-table", no_argument, &options.drawPidTable, 0},
             {"no-draw-craft", no_argument, &options.drawCraft, 0},
             {"no-draw-sticks", no_argument, &options.drawSticks, 0},
             {"no-draw-time", no_argument, &options.drawTime, 0},
+            {"no-draw-acc", no_argument, &options.drawAcc, 0},
             {"smoothing-pid", required_argument, 0, SETTING_SMOOTHING_PID},
             {"smoothing-gyro", required_argument, 0, SETTING_SMOOTHING_GYRO},
             {"smoothing-motor", required_argument, 0, SETTING_SMOOTHING_MOTOR},
@@ -1466,6 +1610,20 @@ void parseCommandlineOptions(int argc, char **argv)
             {"threads", required_argument, 0, SETTING_THREADS},
             {"gapless", no_argument, &options.gapless, 1},
             {"raw-amperage", no_argument, &options.rawAmperage, 1},
+            {"sticks-top", required_argument, 0, SETTING_STICKS_TOP},
+            {"sticks-right", required_argument, 0, SETTING_STICKS_RIGHT},
+            {"sticks-width", required_argument, 0, SETTING_STICKS_WIDTH},
+            {"sticks-text-color", required_argument, 0, SETTING_STICKS_TEXT_COLOR},
+            {"sticks-color", required_argument, 0, SETTING_STICK_COLOR},
+            {"sticks-area-color", required_argument, 0, SETTING_STICK_AREA_COLOR},
+            {"sticks-cross-color", required_argument, 0, SETTING_STICK_CROSSHAIR_COLOR},
+            {"sticks-trail-length", required_argument, 0, SETTING_STICK_TRAIL_LENGTH},
+            {"sticks-trail-color", required_argument, 0, SETTING_STICK_TRAIL_COLOR},
+            {"craft-top", required_argument, 0, SETTING_CRAFT_TOP},
+            {"craft-right", required_argument, 0, SETTING_CRAFT_RIGHT},
+            {"craft-width", required_argument, 0, SETTING_CRAFT_WIDTH},
+            {"sticks-radius", required_argument, 0, SETTING_STICK_RADIUS},
+            {"sticks-trail-radius", required_argument, 0, SETTING_STICK_TRAIL_RADIUS},
             {0, 0, 0, 0}
         };
 
@@ -1486,6 +1644,36 @@ void parseCommandlineOptions(int argc, char **argv)
             case SETTING_END:
                 if (!parseFrameTime(optarg, &options.timeEnd))  {
                     fprintf(stderr, "Bad --end time value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_STICKS_TEXT_COLOR:
+                if (!parseTextColor(optarg, &options.sticksTextColor))  {
+                    fprintf(stderr, "Bad --sticks-text-color color value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_STICK_COLOR:
+                if (!parseTextColor(optarg, &options.stickColor))  {
+                    fprintf(stderr, "Bad --sticks-color color value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_STICK_AREA_COLOR:
+                if (!parseTextColor(optarg, &options.stickAreaColor))  {
+                    fprintf(stderr, "Bad --sticks-area-color color value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_STICK_CROSSHAIR_COLOR:
+                if (!parseTextColor(optarg, &options.crosshairColor))  {
+                    fprintf(stderr, "Bad --sticks-cross-color color value\n");
+                    exit(-1);
+                }
+            break;
+            case SETTING_STICK_TRAIL_COLOR:
+                if (!parseTextColor(optarg, &options.stickTrailColor))  {
+                    fprintf(stderr, "Bad --sticks-trail-color color value\n");
                     exit(-1);
                 }
             break;
@@ -1528,6 +1716,33 @@ void parseCommandlineOptions(int argc, char **argv)
                 } else {
                     options.propStyle = PROP_STYLE_BLADES;
                 }
+            break;
+            case SETTING_STICKS_TOP:
+                options.sticksTop = atoi(optarg);
+            break;
+            case SETTING_STICKS_RIGHT:
+                options.sticksRight = atoi(optarg);
+            break;
+            case SETTING_STICKS_WIDTH:
+                options.sticksWidth = atoi(optarg);
+            break;
+            case SETTING_STICK_RADIUS:
+                options.stickRadius = atoi(optarg);
+            break;
+            case SETTING_STICK_TRAIL_RADIUS:
+                options.stickTrailRadius = atoi(optarg);
+            break;
+            case SETTING_STICK_TRAIL_LENGTH:
+                options.stickTrailLength = atoi(optarg);
+            break;
+            case SETTING_CRAFT_WIDTH:
+                options.craftWidth = atoi(optarg);
+            break;
+            case SETTING_CRAFT_TOP:
+                options.craftTop = atoi(optarg);
+            break;
+            case SETTING_CRAFT_RIGHT:
+                 options.craftRight = atoi(optarg);
             break;
             case '\0':
                 //Longopt which has set a flag
@@ -1678,6 +1893,9 @@ int main(int argc, char **argv)
     }
 
     options.bottomGraphSplitAxes = options.plotPids;
+
+    stickTrails[0] = malloc(options.stickTrailLength * sizeof(struct point_t));
+    stickTrails[1] = malloc(options.stickTrailLength * sizeof(struct point_t));
 
     fd = open(options.filename, O_RDONLY);
     if (fd < 0) {
