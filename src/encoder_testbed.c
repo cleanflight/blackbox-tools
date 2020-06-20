@@ -28,7 +28,7 @@
 #define SONAR
 #define XYZ_AXIS_COUNT 3
 #define MAX_SUPPORTED_MOTORS 8
-#define MAX_SUPPORTED_SERVOS 8
+#define MAX_SUPPORTED_SERVOS 16
 #define USE_SERVOS
 #define MIXER_TRI 3
 #define MIXER_QUAD 4
@@ -274,7 +274,6 @@ static uint32_t blackboxIteration;
  */
 static uint16_t vbatReference;
 
-static blackboxGpsState_t gpsHistory;
 static blackboxSlowState_t slowHistory;
 
 // Keep a history of length 2, plus a buffer for MW to store the new values into
@@ -306,7 +305,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
             return motorCount >= (int) condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
-        
+
         case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
             return motorCount == 3;
 
@@ -495,7 +494,7 @@ static void writeInterframe(void)
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteS32EliasDelta(blackboxCurrent->axisPID_I[x] - blackboxLast->axisPID_I[x]);
     }
-    
+
     /*
      * The PID D term is frequently set to zero for yaw, which makes the result from the calculation
      * always zero. So don't bother recording D results when PID D terms are zero.
@@ -889,7 +888,7 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
     if (blackboxDeviceReserveBufferSpace(WRITE_CHUNK_SIZE) != BLACKBOX_RESERVE_SUCCESS) {
         return true; // Device is busy right now, try later
     }
-    
+
     bufferRemain = WRITE_CHUNK_SIZE - 1; // Leave 1 byte spare so we can easily terminate line
 
     for (; xmitState.u.fieldIndex < fieldCount; xmitState.u.fieldIndex++) {
@@ -917,7 +916,7 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
             }
 
             // Now perform the write if the buffer is large enough
-            
+
             if (bytesToWrite > bufferRemain) {
                 // Ran out of space!
                 return true;
@@ -974,7 +973,7 @@ static bool blackboxWriteSysinfo()
     blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", flightLog->sysConfig.vbatmincellvoltage, flightLog->sysConfig.vbatwarningcellvoltage, flightLog->sysConfig.vbatmaxcellvoltage);
     blackboxPrintf("H vbatref:%u\n", flightLog->sysConfig.vbatref);
     blackboxPrintf("H currentMeter:%d,%d\n", flightLog->sysConfig.currentMeterOffset, flightLog->sysConfig.currentMeterScale);
-    
+
     return true;
 }
 
