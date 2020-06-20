@@ -16,7 +16,7 @@
 #define FLIGHT_LOG_FIELD_INDEX_TIME 1
 
 #define FLIGHT_LOG_MAX_MOTORS 8
-#define FLIGHT_LOG_MAX_SERVOS 8
+#define FLIGHT_LOG_MAX_SERVOS 16
 
 typedef enum FirmwareType {
     FIRMWARE_TYPE_UNKNOWN = 0,
@@ -150,7 +150,7 @@ typedef struct flightLogFrameDef_t {
     int fieldCount;
 
     char *fieldName[FLIGHT_LOG_MAX_FIELDS];
-    
+
     int fieldSigned[FLIGHT_LOG_MAX_FIELDS];
     int fieldWidth[FLIGHT_LOG_MAX_FIELDS];
     int predictor[FLIGHT_LOG_MAX_FIELDS];
