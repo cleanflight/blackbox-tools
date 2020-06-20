@@ -37,7 +37,7 @@
 #define STR(x) STR_HELPER(x)
 
 #define MAX_MOTORS 8
-#define MAX_SERVOS 8
+#define MAX_SERVOS 16
 
 //Controls how fast the props spin on the video
 #define MOTOR_MAX_RPS 25
@@ -969,7 +969,7 @@ void drawAccelerometerData(cairo_t *cr, int64_t *frame)
 
         cairo_move_to(cr, X_POS_VALUE + 140, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, "Total");
-	
+
         snprintf(labelBuf, sizeof(labelBuf), "%" PRId64 " mAh", frame[fieldMeta.cumulativeCurrent]);
         cairo_move_to(cr, X_POS_VALUE + 220, options.imageHeight - 8 - (extent.height + 8) * 3);
         cairo_show_text(cr, labelBuf);
