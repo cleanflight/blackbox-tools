@@ -1063,7 +1063,7 @@ void flightlogFlightStateToString(flightLog_t *log, uint64_t flightState, char *
 {
     if (log->sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && log->sysConfig.firmwareRevison == FIRMWARE_REVISON_INAV)
     {
-        flightlogDecodeFlagsToString(flightState, FLIGHT_LOG_FLIGHT_STATE_NAME, dest, destLen);
+        flightlogDecodeFlagsToString(flightState, FLIGHT_LOG_FLIGHT_STATE_NAME_INAV, dest, destLen);
     }
     else
     {
