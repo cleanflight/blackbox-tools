@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 //For msvcrt to define M_PI:
 #define _USE_MATH_DEFINES
@@ -987,7 +988,7 @@ void drawAccelerometerData(cairo_t *cr, int64_t *frame)
 
 void* pngRenderThread(void *arg)
 {
-    char filename[256];
+    char filename[PATH_MAX];
     pngRenderingTask_t *task = (pngRenderingTask_t *) arg;
 
     snprintf(filename, sizeof(filename), "%s.%02d.%06d.png", options.outputPrefix, task->outputLogIndex + 1, task->outputFrameIndex);
@@ -1663,7 +1664,7 @@ int chooseLog(flightLog_t *log)
 int main(int argc, char **argv)
 {
     struct stat directoryStat;
-    char outputDirectory[256];
+    char outputDirectory[PATH_MAX];
     char **fieldNames;
     uint32_t frameStart, frameEnd;
     int fd;
@@ -1714,15 +1715,25 @@ int main(int argc, char **argv)
             logNameEnd = options.filename + strlen(options.filename);
         }
 
-        snprintf(outputDirectory, 256, "%.*s.%02d", (int) (logNameEnd - options.filename), options.filename, selectedLogIndex + 1);
+        snprintf(outputDirectory, PATH_MAX, "%.*s.%02d", (int) (logNameEnd - options.filename), options.filename, selectedLogIndex + 1);
 
         //Create the output directory if it doesn't exist
         if (stat(outputDirectory, &directoryStat) != 0) {
             directory_create(outputDirectory);
         }
-
-        options.outputPrefix = malloc(256 * sizeof(char));
-        snprintf(options.outputPrefix, 256, "%s/%.*s", outputDirectory, (int) (logNameEnd - logNameStart), logNameStart);
+        uint fsize = strlen(outputDirectory) +  (int) (logNameEnd - logNameStart) + 2;
+        bool ok = false;
+        if (fsize <= PATH_MAX) {
+            options.outputPrefix = malloc(fsize);
+            if( options.outputPrefix != NULL) {
+                snprintf(options.outputPrefix, fsize, "%s/%.*s", outputDirectory, (int) (logNameEnd - logNameStart), logNameStart);
+                ok = true;
+            }
+        }
+        if(!ok) {
+            fprintf(stderr, "Can't allocate %d bytes for output file\n", fsize);
+            exit(255);
+        }
     }
 
     //First check out how many frames we need to store so we can pre-allocate (parsing will update the flightlog stats which contain that info)
